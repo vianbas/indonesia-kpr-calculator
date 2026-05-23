@@ -1,0 +1,373 @@
+/**
+ * pdfRenderer.ts — jsPDF adapter.
+ *
+ * Library choice: jsPDF + jspdf-autotable
+ *
+ * TRADE-OFFS vs alternatives:
+ *
+ *  jsPDF + jspdf-autotable (chosen)
+ *    + Runs entirely in the browser — no server required
+ *    + Excellent table support with auto-pagination (critical for 360-row schedules)
+ *    + Small footprint: ~130 KB gzip total
+ *    + Proven in production banking/fintech apps
+ *    − Limited CSS: layout done via coordinate math, not HTML/CSS
+ *    − No rich typography or vector graphics
+ *
+ *  @react-pdf/renderer
+ *    + Familiar React component mental model
+ *    + Better typography control (custom fonts, proper text flow)
+ *    − ~290 KB gzip — roughly 2× larger bundle
+ *    − Requires a separate render tree; can't mix with DOM components
+ *    − Table pagination must be implemented manually
+ *
+ *  html2canvas + jsPDF (screenshot approach)
+ *    + Renders exact HTML/CSS appearance
+ *    − Rasterized output: poor text quality, large file size
+ *    − Accessibility: text is pixels, not selectable/searchable
+ *    − Fragile: layout depends on window size and CSS at capture time
+ *
+ *  Puppeteer / Playwright (headless browser)
+ *    + Perfect fidelity to web UI
+ *    − Server-side only — requires infrastructure
+ *    − Heavyweight dependency for a simple customer document
+ *
+ * This file is the only place that imports jsPDF. Swapping to another renderer
+ * means replacing this file while leaving pdfTypes.ts and exportService.ts intact.
+ */
+
+import jsPDF from 'jspdf';
+import { autoTable } from 'jspdf-autotable';
+import type { CellHookData, Color, RowInput } from 'jspdf-autotable';
+import type { PdfExportData, PdfScheduleRow } from './pdfTypes';
+
+// ─── Type helpers ─────────────────────────────────────────────────────────────
+
+// jspdf-autotable stores table metadata on the doc object after each call.
+type DocWithAutoTable = jsPDF & {
+  lastAutoTable?: { finalY?: number };
+};
+
+function getLastTableY(doc: DocWithAutoTable, fallback: number): number {
+  return doc.lastAutoTable?.finalY ?? fallback;
+}
+
+// ─── Design constants ─────────────────────────────────────────────────────────
+
+const M = 14; // page margin (mm)
+const PAGE_W = 210;
+const PAGE_H = 297;
+const CONTENT_W = PAGE_W - M * 2;
+const FOOTER_Y = 289;
+
+// Colors (RGB tuples — match the web UI palette)
+const C: Record<string, Color> = {
+  blueDark:   [30,  64,  175],  // blue-800
+  blue:       [37,  99,  235],  // blue-600
+  blueMid:    [59,  130, 246],  // blue-500
+  blueLight:  [219, 234, 254],  // blue-100
+  blueBg:     [239, 246, 255],  // blue-50
+  indigoDark: [67,  56,  202],  // indigo-700
+  indigoBg:   [238, 242, 255],  // indigo-50
+  white:      [255, 255, 255],
+  black:      [17,  24,  39],   // gray-900
+  gray:       [107, 114, 128],  // gray-500
+  grayLight:  [243, 244, 246],  // gray-100
+  grayBg:     [249, 250, 251],  // gray-50
+  orange:     [194, 65,  12],   // orange-700
+  green:      [21,  128, 61],   // green-700
+};
+
+// ─── Public entry point ───────────────────────────────────────────────────────
+
+/** Renders all sections and returns the jsPDF document ready to save. */
+export function renderPdf(data: PdfExportData): jsPDF {
+  const doc: DocWithAutoTable = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+    compress: true,
+  });
+
+  let y = renderDocumentHeader(doc, data.generatedAt);
+  y = renderLoanInfoSection(doc, y, data);
+  y = renderInterestSchemeSection(doc, y, data);
+  y = renderFinancialSummarySection(doc, y, data);
+  renderAmortizationSection(doc, y, data);
+  renderPageNumbers(doc);
+
+  return doc;
+}
+
+// ─── Section A: document header ──────────────────────────────────────────────
+
+function renderDocumentHeader(doc: DocWithAutoTable, generatedAt: string): number {
+  // Dark blue banner
+  doc.setFillColor(...(C.blueDark as [number, number, number]));
+  doc.rect(0, 0, PAGE_W, 26, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.setTextColor(...(C.white as [number, number, number]));
+  doc.text('SIMULASI KREDIT PEMILIKAN RUMAH (KPR)', M, 11);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(186, 210, 254); // blue-200
+  doc.text('Dokumen bersifat estimasi — bukan penawaran kredit resmi dari lembaga keuangan mana pun.', M, 17.5);
+
+  doc.setFontSize(7);
+  doc.text(`Dibuat: ${generatedAt}`, PAGE_W - M, 22.5, { align: 'right' });
+
+  return 32;
+}
+
+// ─── Section A: Loan info ─────────────────────────────────────────────────────
+
+function renderLoanInfoSection(doc: DocWithAutoTable, y: number, data: PdfExportData): number {
+  y = renderSectionTitle(doc, 'A.  INFORMASI KREDIT', y);
+
+  const { loanInfo } = data;
+  const rows: [string, string][] = [
+    ['Harga Properti',       loanInfo.propertyPriceDisplay],
+    ['Uang Muka',            loanInfo.downPaymentDisplay],
+    ['Nilai Kredit (KPR)',   loanInfo.principalDisplay],
+    ['Jangka Waktu',         loanInfo.tenorDisplay],
+    ['Metode Perhitungan',   loanInfo.paymentMethodDisplay],
+    ['Tanggal Pencairan',    loanInfo.startDateDisplay],
+  ];
+  if (loanInfo.adminFeeDisplay) {
+    rows.push(['Biaya Administrasi', loanInfo.adminFeeDisplay]);
+  }
+
+  autoTable(doc, {
+    startY: y,
+    margin: { left: M, right: M },
+    tableWidth: CONTENT_W,
+    head: [],
+    body: rows,
+    theme: 'plain',
+    styles: { fontSize: 8.5, cellPadding: { top: 2.8, bottom: 2.8, left: 3.5, right: 3.5 } },
+    columnStyles: {
+      0: { cellWidth: 58, fontStyle: 'bold', fillColor: C.grayBg as Color, textColor: C.black as Color },
+      1: { textColor: C.black as Color },
+    },
+    didParseCell: (d: CellHookData) => {
+      // Highlight the principal row
+      if (d.section === 'body' && d.row.index === 2) {
+        d.cell.styles.fillColor = C.blueLight as Color;
+        d.cell.styles.textColor = C.blueDark as Color;
+        d.cell.styles.fontStyle = 'bold';
+      }
+    },
+  });
+
+  return getLastTableY(doc, y) + 7;
+}
+
+// ─── Section B: Interest scheme ───────────────────────────────────────────────
+
+function renderInterestSchemeSection(doc: DocWithAutoTable, y: number, data: PdfExportData): number {
+  y = ensureSpace(doc, y, 50);
+  y = renderSectionTitle(doc, 'B.  SKEMA SUKU BUNGA', y);
+
+  autoTable(doc, {
+    startY: y,
+    margin: { left: M, right: M },
+    tableWidth: CONTENT_W,
+    head: [['Periode', 'Jenis', 'Suku Bunga (p.a.)', 'Cicilan / Bulan']],
+    body: data.interestRows.map((r) => [r.periodDisplay, r.typeDisplay, r.rateDisplay, r.installmentDisplay]),
+    styles: { fontSize: 8.5, cellPadding: { top: 2.8, bottom: 2.8, left: 3, right: 3 } },
+    headStyles: { fillColor: C.blue as Color, textColor: C.white as Color, fontStyle: 'bold', halign: 'center', fontSize: 8 },
+    alternateRowStyles: { fillColor: C.grayBg as Color },
+    columnStyles: {
+      0: { cellWidth: 38 },
+      1: { cellWidth: 30, halign: 'center' },
+      2: { cellWidth: 42, halign: 'center' },
+      3: { cellWidth: CONTENT_W - 38 - 30 - 42, halign: 'right', fontStyle: 'bold' },
+    },
+    didParseCell: (d: CellHookData) => {
+      if (d.section !== 'body') return;
+      const typeVal = data.interestRows[d.row.index]?.typeDisplay;
+      if (d.column.index === 1) {
+        d.cell.styles.textColor = typeVal === 'Tetap' ? (C.blueDark as Color) : (C.indigoDark as Color);
+        d.cell.styles.fontStyle = 'bold';
+      }
+    },
+  });
+
+  return getLastTableY(doc, y) + 7;
+}
+
+// ─── Section C: Financial summary ─────────────────────────────────────────────
+
+function renderFinancialSummarySection(doc: DocWithAutoTable, y: number, data: PdfExportData): number {
+  y = ensureSpace(doc, y, 60);
+  y = renderSectionTitle(doc, 'C.  RINGKASAN PEMBAYARAN', y);
+
+  autoTable(doc, {
+    startY: y,
+    margin: { left: M, right: M },
+    tableWidth: CONTENT_W,
+    head: [],
+    body: data.financialRows.map((r) => [r.label, r.value]),
+    theme: 'plain',
+    styles: { fontSize: 9, cellPadding: { top: 3, bottom: 3, left: 3.5, right: 3.5 } },
+    columnStyles: {
+      0: { cellWidth: 78, fontStyle: 'bold', fillColor: C.grayBg as Color, textColor: C.black as Color },
+      1: { halign: 'right', fontStyle: 'bold', textColor: C.black as Color },
+    },
+    didParseCell: (d: CellHookData) => {
+      if (d.section !== 'body' || d.column.index !== 1) return;
+      const hint = data.financialRows[d.row.index]?.hint;
+      if (hint === 'interest') d.cell.styles.textColor = C.orange as Color;
+      if (hint === 'paid')     d.cell.styles.textColor = C.green  as Color;
+    },
+  });
+
+  return getLastTableY(doc, y) + 7;
+}
+
+// ─── Section D: Amortization schedule ────────────────────────────────────────
+
+function renderAmortizationSection(doc: DocWithAutoTable, y: number, data: PdfExportData): void {
+  y = ensureSpace(doc, y, 45);
+  y = renderSectionTitle(doc, 'D.  JADWAL ANGSURAN (AMORTISASI)', y);
+
+  // Build body — separator rows use colSpan so text spans the row
+  const body = buildAmortizationBody(data.scheduleRows);
+  const separatorSet = buildSeparatorIndexSet(data.scheduleRows);
+
+  const { totalRow } = data;
+  const foot: RowInput[] = [[
+    { content: totalRow.label,        colSpan: 3, styles: { halign: 'left'  as const, fontStyle: 'bold' as const } },
+    { content: totalRow.installment,             styles: { halign: 'right' as const, fontStyle: 'bold' as const } },
+    { content: totalRow.principal,               styles: { halign: 'right' as const, fontStyle: 'bold' as const, textColor: C.blue } },
+    { content: totalRow.interest,                styles: { halign: 'right' as const, fontStyle: 'bold' as const, textColor: C.orange } },
+    { content: totalRow.finalBalance,            styles: { halign: 'right' as const, fontStyle: 'bold' as const, textColor: C.green } },
+  ]];
+
+  autoTable(doc, {
+    startY: y,
+    margin: { left: M, right: M },
+    tableWidth: CONTENT_W,
+    head: [['Bln', 'Thn', 'Suku Bunga', 'Cicilan', 'Pokok', 'Bunga', 'Saldo Akhir']],
+    body,
+    foot,
+    showHead: 'everyPage',
+    showFoot: 'lastPage',
+    styles: {
+      fontSize: 7,
+      cellPadding: { top: 2.2, bottom: 2.2, left: 2.5, right: 2.5 },
+      overflow: 'linebreak',
+    },
+    headStyles: {
+      fillColor: C.blue as Color,
+      textColor: C.white as Color,
+      fontStyle: 'bold',
+      halign: 'center',
+      fontSize: 7.5,
+    },
+    footStyles: {
+      fillColor: C.blueLight as Color,
+      textColor: C.blueDark as Color,
+      fontStyle: 'bold',
+      fontSize: 7.5,
+    },
+    alternateRowStyles: { fillColor: C.grayBg as Color },
+    columnStyles: {
+      0: { halign: 'center', cellWidth: 12 },
+      1: { halign: 'center', cellWidth: 11 },
+      2: { halign: 'center', cellWidth: 22 },
+      3: { halign: 'right',  cellWidth: 31 },
+      4: { halign: 'right',  cellWidth: 30 },
+      5: { halign: 'right',  cellWidth: 29 },
+      6: { halign: 'right',  cellWidth: CONTENT_W - 12 - 11 - 22 - 31 - 30 - 29 },
+    },
+    didParseCell: (d: CellHookData) => {
+      if (d.section !== 'body') return;
+      const idx = d.row.index;
+
+      if (separatorSet.has(idx)) {
+        // Rate-change separator: indigo tinted banner row
+        d.cell.styles.fillColor = C.indigoBg as Color;
+        d.cell.styles.textColor = C.indigoDark as Color;
+        d.cell.styles.fontStyle = 'bold';
+        d.cell.styles.fontSize = 6.8;
+      } else {
+        // Color-code principal and interest columns
+        if (d.column.index === 4) d.cell.styles.textColor = C.blue as Color;    // Pokok
+        if (d.column.index === 5) d.cell.styles.textColor = C.orange as Color;  // Bunga
+        // Final row (Lunas) highlight
+        const nonSepIndices = [...Array(body.length).keys()].filter(i => !separatorSet.has(i));
+        const lastDataIdx = nonSepIndices[nonSepIndices.length - 1];
+        if (idx === lastDataIdx) d.cell.styles.fillColor = [220, 252, 231] as Color; // green-100
+      }
+    },
+  });
+}
+
+// ─── Page numbers ─────────────────────────────────────────────────────────────
+
+function renderPageNumbers(doc: DocWithAutoTable): void {
+  const total = doc.getNumberOfPages();
+  for (let i = 1; i <= total; i++) {
+    doc.setPage(i);
+
+    // Footer separator line
+    doc.setDrawColor(...(C.gray as [number, number, number]));
+    doc.setLineWidth(0.2);
+    doc.line(M, FOOTER_Y - 2, PAGE_W - M, FOOTER_Y - 2);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(...(C.gray as [number, number, number]));
+    doc.text(
+      `Simulasi KPR  •  Halaman ${i} dari ${total}  •  Bukan penawaran kredit resmi`,
+      PAGE_W / 2,
+      FOOTER_Y + 1,
+      { align: 'center' },
+    );
+  }
+}
+
+// ─── Shared helpers ───────────────────────────────────────────────────────────
+
+function renderSectionTitle(doc: DocWithAutoTable, title: string, y: number): number {
+  const titleH = 7;
+  doc.setFillColor(...(C.blueDark as [number, number, number]));
+  doc.roundedRect(M, y, CONTENT_W, titleH, 1.2, 1.2, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(...(C.white as [number, number, number]));
+  doc.text(title, M + 3.5, y + 4.9);
+  return y + titleH + 1.5;
+}
+
+/** If the remaining vertical space is less than `needed` mm, add a new page. */
+function ensureSpace(doc: DocWithAutoTable, currentY: number, needed: number): number {
+  if (currentY + needed > PAGE_H - 18) {
+    doc.addPage();
+    return 16;
+  }
+  return currentY;
+}
+
+/**
+ * Builds the autoTable body array. Separator rows use colSpan=7 so the
+ * rate-change label spans the full width.
+ */
+function buildAmortizationBody(rows: PdfScheduleRow[]): RowInput[] {
+  return rows.map((row): RowInput => {
+    if (row.isRateChange) {
+      return [{ content: row.rateChangeLabel ?? '', colSpan: 7, styles: { halign: 'left' as const } }];
+    }
+    return [row.month, row.year, row.rate, row.installment, row.principal, row.interest, row.balance];
+  });
+}
+
+/** Returns the set of body-array indices that are separator rows. */
+function buildSeparatorIndexSet(rows: PdfScheduleRow[]): Set<number> {
+  const set = new Set<number>();
+  rows.forEach((row, i) => { if (row.isRateChange) set.add(i); });
+  return set;
+}
