@@ -7,6 +7,9 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    include: ['src/**/*.{test,spec}.ts'],
+    // UI integration tests run in jsdom; domain/application tests stay in node
+    environmentMatchGlobs: [['src/ui/**', 'jsdom']],
+    setupFiles: ['./src/test/setup.ts'],
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
   },
 })
