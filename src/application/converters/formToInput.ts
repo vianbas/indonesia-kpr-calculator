@@ -1,17 +1,25 @@
-import type { MortgageInput, FloatingTier } from '../../domain/models/mortgage.types';
+import type { MortgageInput, FloatingTier, ValidationError } from '../../domain/models/mortgage.types';
 import type { MortgageFormState } from '../store/formTypes';
+
+export interface ConversionResult {
+  input: MortgageInput | null;
+  /** Pre-validation errors detected during conversion (e.g. DP ≥ property price) */
+  conversionErrors: ValidationError[];
+}
 
 /**
  * Converts the form state (strings) into a typed MortgageInput for the domain.
- * Returns null when essential fields are missing or unparseable — the validator
- * will produce the actual error messages for valid-looking but logically invalid inputs.
+ * Returns null input when essential fields are missing or unparseable.
+ * Returns conversionErrors for logically invalid combos detectable before Zod validation.
  */
-export function formToMortgageInput(form: MortgageFormState): MortgageInput | null {
+export function formToMortgageInput(form: MortgageFormState): ConversionResult {
+  const none: ConversionResult = { input: null, conversionErrors: [] };
+
   const propertyPrice = parsePositiveNumber(form.propertyPrice);
-  if (propertyPrice === null) return null;
+  if (propertyPrice === null) return none;
 
   const downPaymentRaw = parsePositiveNumber(form.downPaymentValue, true); // 0 is valid
-  if (downPaymentRaw === null) return null;
+  if (downPaymentRaw === null) return none;
 
   const downPayment =
     form.downPaymentMode === 'percent'
@@ -19,15 +27,24 @@ export function formToMortgageInput(form: MortgageFormState): MortgageInput | nu
       : downPaymentRaw;
 
   const principalAmount = propertyPrice - downPayment;
-  if (principalAmount <= 0) return null;
+  if (principalAmount <= 0) {
+    return {
+      input: null,
+      conversionErrors: [{
+        field: 'downPaymentValue',
+        message: 'Uang muka melebihi atau sama dengan harga properti. Nilai kredit harus lebih dari Rp 0.',
+      }],
+    };
+  }
 
   const tenorYears = parseInt(form.tenorYears) || 0;
   const tenorAdditional = parseInt(form.tenorAdditionalMonths) || 0;
   const tenorMonths = tenorYears * 12 + tenorAdditional;
-  if (tenorMonths <= 0) return null;
+  if (tenorMonths <= 0) return none;
 
-  const startDate = new Date(form.startDate);
-  if (isNaN(startDate.getTime())) return null;
+  // Parse YYYY-MM-DD as local time (avoid UTC-midnight shift on non-UTC+X timezones)
+  const startDate = parseLocalDate(form.startDate);
+  if (startDate === null) return none;
 
   // Fixed period
   const fixedPeriod =
@@ -65,15 +82,18 @@ export function formToMortgageInput(form: MortgageFormState): MortgageInput | nu
   }
 
   return {
-    principalAmount,
-    tenorMonths,
-    paymentMethod: form.paymentMethod,
-    fixedPeriod,
-    floatingBaseRate,
-    floatingTiers,
-    startDate,
-    includeAdminFee: form.includeAdminFee,
-    adminFeeAmount: parsePositiveNumber(form.adminFeeAmount, true) ?? 0,
+    input: {
+      principalAmount,
+      tenorMonths,
+      paymentMethod: form.paymentMethod,
+      fixedPeriod,
+      floatingBaseRate,
+      floatingTiers,
+      startDate,
+      includeAdminFee: form.includeAdminFee,
+      adminFeeAmount: parsePositiveNumber(form.adminFeeAmount, true) ?? 0,
+    },
+    conversionErrors: [],
   };
 }
 
@@ -91,4 +111,18 @@ function parsePositiveNumber(value: string, allowZero = false): number | null {
 /** Converts a percent string "7.5" to decimal 0.075 */
 function percentToDecimal(value: string): number {
   return parseFloat(value) / 100;
+}
+
+/**
+ * Parses "YYYY-MM-DD" as a local-time Date.
+ * `new Date("YYYY-MM-DD")` is spec-defined as UTC midnight, which shifts the
+ * date backward by the UTC offset in negative-offset timezones.
+ */
+function parseLocalDate(value: string): Date | null {
+  const parts = value.split('-').map(Number);
+  if (parts.length !== 3) return null;
+  const [yyyy, mm, dd] = parts;
+  if (!yyyy || !mm || !dd) return null;
+  const d = new Date(yyyy, mm - 1, dd);
+  return isNaN(d.getTime()) ? null : d;
 }

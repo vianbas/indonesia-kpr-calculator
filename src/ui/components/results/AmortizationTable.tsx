@@ -1,4 +1,4 @@
-import { useRef, useMemo, useState, useCallback } from 'react';
+import { useRef, useMemo, useCallback } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Card } from '../common/Card';
 import { formatIDR, formatPercent, monthToYear } from '../../../domain/utils/currency';
@@ -92,7 +92,6 @@ interface Props {
 const VIRTUALIZE_THRESHOLD = 24;
 
 export function AmortizationTable({ schedule }: Props) {
-  const [expandedYear, setExpandedYear] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Pre-process once per schedule change
@@ -128,8 +127,6 @@ export function AmortizationTable({ schedule }: Props) {
       <SmallScheduleTable
         schedule={schedule}
         tableItems={tableItems}
-        expandedYear={expandedYear}
-        setExpandedYear={setExpandedYear}
       />
     );
   }
@@ -195,8 +192,6 @@ export function AmortizationTable({ schedule }: Props) {
 interface SmallScheduleProps {
   schedule: AmortizationRow[];
   tableItems: TableItem[];
-  expandedYear: number | null;
-  setExpandedYear: React.Dispatch<React.SetStateAction<number | null>>;
 }
 
 function SmallScheduleTable({ schedule, tableItems }: SmallScheduleProps) {

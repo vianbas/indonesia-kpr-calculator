@@ -22,6 +22,7 @@ const INLINE_FIELD_PREFIXES = [
   'tenorMonths',
   'fixedPeriod.annualRate',
   'fixedPeriod.durationMonths',
+  'downPaymentValue',
 ] as const;
 
 export function LoanInputForm({ form, dispatch, errors, fieldErrors }: Props) {

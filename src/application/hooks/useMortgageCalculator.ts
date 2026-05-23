@@ -30,11 +30,11 @@ export function useMortgageCalculator(): MortgageCalculatorState {
   const [isCalcError, setIsCalcError] = useState(false);
 
   const recalculate = useCallback(() => {
-    const input = formToMortgageInput(form);
+    const { input, conversionErrors } = formToMortgageInput(form);
 
     if (input === null) {
       setSummary(null);
-      setErrors([]);
+      setErrors(conversionErrors);
       setIsCalcError(false);
       return;
     }

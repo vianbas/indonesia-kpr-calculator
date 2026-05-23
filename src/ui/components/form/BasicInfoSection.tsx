@@ -84,8 +84,9 @@ export function BasicInfoSection({ form, dispatch, fieldErrors }: Props) {
             placeholder={form.downPaymentMode === 'percent' ? '20' : '100000000'}
             min="0"
             step={form.downPaymentMode === 'percent' ? '0.5' : '1000000'}
+            error={fieldErrors['downPaymentValue']}
             hint={
-              downPayment > 0
+              !fieldErrors['downPaymentValue'] && downPayment > 0
                 ? `Setara ${formatIDR(downPayment)}${form.downPaymentMode === 'amount' ? dpPercentLabel : ''}`
                 : undefined
             }

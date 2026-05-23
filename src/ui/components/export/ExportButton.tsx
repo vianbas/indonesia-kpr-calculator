@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Button } from '../common/Button';
-import { exportToPdf } from '../../../infrastructure/pdf/exportService';
 import type { MortgageFormState } from '../../../application/store/formTypes';
 import type { MortgageSummary } from '../../../domain/models/amortization.types';
 
@@ -45,6 +44,7 @@ export function ExportButton({ form, summary }: Props) {
   async function handleExport() {
     setStatus('loading');
     try {
+      const { exportToPdf } = await import('../../../infrastructure/pdf/exportService');
       await exportToPdf(form, summary);
       setStatus('idle');
     } catch (err) {
