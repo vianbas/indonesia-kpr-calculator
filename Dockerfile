@@ -52,6 +52,6 @@ EXPOSE 8080
 
 # Lightweight liveness check — wget is bundled with busybox in alpine.
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget -qO- http://localhost:8080/ > /dev/null || exit 1
+    CMD wget -qO- http://localhost:8080/health > /dev/null || exit 1
 
 CMD ["nginx", "-g", "daemon off;"]
