@@ -1,0 +1,130 @@
+name: Docker
+
+# Runs automatically after CI passes on master.
+# Can also be triggered manually via the GitHub Actions UI (Actions → Docker → Run workflow).
+on:
+  workflow_run:
+    workflows: [CI]
+    branches: [master]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Git ref to build (branch, tag, or SHA)'
+        required: false
+        default: master
+
+# ── Deployment flow ──────────────────────────────────────────────────────────
+#
+# This workflow produces an image tagged with both a short SHA and "latest":
+#
+#   ghcr.io/vianbas/indonesia-kpr-calculator:sha-<7-char-sha>   ← immutable
+#   ghcr.io/vianbas/indonesia-kpr-calculator:latest             ← always master
+#
+# To deploy on any machine with Docker:
+#
+#   echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
+#   docker pull ghcr.io/vianbas/indonesia-kpr-calculator:latest
+#   docker run -d --name kpr -p 8080:8080 --restart unless-stopped \
+#     ghcr.io/vianbas/indonesia-kpr-calculator:latest
+#
+# ── Rollback strategy ────────────────────────────────────────────────────────
+#
+# Every commit produces an immutable sha-tagged image.  To roll back:
+#
+#   1. Find the last good SHA from: Actions → Docker → (previous run) → job logs
+#      or: git log --oneline -10
+#   2. docker stop kpr && docker rm kpr
+#   3. docker run -d --name kpr -p 8080:8080 --restart unless-stopped \
+#        ghcr.io/vianbas/indonesia-kpr-calculator:sha-<previous-sha>
+#
+# No re-deployment needed — the image is already in GHCR.
+# ─────────────────────────────────────────────────────────────────────────────
+
+jobs:
+  docker:
+    name: Build · Push · Scan
+    runs-on: ubuntu-latest
+
+    # Skip if the triggering CI run failed (not applicable for workflow_dispatch).
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+
+    permissions:
+      contents: read
+      packages: write      # push to GHCR
+      security-events: write  # upload Trivy SARIF results
+
+    steps:
+      - name: Resolve build ref
+        id: ref
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "sha=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "sha=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.ref.outputs.sha }}
+
+      # ── Docker setup ──────────────────────────────────────────────────────
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── Tags & labels ─────────────────────────────────────────────────────
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=sha,prefix=sha-,format=short,value=${{ steps.ref.outputs.sha }}
+            type=raw,value=latest
+
+      # ── Build & push ──────────────────────────────────────────────────────
+      # Layer cache stored in GitHub Actions cache (free, per-repo).
+      # First push of a new branch misses; subsequent runs are fast.
+
+      - name: Build and push
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # ── Image vulnerability scan ──────────────────────────────────────────
+      # Trivy scans the pushed image for OS and dependency CVEs.
+      # Results are uploaded as SARIF and visible under Security → Code scanning.
+      # exit-code: 0 — reports findings without failing the workflow.
+      # Change to exit-code: 1 to block on CRITICAL findings.
+
+      - name: Scan image with Trivy
+        uses: aquasecurity/trivy-action@0.31.0
+        with:
+          image-ref: ghcr.io/${{ github.repository }}:latest
+          format: sarif
+          output: trivy-results.sarif
+          severity: CRITICAL,HIGH
+          exit-code: '0'
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-results.sarif
