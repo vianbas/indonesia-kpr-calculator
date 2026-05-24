@@ -1,6 +1,6 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 
-type Variant = 'primary' | 'secondary' | 'danger' | 'ghost';
+type Variant = 'primary' | 'secondary' | 'danger' | 'ghost' | 'bare';
 type Size = 'sm' | 'md' | 'lg';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -19,6 +19,9 @@ const variantClasses: Record<Variant, string> = {
   danger:
     'bg-white hover:bg-red-50 text-red-600 border-red-300 active:bg-red-100',
   ghost: 'bg-transparent hover:bg-gray-100 text-gray-600 border-transparent',
+  // No color classes — caller supplies all styling via className.
+  // Use for toggle-style buttons where active/inactive colors must be fully controlled.
+  bare: 'border-transparent',
 };
 
 const sizeClasses: Record<Size, string> = {

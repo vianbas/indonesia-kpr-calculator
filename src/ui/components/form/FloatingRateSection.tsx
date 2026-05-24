@@ -41,7 +41,7 @@ export function FloatingRateSection({ form, dispatch, fieldErrors }: Props) {
             <Button
               key={mode}
               type="button"
-              variant="ghost"
+              variant="bare"
               className={[
                 'flex-1 rounded-none border-0 py-2',
                 form.floatingMode === mode

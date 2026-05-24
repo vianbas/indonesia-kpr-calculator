@@ -58,7 +58,7 @@ export function BasicInfoSection({ form, dispatch, fieldErrors }: Props) {
                 <Button
                   key={mode}
                   size="sm"
-                  variant="ghost"
+                  variant="bare"
                   type="button"
                   onClick={() => dispatch({ type: 'SET_DOWN_PAYMENT_MODE', mode })}
                   className={[
