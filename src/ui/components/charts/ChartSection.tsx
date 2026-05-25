@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card } from '../common/Card';
 import { AmortizationBarChart } from './AmortizationBarChart';
 import { BalanceLineChart } from './BalanceLineChart';
@@ -11,13 +11,20 @@ interface Props {
 export function ChartSection({ calculated }: Props) {
   const [barIdx, setBarIdx] = useState(0);
 
+  // Grouping decision made ONCE here — both charts receive the same value so
+  // their period axes are always consistent (never mixed monthly/yearly).
+  const useYearlyGrouping = useMemo(
+    () => calculated.some((s) => s.summary.effectiveTenorMonths > 24),
+    [calculated],
+  );
+
   const isMulti = calculated.length >= 2;
   // Clamp so the active button and schedule remain correct after a scenario is removed
   const safeBarIdx = Math.min(barIdx, calculated.length - 1);
   const barSchedule = calculated[safeBarIdx].summary.schedule;
 
   return (
-    <Card title="Visualisasi">
+    <Card title="Visualisasi Simulasi">
       <div className="space-y-6">
         {/* ── Bar chart ──────────────────────────────────────────────────── */}
         <div>
@@ -39,13 +46,13 @@ export function ChartSection({ calculated }: Props) {
               ))}
             </div>
           )}
-          <AmortizationBarChart schedule={barSchedule} />
+          <AmortizationBarChart schedule={barSchedule} useYearlyGrouping={useYearlyGrouping} />
         </div>
 
         <div className="border-t border-gray-100" />
 
         {/* ── Balance line chart ──────────────────────────────────────────── */}
-        <BalanceLineChart calculated={calculated} />
+        <BalanceLineChart calculated={calculated} useYearlyGrouping={useYearlyGrouping} />
       </div>
     </Card>
   );
