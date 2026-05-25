@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { formatIDR, formatPercent } from '../../../domain/utils/currency';
+import { getRowHighlights } from '../../utils/highlightLogic';
+import type { CellHighlight } from '../../utils/highlightLogic';
 import type { CalculatedScenario } from '../../../application/store/scenarioTypes';
 
 interface Props {
@@ -11,7 +13,8 @@ interface RowDef {
   getValue: (s: CalculatedScenario) => string;
   getNumeric?: (s: CalculatedScenario) => number;
   isSection?: boolean;
-  higherIsBetter?: boolean;
+  lowerIsBetter?: boolean;    // default true
+  highlightEnabled?: boolean; // default true when getNumeric exists, false otherwise
 }
 
 const ROWS: RowDef[] = [
@@ -53,7 +56,7 @@ const ROWS: RowDef[] = [
     label: 'Bulan Dihemat',
     getValue: (s) => (s.summary.monthsSaved > 0 ? `${s.summary.monthsSaved} Bulan` : '—'),
     getNumeric: (s) => s.summary.monthsSaved,
-    higherIsBetter: true,
+    lowerIsBetter: false,
   },
   {
     label: 'Bunga Dihemat',
@@ -62,25 +65,11 @@ const ROWS: RowDef[] = [
         ? `${formatIDR(s.summary.interestSaved)} (${s.summary.interestSavedPercent.toFixed(1)}%)`
         : '—',
     getNumeric: (s) => s.summary.interestSaved,
-    higherIsBetter: true,
+    lowerIsBetter: false,
   },
 ];
 
-// ─── Highlight logic ──────────────────────────────────────────────────────────
-
-type CellHighlight = 'best' | 'worst' | 'mid' | 'none';
-
-function getCellHighlight(values: number[], idx: number, higherIsBetter = false): CellHighlight {
-  if (values.length < 2) return 'none';
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  if (min === max) return 'none';
-  const bestValue  = higherIsBetter ? max : min;
-  const worstValue = higherIsBetter ? min : max;
-  if (values[idx] === bestValue)  return 'best';
-  if (values[idx] === worstValue) return 'worst';
-  return 'mid';
-}
+// ─── Styling helpers ──────────────────────────────────────────────────────────
 
 function highlightClass(h: CellHighlight): string {
   if (h === 'best')  return 'bg-green-50 text-green-800 font-semibold';
@@ -88,14 +77,13 @@ function highlightClass(h: CellHighlight): string {
   return '';
 }
 
-// Direction-aware tooltip text so savings rows (higherIsBetter) say the right thing.
-function cellTooltipText(h: CellHighlight, higherIsBetter: boolean): string | null {
-  if (h === 'best')  return higherIsBetter
-    ? 'Highest value among your scenarios'
-    : 'Lowest value among your scenarios';
-  if (h === 'worst') return higherIsBetter
+function cellTooltipText(h: CellHighlight, lowerIsBetter: boolean): string | null {
+  if (h === 'best')  return lowerIsBetter
     ? 'Lowest value among your scenarios'
     : 'Highest value among your scenarios';
+  if (h === 'worst') return lowerIsBetter
+    ? 'Highest value among your scenarios'
+    : 'Lowest value among your scenarios';
   return null;
 }
 
@@ -146,7 +134,7 @@ export function ScenarioComparisonTable({ scenarios }: Props) {
 
   return (
     <>
-      {/* Tooltip — position:fixed so it escapes the panel's overflow:hidden */}
+      {/* Tooltip — position:fixed escapes the panel's overflow:hidden */}
       {tooltip && (
         <div
           className="fixed z-50 px-2 py-1 rounded bg-gray-800 text-white text-xs whitespace-nowrap pointer-events-none -translate-x-1/2 -translate-y-full"
@@ -190,9 +178,20 @@ export function ScenarioComparisonTable({ scenarios }: Props) {
                 );
               }
 
-              const numericValues = row.getNumeric
+              const numericValues: (number | null)[] = row.getNumeric
                 ? scenarios.map((s) => row.getNumeric!(s))
-                : null;
+                : scenarios.map(() => null);
+
+              const highlightEnabledForRow =
+                row.highlightEnabled ?? row.getNumeric !== undefined;
+
+              const highlights = getRowHighlights(
+                numericValues,
+                row.lowerIsBetter ?? true,
+                highlightEnabledForRow,
+              );
+
+              const lowerIsBetter = row.lowerIsBetter ?? true;
 
               return (
                 <tr key={ri} className="border-b border-gray-100 last:border-0">
@@ -200,18 +199,14 @@ export function ScenarioComparisonTable({ scenarios }: Props) {
                     {row.label}
                   </td>
                   {scenarios.map((s, si) => {
-                    const highlight = numericValues
-                      ? getCellHighlight(numericValues, si, row.higherIsBetter)
-                      : 'none';
-                    const tip = numericValues
-                      ? cellTooltipText(highlight, row.higherIsBetter ?? false)
-                      : null;
+                    const h = highlights[si];
+                    const tip = cellTooltipText(h, lowerIsBetter);
                     return (
                       <td
                         key={s.id}
                         className={[
                           'py-2.5 px-3 text-right tabular-nums text-gray-800',
-                          highlightClass(highlight),
+                          highlightClass(h),
                         ]
                           .filter(Boolean)
                           .join(' ')}
@@ -219,7 +214,11 @@ export function ScenarioComparisonTable({ scenarios }: Props) {
                           tip
                             ? (e) => {
                                 const rect = e.currentTarget.getBoundingClientRect();
-                                setTooltip({ text: tip, x: rect.left + rect.width / 2, y: rect.top - 8 });
+                                setTooltip({
+                                  text: tip,
+                                  x: rect.left + rect.width / 2,
+                                  y: rect.top - 8,
+                                });
                               }
                             : undefined
                         }
