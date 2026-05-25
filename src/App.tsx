@@ -1,10 +1,11 @@
+import { ErrorBoundary } from '@sentry/react';
 import { AppLayout } from './ui/layouts/AppLayout';
 import { CalculatorPage } from './ui/pages/CalculatorPage';
-import { ErrorBoundary } from './ui/components/common/ErrorBoundary';
+import { ErrorFallback } from './ui/components/common/ErrorFallback';
 
 export default function App() {
   return (
-    <ErrorBoundary>
+    <ErrorBoundary fallback={<ErrorFallback />}>
       <AppLayout>
         <CalculatorPage />
       </AppLayout>

@@ -1,3 +1,5 @@
+import * as Sentry from '@sentry/react';
+import { captureError } from '../lib/sentry';
 import type {
   MortgageFormState,
   TierFormRow,
@@ -102,7 +104,8 @@ export function decodeUrlState(b64: string): UrlState | null {
     if (!isStoredPayload(raw)) return null;
     const { v: _v, ...urlState } = raw;
     return urlState;
-  } catch {
+  } catch (err) {
+    captureError(err, { feature: 'url_decode' });
     return null;
   }
 }
@@ -110,12 +113,14 @@ export function decodeUrlState(b64: string): UrlState | null {
 // ─── URL init helper (called once at app start) ───────────────────────────────
 
 export function parseUrlInit(): UrlState | null {
-  try {
-    const params = new URLSearchParams(window.location.search);
-    const s = params.get('s');
-    if (!s) return null;
-    return decodeUrlState(s);
-  } catch {
-    return null;
-  }
+  return Sentry.startSpan({ name: 'kpr.url.parse_shared_state', op: 'url.parse' }, () => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const s = params.get('s');
+      if (!s) return null;
+      return decodeUrlState(s);
+    } catch {
+      return null;
+    }
+  });
 }

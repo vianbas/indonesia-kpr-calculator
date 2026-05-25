@@ -1,3 +1,5 @@
+import * as Sentry from '@sentry/react';
+import { captureError } from '../../lib/sentry';
 import { renderPdf, renderMultiScenarioPdf } from './pdfRenderer';
 import type {
   PdfExportData,
@@ -49,25 +51,39 @@ export async function exportToPdf(
   form: MortgageFormState,
   summary: MortgageSummary,
 ): Promise<void> {
-  const data = buildPdfExportData(form, summary);
-  const doc = renderPdf(data);
+  return Sentry.startSpan({ name: 'kpr.pdf_export', op: 'pdf.export' }, async () => {
+    try {
+      const data = buildPdfExportData(form, summary);
+      const doc = renderPdf(data);
 
-  const now = new Date();
-  const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
-  const hh = String(now.getHours()).padStart(2, '0');
-  const mm = String(now.getMinutes()).padStart(2, '0');
-  doc.save(`SimulasiKPR_${dateStr}_${hh}${mm}.pdf`);
+      const now = new Date();
+      const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+      const hh = String(now.getHours()).padStart(2, '0');
+      const mm = String(now.getMinutes()).padStart(2, '0');
+      doc.save(`SimulasiKPR_${dateStr}_${hh}${mm}.pdf`);
+    } catch (err) {
+      captureError(err, { feature: 'pdf_export', scenarioCount: 1 });
+      throw err;
+    }
+  });
 }
 
 export async function exportMultiScenarioPdf(scenarios: ScenarioForPdf[]): Promise<void> {
-  const data = buildMultiScenarioExportData(scenarios);
-  const doc = renderMultiScenarioPdf(data);
+  return Sentry.startSpan({ name: 'kpr.pdf_export_multi', op: 'pdf.export' }, async () => {
+    try {
+      const data = buildMultiScenarioExportData(scenarios);
+      const doc = renderMultiScenarioPdf(data);
 
-  const now = new Date();
-  const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
-  const hh = String(now.getHours()).padStart(2, '0');
-  const mm = String(now.getMinutes()).padStart(2, '0');
-  doc.save(`PerbandinganKPR_${dateStr}_${hh}${mm}.pdf`);
+      const now = new Date();
+      const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+      const hh = String(now.getHours()).padStart(2, '0');
+      const mm = String(now.getMinutes()).padStart(2, '0');
+      doc.save(`PerbandinganKPR_${dateStr}_${hh}${mm}.pdf`);
+    } catch (err) {
+      captureError(err, { feature: 'pdf_export', scenarioCount: scenarios.length });
+      throw err;
+    }
+  });
 }
 
 function buildMultiScenarioExportData(scenarios: ScenarioForPdf[]): PdfMultiScenarioExportData {

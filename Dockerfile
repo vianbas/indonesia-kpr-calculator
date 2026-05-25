@@ -13,6 +13,10 @@ RUN npm ci
 # Copy the rest of the source and build.
 COPY . .
 RUN npm run build
+# Remove source maps from dist so they are never served publicly.
+# The @sentry/vite-plugin deletes them after upload when SENTRY_AUTH_TOKEN is
+# present; this line is a belt-and-suspenders fallback for builds without it.
+RUN find /app/dist -name '*.map' -delete 2>/dev/null || true
 # The compiled output is at /app/dist — no Node.js or source code is carried
 # into the next stage.
 

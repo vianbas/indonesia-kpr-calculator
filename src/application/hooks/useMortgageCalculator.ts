@@ -1,4 +1,6 @@
 import { useReducer, useEffect, useState, useMemo, useCallback } from 'react';
+import * as Sentry from '@sentry/react';
+import { captureError } from '../../lib/sentry';
 import { formReducer, createDefaultFormState } from '../store/formReducer';
 import { formToMortgageInput } from '../converters/formToInput';
 import { validateMortgageInput } from '../../domain/validators/mortgage.validator';
@@ -53,11 +55,18 @@ export function useMortgageCalculator(initialState?: MortgageFormState): Mortgag
     }
 
     try {
-      const schedule = generateAmortizationSchedule(input);
-      const result = calculateMortgageSummary(input, schedule);
-      setSummary(result);
-      setIsCalcError(false);
+      Sentry.startSpan({ name: 'kpr.calculation', op: 'calculate' }, () => {
+        const schedule = generateAmortizationSchedule(input);
+        const result = calculateMortgageSummary(input, schedule);
+        setSummary(result);
+        setIsCalcError(false);
+      });
     } catch (err) {
+      const tenorMonths =
+        (parseInt(form.tenorYears) || 0) * 12 + (parseInt(form.tenorAdditionalMonths) || 0);
+      const tenorBucket =
+        tenorMonths < 120 ? 'short' : tenorMonths <= 240 ? 'medium' : 'long';
+      captureError(err, { feature: 'calculation', tenorBucket });
       console.error('[KPR] Calculation error:', err);
       setSummary(null);
       setIsCalcError(true);
