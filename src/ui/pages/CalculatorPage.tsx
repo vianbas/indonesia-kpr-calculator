@@ -12,6 +12,7 @@ import { ScenarioTabs } from '../components/scenarios/ScenarioTabs';
 import { ScenarioComparisonPanel } from '../components/scenarios/ScenarioComparisonPanel';
 import { ChartSection } from '../components/charts/ChartSection';
 import { EarlyRepaymentSummary } from '../components/results/EarlyRepaymentSummary';
+import { KprFeesSummary } from '../components/results/KprFeesSummary';
 import {
   FormIncompleteState,
   ValidationErrorState,
@@ -134,6 +135,7 @@ function ResultsPanel({ scenario, calculated, scenarios, activeCount, activeTab,
         </div>
         <SummaryCard summary={summary} />
         <EarlyRepaymentSummary summary={summary} />
+        {summary.totalUpfrontCost > 0 && <KprFeesSummary summary={summary} />}
         {summary.installmentGroups.length > 1 && (
           <InstallmentGroups summary={summary} />
         )}

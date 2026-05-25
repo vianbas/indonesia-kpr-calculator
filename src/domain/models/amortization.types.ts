@@ -80,4 +80,18 @@ export interface MortgageSummary {
   interestSaved: number;
   /** interestSaved as % of originalTotalInterest; 0 when mode is 'none' */
   interestSavedPercent: number;
+
+  // ── Upfront cost breakdown (KPR fees) ──────────────────────────────────────
+  /** Down payment (propertyPrice − principalAmount); 0 when not provided */
+  downPayment: number;
+  /** Bank provision fee in IDR; 0 when not enabled */
+  provisionFee: number;
+  /** Property appraisal fee in IDR; 0 when not enabled */
+  appraisalFee: number;
+  /** Notary / PPAT fee in IDR; 0 when not enabled */
+  notaryFee: number;
+  /** BPHTB (land/building acquisition tax) in IDR; 0 when not enabled */
+  bphtb: number;
+  /** DP + adminFee + provisionFee + appraisalFee + notaryFee + bphtb */
+  totalUpfrontCost: number;
 }

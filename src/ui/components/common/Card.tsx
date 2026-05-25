@@ -5,14 +5,15 @@ interface CardProps {
   subtitle?: string;
   children: ReactNode;
   className?: string;
-  /** Renders a colored left border accent: 'blue' | 'indigo' | 'green' */
-  accent?: 'blue' | 'indigo' | 'green' | 'none';
+  /** Renders a colored left border accent: 'blue' | 'indigo' | 'green' | 'orange' */
+  accent?: 'blue' | 'indigo' | 'green' | 'orange' | 'none';
 }
 
 const accentClasses = {
   blue: 'border-l-4 border-l-blue-500',
   indigo: 'border-l-4 border-l-indigo-500',
   green: 'border-l-4 border-l-green-500',
+  orange: 'border-l-4 border-l-orange-500',
   none: '',
 };
 

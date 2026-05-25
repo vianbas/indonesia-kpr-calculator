@@ -67,6 +67,38 @@ const ROWS: RowDef[] = [
     getNumeric: (s) => s.summary.interestSaved,
     lowerIsBetter: false,
   },
+  { label: 'Biaya Awal', isSection: true, getValue: () => '' },
+  {
+    label: 'Uang Muka (DP)',
+    getValue: (s) => formatIDR(s.summary.downPayment),
+    highlightEnabled: false,
+  },
+  {
+    label: 'Biaya Provisi',
+    getValue: (s) => (s.summary.provisionFee > 0 ? formatIDR(s.summary.provisionFee) : '—'),
+    getNumeric: (s) => s.summary.provisionFee,
+  },
+  {
+    label: 'Biaya Appraisal',
+    getValue: (s) => (s.summary.appraisalFee > 0 ? formatIDR(s.summary.appraisalFee) : '—'),
+    getNumeric: (s) => s.summary.appraisalFee,
+  },
+  {
+    label: 'Biaya Notaris / PPAT',
+    getValue: (s) => (s.summary.notaryFee > 0 ? formatIDR(s.summary.notaryFee) : '—'),
+    getNumeric: (s) => s.summary.notaryFee,
+  },
+  {
+    label: 'BPHTB',
+    getValue: (s) => (s.summary.bphtb > 0 ? formatIDR(s.summary.bphtb) : '—'),
+    getNumeric: (s) => s.summary.bphtb,
+  },
+  {
+    label: 'Total Dana Awal',
+    getValue: (s) =>
+      s.summary.totalUpfrontCost > 0 ? formatIDR(s.summary.totalUpfrontCost) : '—',
+    getNumeric: (s) => s.summary.totalUpfrontCost,
+  },
 ];
 
 // ─── Styling helpers ──────────────────────────────────────────────────────────

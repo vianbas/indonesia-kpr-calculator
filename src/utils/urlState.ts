@@ -91,20 +91,34 @@ function isForm(f: unknown): f is Omit<MortgageFormState, 'earlyRepaymentMode' |
   if ('lumpSumAmount' in o && !isStr(o.lumpSumAmount)) return false;
   if ('lumpSumMonth' in o && !isStr(o.lumpSumMonth)) return false;
 
+  // KPR fee fields — optional for backward compat; validate if present
+  if ('includeKprFees' in o && !isBool(o.includeKprFees)) return false;
+  if ('provisionFeePercent' in o && !isStr(o.provisionFeePercent)) return false;
+  if ('appraisalFeeAmount' in o && !isStr(o.appraisalFeeAmount)) return false;
+  if ('notaryFeePercent' in o && !isStr(o.notaryFeePercent)) return false;
+  if ('bphtbPercent' in o && !isStr(o.bphtbPercent)) return false;
+
   return true;
 }
 
-/** Fills early repayment fields with defaults when loading an older URL that lacks them. */
+/** Fills optional fields with defaults when loading an older URL that lacks them. */
 function normalizeForm(f: unknown): MortgageFormState {
   const o = f as Record<string, unknown>;
   return {
     ...(f as MortgageFormState),
+    // Early repayment fields (added after initial release)
     earlyRepaymentMode: isErMode(o.earlyRepaymentMode) ? o.earlyRepaymentMode : 'none',
     extraMonthlyAmount: isStr(o.extraMonthlyAmount) ? o.extraMonthlyAmount : '',
     extraMonthlyStartMonth: isStr(o.extraMonthlyStartMonth) ? o.extraMonthlyStartMonth : '1',
     extraMonthlyEndMonth: isStr(o.extraMonthlyEndMonth) ? o.extraMonthlyEndMonth : '',
     lumpSumAmount: isStr(o.lumpSumAmount) ? o.lumpSumAmount : '',
     lumpSumMonth: isStr(o.lumpSumMonth) ? o.lumpSumMonth : '',
+    // KPR fee fields (added in Phase 15)
+    includeKprFees: isBool(o.includeKprFees) ? o.includeKprFees : false,
+    provisionFeePercent: isStr(o.provisionFeePercent) ? o.provisionFeePercent : '1',
+    appraisalFeeAmount: isStr(o.appraisalFeeAmount) ? o.appraisalFeeAmount : '0',
+    notaryFeePercent: isStr(o.notaryFeePercent) ? o.notaryFeePercent : '0.75',
+    bphtbPercent: isStr(o.bphtbPercent) ? o.bphtbPercent : '5',
   };
 }
 

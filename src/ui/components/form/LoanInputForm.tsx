@@ -3,6 +3,7 @@ import { CalculationMethodSelector } from './CalculationMethodSelector';
 import { FixedRateSection } from './FixedRateSection';
 import { FloatingRateSection } from './FloatingRateSection';
 import { EarlyRepaymentSection } from './EarlyRepaymentSection';
+import { KprFeesSection } from './KprFeesSection';
 import type { MortgageFormState, FormAction } from '../../../application/store/formTypes';
 import type { ValidationError } from '../../../domain';
 
@@ -43,6 +44,7 @@ export function LoanInputForm({ form, dispatch, errors, fieldErrors }: Props) {
       <FloatingRateSection form={form} dispatch={dispatch} fieldErrors={fieldErrors} />
 
       <EarlyRepaymentSection form={form} dispatch={dispatch} />
+      <KprFeesSection form={form} dispatch={dispatch} />
 
       {/* Cross-field errors not tied to a specific inline input */}
       {globalErrors.length > 0 && (
