@@ -35,6 +35,11 @@ function makeForm(overrides: Partial<MortgageFormState> = {}): MortgageFormState
     extraMonthlyEndMonth: '',
     lumpSumAmount: '',
     lumpSumMonth: '',
+    includeKprFees: false,
+    provisionFeePercent: '1',
+    appraisalFeeAmount: '0',
+    notaryFeePercent: '0.75',
+    bphtbPercent: '5',
     ...overrides,
   };
 }

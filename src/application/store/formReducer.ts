@@ -44,6 +44,11 @@ export function createDefaultFormState(): MortgageFormState {
     tiers: [],
     includeAdminFee: false,
     adminFeeAmount: '0',
+    includeKprFees: false,
+    provisionFeePercent: '1',
+    appraisalFeeAmount: '0',
+    notaryFeePercent: '0.75',
+    bphtbPercent: '5',
     earlyRepaymentMode: 'none',
     extraMonthlyAmount: '',
     extraMonthlyStartMonth: '1',
@@ -164,6 +169,16 @@ export function formReducer(state: MortgageFormState, action: FormAction): Mortg
       return { ...state, includeAdminFee: action.value };
     case 'SET_ADMIN_FEE_AMOUNT':
       return { ...state, adminFeeAmount: action.value };
+    case 'SET_INCLUDE_KPR_FEES':
+      return { ...state, includeKprFees: action.value };
+    case 'SET_PROVISION_FEE_PERCENT':
+      return { ...state, provisionFeePercent: action.value };
+    case 'SET_APPRAISAL_FEE_AMOUNT':
+      return { ...state, appraisalFeeAmount: action.value };
+    case 'SET_NOTARY_FEE_PERCENT':
+      return { ...state, notaryFeePercent: action.value };
+    case 'SET_BPHTB_PERCENT':
+      return { ...state, bphtbPercent: action.value };
 
     // ── Early repayment ───────────────────────────────────────────────────────
     case 'SET_EARLY_REPAYMENT_MODE':

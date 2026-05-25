@@ -174,6 +174,13 @@ export function calculateMortgageSummary(
   input: MortgageInput,
   schedule: AmortizationRow[],
 ): MortgageSummary {
+  const fees = input.kprFees;
+  const downPayment = fees?.downPayment ?? 0;
+  const provisionFee = fees?.provisionFee ?? 0;
+  const appraisalFee = fees?.appraisalFee ?? 0;
+  const notaryFee = fees?.notaryFee ?? 0;
+  const bphtb = fees?.bphtb ?? 0;
+
   const emptyBase = {
     installmentGroups: [],
     totalPrincipal: 0,
@@ -189,6 +196,12 @@ export function calculateMortgageSummary(
     originalTotalPayment: 0,
     interestSaved: 0,
     interestSavedPercent: 0,
+    downPayment,
+    provisionFee,
+    appraisalFee,
+    notaryFee,
+    bphtb,
+    totalUpfrontCost: 0,
   };
 
   if (schedule.length === 0) return emptyBase;
@@ -243,6 +256,15 @@ export function calculateMortgageSummary(
       ? Math.round((interestSaved / originalTotalInterest) * 10000) / 100
       : 0;
 
+  const totalUpfrontCost = roundMoney(
+    new Decimal(downPayment)
+      .plus(adminFee)
+      .plus(provisionFee)
+      .plus(appraisalFee)
+      .plus(notaryFee)
+      .plus(bphtb),
+  );
+
   return {
     installmentGroups: buildInstallmentGroups(schedule),
     totalPrincipal,
@@ -258,6 +280,12 @@ export function calculateMortgageSummary(
     originalTotalPayment,
     interestSaved,
     interestSavedPercent,
+    downPayment,
+    provisionFee,
+    appraisalFee,
+    notaryFee,
+    bphtb,
+    totalUpfrontCost,
   };
 }
 

@@ -117,8 +117,31 @@ export function formToMortgageInput(form: MortgageFormState): ConversionResult {
       includeAdminFee: form.includeAdminFee,
       adminFeeAmount: parsePositiveNumber(form.adminFeeAmount, true) ?? 0,
       earlyRepayment: buildEarlyRepaymentConfig(form),
+      kprFees: buildKprFees(form, propertyPrice, principalAmount),
     },
     conversionErrors: [],
+  };
+}
+
+// ─── KPR fees builder ─────────────────────────────────────────────────────────
+
+function buildKprFees(
+  form: import('../store/formTypes').MortgageFormState,
+  propertyPrice: number,
+  principalAmount: number,
+): import('../../domain/models/mortgage.types').MortgageInput['kprFees'] {
+  if (!form.includeKprFees) return undefined;
+
+  const provisionPct = (parseFloat(form.provisionFeePercent) || 0) / 100;
+  const notaryPct = (parseFloat(form.notaryFeePercent) || 0) / 100;
+  const bphtbPct = (parseFloat(form.bphtbPercent) || 0) / 100;
+
+  return {
+    downPayment: Math.max(0, propertyPrice - principalAmount),
+    provisionFee: Math.round(provisionPct * principalAmount),
+    appraisalFee: parsePositiveNumber(form.appraisalFeeAmount, true) ?? 0,
+    notaryFee: Math.round(notaryPct * propertyPrice),
+    bphtb: Math.round(bphtbPct * propertyPrice),
   };
 }
 

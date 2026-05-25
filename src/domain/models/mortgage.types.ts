@@ -75,6 +75,14 @@ export interface MortgageInput {
   adminFeeAmount: number;
   /** Optional early repayment configuration — omit or set mode 'none' for standard schedule */
   earlyRepayment?: EarlyRepaymentConfig;
+  /** Pre-computed upfront fee amounts — omit when fees section is disabled */
+  kprFees?: {
+    downPayment: number;
+    provisionFee: number;
+    appraisalFee: number;
+    notaryFee: number;
+    bphtb: number;
+  };
 }
 
 export interface ValidationError {
