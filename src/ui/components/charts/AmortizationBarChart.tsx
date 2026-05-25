@@ -10,11 +10,7 @@ import {
   Legend,
 } from 'recharts';
 import type { AmortizationRow } from '../../../domain/models/amortization.types';
-import {
-  buildBarData,
-  shouldUseYearlyGrouping,
-  formatChartAmount,
-} from '../../utils/chartDataTransform';
+import { buildBarData, formatChartAmount } from '../../utils/chartDataTransform';
 import { formatIDR } from '../../../domain/utils/currency';
 
 // ─── Custom tooltip ───────────────────────────────────────────────────────────
@@ -85,11 +81,15 @@ function legendFormatter(value: string): React.ReactNode {
 
 interface Props {
   schedule: AmortizationRow[];
+  /** Determined once by ChartSection so bar and line charts share the same axis. */
+  useYearlyGrouping: boolean;
 }
 
-export function AmortizationBarChart({ schedule }: Props) {
-  const useYearly = shouldUseYearlyGrouping(schedule);
-  const data = useMemo(() => buildBarData(schedule), [schedule]);
+export function AmortizationBarChart({ schedule, useYearlyGrouping }: Props) {
+  const data = useMemo(
+    () => buildBarData(schedule, useYearlyGrouping),
+    [schedule, useYearlyGrouping],
+  );
   const hasExtraPayment = data.some((d) => d.extraPayment > 0);
 
   const xInterval = data.length > 24 ? Math.floor(data.length / 10) - 1 : 0;
@@ -97,7 +97,7 @@ export function AmortizationBarChart({ schedule }: Props) {
   return (
     <>
       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
-        Pokok vs Bunga per {useYearly ? 'Tahun' : 'Bulan'}
+        Pokok vs Bunga per {useYearlyGrouping ? 'Tahun' : 'Bulan'}
       </p>
       <ResponsiveContainer width="100%" height={220}>
         <BarChart

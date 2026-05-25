@@ -14,7 +14,6 @@ import type { CalculatedScenario } from '../../../application/store/scenarioType
 import {
   buildBalanceData,
   buildRateChangeMarks,
-  shouldUseYearlyGrouping,
   formatChartAmount,
 } from '../../utils/chartDataTransform';
 import { formatIDR } from '../../../domain/utils/currency';
@@ -22,9 +21,9 @@ import { formatIDR } from '../../../domain/utils/currency';
 // ─── Colors per scenario slot ─────────────────────────────────────────────────
 
 const SCENARIO_COLORS: Record<number, string> = {
-  1: '#2563EB',
-  2: '#D97706',
-  3: '#7C3AED',
+  1: '#378ADD',
+  2: '#1D9E75',
+  3: '#BA7517',
 };
 
 // ─── Custom tooltip ───────────────────────────────────────────────────────────
@@ -109,24 +108,25 @@ function buildMergedData(
 
 interface Props {
   calculated: CalculatedScenario[];
+  /** Determined once by ChartSection so bar and line charts share the same axis. */
+  useYearlyGrouping: boolean;
 }
 
-export function BalanceLineChart({ calculated }: Props) {
+export function BalanceLineChart({ calculated, useYearlyGrouping }: Props) {
   const primarySchedule = calculated[0].summary.schedule;
-  // Yearly if ANY scenario exceeds the threshold — ensures all scenarios share one axis
-  const useYearly = useMemo(
-    () => calculated.some((s) => shouldUseYearlyGrouping(s.summary.schedule)),
-    [calculated],
-  );
 
   const mergedData = useMemo(
-    () => buildMergedData(calculated, useYearly),
-    [calculated, useYearly],
+    () => buildMergedData(calculated, useYearlyGrouping),
+    [calculated, useYearlyGrouping],
   );
 
+  // Reference lines only for single-scenario view — too cluttered with multiple lines
   const rateMarks = useMemo(
-    () => buildRateChangeMarks(primarySchedule, useYearly),
-    [primarySchedule, useYearly],
+    () =>
+      calculated.length === 1
+        ? buildRateChangeMarks(primarySchedule, useYearlyGrouping)
+        : [],
+    [calculated.length, primarySchedule, useYearlyGrouping],
   );
 
   const xInterval = mergedData.length > 24 ? Math.floor(mergedData.length / 10) - 1 : 0;
@@ -135,7 +135,7 @@ export function BalanceLineChart({ calculated }: Props) {
   return (
     <>
       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
-        Saldo Sisa per {useYearly ? 'Tahun' : 'Bulan'}
+        Saldo Sisa per {useYearlyGrouping ? 'Tahun' : 'Bulan'}
       </p>
       <ResponsiveContainer width="100%" height={220}>
         <LineChart
@@ -145,7 +145,7 @@ export function BalanceLineChart({ calculated }: Props) {
           <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
           <XAxis
             dataKey="period"
-            tickFormatter={(v: number) => (useYearly ? `Thn ${v}` : `Bln ${v}`)}
+            tickFormatter={(v: number) => (useYearlyGrouping ? `Thn ${v}` : `Bln ${v}`)}
             tick={{ fontSize: 10, fill: '#9CA3AF' }}
             tickLine={false}
             axisLine={false}
@@ -159,16 +159,14 @@ export function BalanceLineChart({ calculated }: Props) {
             width={52}
           />
           <Tooltip
-            content={
-              <BalanceTooltip useYearly={useYearly} />
-            }
+            content={<BalanceTooltip useYearly={useYearlyGrouping} />}
             cursor={{ stroke: '#E5E7EB', strokeWidth: 1 }}
           />
           {showLegend && (
             <Legend iconType="line" iconSize={16} formatter={legendFormatter} />
           )}
 
-          {/* Rate-change reference lines (from primary scenario) */}
+          {/* Rate-change reference lines — single-scenario view only */}
           {rateMarks.map((mark, i) => (
             <ReferenceLine
               key={i}
@@ -179,14 +177,14 @@ export function BalanceLineChart({ calculated }: Props) {
             />
           ))}
 
-          {/* One line per scenario */}
+          {/* One line per scenario, each ending at its own effectiveTenorMonths */}
           {calculated.map((s) => (
             <Line
               key={s.id}
               type="monotone"
               dataKey={`s${s.id}`}
               name={s.label}
-              stroke={SCENARIO_COLORS[s.id] ?? '#2563EB'}
+              stroke={SCENARIO_COLORS[s.id] ?? '#378ADD'}
               strokeWidth={2}
               dot={false}
               activeDot={{ r: 4, strokeWidth: 0 }}

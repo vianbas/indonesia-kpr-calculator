@@ -47,10 +47,17 @@ export function formatChartAmount(value: number): string {
 
 // ─── Bar chart data ───────────────────────────────────────────────────────────
 
-export function buildBarData(schedule: AmortizationRow[]): BarDataPoint[] {
+/**
+ * @param forceYearly When provided, overrides the automatic threshold check.
+ * Pass this when ChartSection has already decided grouping for all charts so
+ * the bar and line charts always use the same period axis.
+ */
+export function buildBarData(schedule: AmortizationRow[], forceYearly?: boolean): BarDataPoint[] {
   if (schedule.length === 0) return [];
 
-  if (!shouldUseYearlyGrouping(schedule)) {
+  const useYearly = forceYearly !== undefined ? forceYearly : shouldUseYearlyGrouping(schedule);
+
+  if (!useYearly) {
     return schedule.map((row) => ({
       period: row.month,
       periodLabel: `Bln ${row.month}`,
