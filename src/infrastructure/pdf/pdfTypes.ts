@@ -7,13 +7,14 @@
  */
 
 export interface PdfLoanInfo {
-  propertyPriceDisplay: string;   // "Rp 500.000.000"
-  downPaymentDisplay: string;     // "Rp 100.000.000 (20,0%)"
-  principalDisplay: string;       // "Rp 400.000.000"
-  tenorDisplay: string;           // "10 Tahun (120 Bulan)"
-  paymentMethodDisplay: string;   // "Anuitas (Cicilan Tetap per Periode)"
-  startDateDisplay: string;       // "1 Januari 2024"
-  adminFeeDisplay: string | null; // null when not applicable
+  propertyPriceDisplay: string;       // "Rp 500.000.000"
+  downPaymentDisplay: string;         // "Rp 100.000.000 (20,0%)"
+  principalDisplay: string;           // "Rp 400.000.000"
+  tenorDisplay: string;               // "10 Tahun (120 Bulan)"
+  calculationMethodDisplay: string;   // "Fixed + Floating Tunggal"
+  paymentMethodDisplay: string;       // "Anuitas (Cicilan Tetap per Periode)"
+  startDateDisplay: string;           // "1 Januari 2024"
+  adminFeeDisplay: string | null;     // null when not applicable
 }
 
 export interface PdfInterestRow {

@@ -133,15 +133,18 @@ describe('field-level validation', () => {
 // ─── Business rule: fixed period vs tenor ────────────────────────────────────
 
 describe('fixed period duration constraints', () => {
-  it('rejects fixed period equal to tenor', () => {
+  it('accepts fixed period equal to tenor (all-fixed loan — Fixed Only method)', () => {
+    // fixedPeriod.durationMonths === tenorMonths is valid: the entire tenor is at a fixed rate.
+    // The rate schedule correctly returns early when floatingStart > tenorMonths.
     const result = validateMortgageInput(
       makeValidInput({
         tenorMonths: 12,
         fixedPeriod: { annualRate: 0.07, durationMonths: 12 },
+        floatingBaseRate: null,
+        floatingTiers: [],
       }),
     );
-    expect(result.valid).toBe(false);
-    expect(hasError(result, 'fixedPeriod.durationMonths')).toBe(true);
+    expect(result.valid).toBe(true);
   });
 
   it('rejects fixed period longer than tenor', () => {

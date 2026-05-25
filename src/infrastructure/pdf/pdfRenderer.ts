@@ -164,7 +164,8 @@ function renderLoanInfoSection(doc: DocWithAutoTable, y: number, data: PdfExport
     ['Uang Muka',            loanInfo.downPaymentDisplay],
     ['Nilai Kredit (KPR)',   loanInfo.principalDisplay],
     ['Jangka Waktu',         loanInfo.tenorDisplay],
-    ['Metode Perhitungan',   loanInfo.paymentMethodDisplay],
+    ['Skema Bunga',          loanInfo.calculationMethodDisplay],
+    ['Metode Bayar',         loanInfo.paymentMethodDisplay],
     ['Tanggal Pencairan',    loanInfo.startDateDisplay],
   ];
   if (loanInfo.adminFeeDisplay) {

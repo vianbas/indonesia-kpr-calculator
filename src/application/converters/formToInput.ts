@@ -46,28 +46,47 @@ export function formToMortgageInput(form: MortgageFormState): ConversionResult {
   const startDate = parseLocalDate(form.startDate);
   if (startDate === null) return none;
 
-  // Fixed period
-  const fixedPeriod =
-    form.hasFixedPeriod && form.fixedDurationMonths && form.fixedRate
-      ? {
-          annualRate: percentToDecimal(form.fixedRate),
-          durationMonths: parseInt(form.fixedDurationMonths) || 0,
-        }
-      : null;
+  // ── Determine fixedPeriod and floating based on calculationMethod ──────────
 
-  const fixedEnd = fixedPeriod?.durationMonths ?? 0;
-
-  // Floating
+  let fixedPeriod: MortgageInput['fixedPeriod'] = null;
   let floatingBaseRate: number | null = null;
   let floatingTiers: FloatingTier[] = [];
 
-  if (form.floatingMode === 'base') {
+  if (form.calculationMethod === 'fixed_only') {
+    // Entire tenor is at the fixed rate — no floating period
+    if (!form.fixedRate) return none;
+    fixedPeriod = {
+      annualRate: percentToDecimal(form.fixedRate),
+      durationMonths: tenorMonths,
+    };
+    // floatingBaseRate and floatingTiers remain null/[]
+
+  } else if (form.calculationMethod === 'fixed_single_floating') {
+    // Fixed period (optional) + single floating rate
+    fixedPeriod =
+      form.hasFixedPeriod && form.fixedDurationMonths && form.fixedRate
+        ? {
+            annualRate: percentToDecimal(form.fixedRate),
+            durationMonths: parseInt(form.fixedDurationMonths) || 0,
+          }
+        : null;
+
     const rate = parseFloat(form.floatingBaseRate);
     if (!isNaN(rate)) {
       floatingBaseRate = percentToDecimal(form.floatingBaseRate);
     }
+
   } else {
-    // Build tiers — fromMonth is derived, not stored
+    // fixed_tiered_floating: fixed period (optional) + tiered floating rates
+    fixedPeriod =
+      form.hasFixedPeriod && form.fixedDurationMonths && form.fixedRate
+        ? {
+            annualRate: percentToDecimal(form.fixedRate),
+            durationMonths: parseInt(form.fixedDurationMonths) || 0,
+          }
+        : null;
+
+    const fixedEnd = fixedPeriod?.durationMonths ?? 0;
     let fromMonth = fixedEnd + 1;
     floatingTiers = form.tiers
       .map((t): FloatingTier | null => {

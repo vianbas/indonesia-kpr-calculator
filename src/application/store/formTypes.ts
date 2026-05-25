@@ -9,7 +9,16 @@ export interface TierFormRow {
 }
 
 export type DownPaymentMode = 'amount' | 'percent';
-export type FloatingMode = 'base' | 'tiered';
+
+/**
+ * fixed_only            — entire tenor at the fixed rate; no floating period
+ * fixed_single_floating — fixed period, then one flat floating rate
+ * fixed_tiered_floating — fixed period, then tiered floating rates
+ */
+export type CalculationMethod =
+  | 'fixed_only'
+  | 'fixed_single_floating'
+  | 'fixed_tiered_floating';
 
 export interface MortgageFormState {
   // ── Loan basics ────────────────────────────────────────────────────────────
@@ -22,13 +31,15 @@ export interface MortgageFormState {
   paymentMethod: PaymentMethod;
   startDate: string; // YYYY-MM-DD
 
+  // ── Calculation method ─────────────────────────────────────────────────────
+  calculationMethod: CalculationMethod;
+
   // ── Fixed rate ─────────────────────────────────────────────────────────────
   hasFixedPeriod: boolean;
   fixedRate: string; // e.g. "7.5"
   fixedDurationMonths: string;
 
   // ── Floating rate ──────────────────────────────────────────────────────────
-  floatingMode: FloatingMode;
   floatingBaseRate: string;
   tiers: TierFormRow[];
 
@@ -47,10 +58,10 @@ export type FormAction =
   | { type: 'SET_TENOR_ADDITIONAL_MONTHS'; value: string }
   | { type: 'SET_PAYMENT_METHOD'; method: PaymentMethod }
   | { type: 'SET_START_DATE'; value: string }
+  | { type: 'SET_CALCULATION_METHOD'; method: CalculationMethod }
   | { type: 'SET_HAS_FIXED_PERIOD'; value: boolean }
   | { type: 'SET_FIXED_RATE'; value: string }
   | { type: 'SET_FIXED_DURATION_MONTHS'; value: string }
-  | { type: 'SET_FLOATING_MODE'; mode: FloatingMode }
   | { type: 'SET_FLOATING_BASE_RATE'; value: string }
   | { type: 'ADD_TIER' }
   | { type: 'UPDATE_TIER'; id: string; field: 'toMonth' | 'rate'; value: string }

@@ -222,29 +222,29 @@ describe('CalculatorPage', () => {
   // ─── Tiered floating interest rate ────────────────────────────────────────
 
   describe('tiered floating interest rate', () => {
-    it('shows TierBuilder with Tier 1 after switching to tiered mode', () => {
+    it('shows TierBuilder with Tier 1 after switching to Fixed + Floating Bertingkat', () => {
       render(<CalculatorPage />);
-      fireEvent.click(screen.getByRole('button', { name: /Berjenjang \(Tiered\)/i }));
+      fireEvent.click(screen.getByRole('button', { name: /Fixed \+ Floating Bertingkat/i }));
       expect(screen.getByText('Tier 1')).toBeInTheDocument();
     });
 
     it('auto-creates a single tier starting at month 25 (after fixed period)', () => {
       render(<CalculatorPage />);
-      fireEvent.click(screen.getByRole('button', { name: /Berjenjang \(Tiered\)/i }));
+      fireEvent.click(screen.getByRole('button', { name: /Fixed \+ Floating Bertingkat/i }));
       // fixedDurationMonths = "24" → floating starts at month 25
       expect(screen.getByText('25')).toBeInTheDocument();
     });
 
     it('shows "Tambah Tier" button once at least one tier exists', () => {
       render(<CalculatorPage />);
-      fireEvent.click(screen.getByRole('button', { name: /Berjenjang \(Tiered\)/i }));
+      fireEvent.click(screen.getByRole('button', { name: /Fixed \+ Floating Bertingkat/i }));
       expect(screen.getByRole('button', { name: /Tambah Tier/i })).toBeInTheDocument();
     });
 
     it('produces calculation results with the auto-created tiered setup', async () => {
       render(<CalculatorPage />);
       // Reducer creates one tier covering months 25–120 at rate "11" (= floatingBaseRate)
-      fireEvent.click(screen.getByRole('button', { name: /Berjenjang \(Tiered\)/i }));
+      fireEvent.click(screen.getByRole('button', { name: /Fixed \+ Floating Bertingkat/i }));
       await waitForCalc();
 
       expect(screen.getByText('Tabel Amortisasi')).toBeInTheDocument();
@@ -253,7 +253,7 @@ describe('CalculatorPage', () => {
 
     it('adds Tier 2 when user clicks "Tambah Tier"', () => {
       render(<CalculatorPage />);
-      fireEvent.click(screen.getByRole('button', { name: /Berjenjang \(Tiered\)/i }));
+      fireEvent.click(screen.getByRole('button', { name: /Fixed \+ Floating Bertingkat/i }));
       fireEvent.click(screen.getByRole('button', { name: /Tambah Tier/i }));
       expect(screen.getByText('Tier 2')).toBeInTheDocument();
     });

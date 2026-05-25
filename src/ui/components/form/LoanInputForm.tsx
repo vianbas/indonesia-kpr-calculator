@@ -1,4 +1,5 @@
 import { BasicInfoSection } from './BasicInfoSection';
+import { CalculationMethodSelector } from './CalculationMethodSelector';
 import { FixedRateSection } from './FixedRateSection';
 import { FloatingRateSection } from './FloatingRateSection';
 import type { MortgageFormState, FormAction } from '../../../application/store/formTypes';
@@ -33,6 +34,10 @@ export function LoanInputForm({ form, dispatch, errors, fieldErrors }: Props) {
   return (
     <div className="space-y-4">
       <BasicInfoSection form={form} dispatch={dispatch} fieldErrors={fieldErrors} />
+
+      {/* Metode Perhitungan selector — drives which interest rate fields are shown */}
+      <CalculationMethodSelector form={form} dispatch={dispatch} />
+
       <FixedRateSection form={form} dispatch={dispatch} fieldErrors={fieldErrors} />
       <FloatingRateSection form={form} dispatch={dispatch} fieldErrors={fieldErrors} />
 

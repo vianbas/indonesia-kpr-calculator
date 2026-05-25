@@ -168,6 +168,13 @@ function buildLoanInfo(form: MortgageFormState, summary: MortgageSummary): PdfLo
   const tenorMonths =
     (parseInt(form.tenorYears) || 0) * 12 + (parseInt(form.tenorAdditionalMonths) || 0);
 
+  const calculationMethodDisplay =
+    form.calculationMethod === 'fixed_only'
+      ? 'Fixed Only (Seluruh Tenor Tetap)'
+      : form.calculationMethod === 'fixed_single_floating'
+        ? 'Fixed + Floating Tunggal'
+        : 'Fixed + Floating Bertingkat';
+
   const paymentMethodDisplay =
     form.paymentMethod === 'annuity'
       ? 'Anuitas (Cicilan Tetap per Periode)'
@@ -186,6 +193,7 @@ function buildLoanInfo(form: MortgageFormState, summary: MortgageSummary): PdfLo
     downPaymentDisplay: `${formatIDR(downPayment)} (${dpPercent.toFixed(1).replace('.', ',')}%)`,
     principalDisplay: formatIDR(summary.totalPrincipal),
     tenorDisplay: `${formatTenor(tenorMonths)} (${tenorMonths} Bulan)`,
+    calculationMethodDisplay,
     paymentMethodDisplay,
     startDateDisplay,
     adminFeeDisplay,

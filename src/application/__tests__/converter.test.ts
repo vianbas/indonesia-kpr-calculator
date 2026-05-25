@@ -21,10 +21,10 @@ function makeForm(overrides: Partial<MortgageFormState> = {}): MortgageFormState
     tenorAdditionalMonths: '0',
     paymentMethod: 'annuity',
     startDate: '2024-01-15',
+    calculationMethod: 'fixed_single_floating',
     hasFixedPeriod: true,
     fixedRate: '7.5',
     fixedDurationMonths: '24',
-    floatingMode: 'base',
     floatingBaseRate: '11',
     tiers: [],
     includeAdminFee: false,
@@ -98,10 +98,10 @@ describe('formToMortgageInput — valid input', () => {
     expect(input?.fixedPeriod).toBeNull();
   });
 
-  it('converts tiered mode: derives fromMonth from previous tier toMonth', () => {
+  it('converts tiered method: derives fromMonth from previous tier toMonth', () => {
     // fixedEnd = 24 months, so tier 1 starts at month 25
     const { input } = formToMortgageInput(makeForm({
-      floatingMode: 'tiered',
+      calculationMethod: 'fixed_tiered_floating',
       tiers: [
         { id: 'a', toMonth: '60', rate: '9' },
         { id: 'b', toMonth: '120', rate: '11' },
@@ -112,6 +112,26 @@ describe('formToMortgageInput — valid input', () => {
     expect(input?.floatingTiers[0].toMonth).toBe(60);
     expect(input?.floatingTiers[1].fromMonth).toBe(61); // prev toMonth(60) + 1
     expect(input?.floatingTiers[1].toMonth).toBe(120);
+  });
+
+  it('fixed_only method: sets fixedPeriod.durationMonths equal to tenorMonths', () => {
+    // 10 years = 120 months; fixed period covers the full tenor
+    const { input } = formToMortgageInput(makeForm({
+      calculationMethod: 'fixed_only',
+      fixedRate: '8',
+    }));
+    expect(input?.fixedPeriod?.durationMonths).toBe(120);
+    expect(input?.floatingBaseRate).toBeNull();
+    expect(input?.floatingTiers).toHaveLength(0);
+  });
+
+  it('fixed_only method: returns null when fixedRate is missing (incomplete form)', () => {
+    const { input, conversionErrors } = formToMortgageInput(makeForm({
+      calculationMethod: 'fixed_only',
+      fixedRate: '',
+    }));
+    expect(input).toBeNull();
+    expect(conversionErrors).toHaveLength(0);
   });
 
   it('includes adminFeeAmount when includeAdminFee is true', () => {
@@ -196,7 +216,7 @@ describe('formToMortgageInput — incomplete or unparseable form fields', () => 
   it('silently drops a tier whose rate is not a valid number', () => {
     // Invalid tier is filtered; validator will then flag the gap
     const { input } = formToMortgageInput(makeForm({
-      floatingMode: 'tiered',
+      calculationMethod: 'fixed_tiered_floating',
       tiers: [
         { id: 'a', toMonth: '120', rate: '' }, // empty rate → NaN
       ],

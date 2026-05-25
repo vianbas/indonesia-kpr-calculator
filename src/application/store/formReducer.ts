@@ -36,10 +36,10 @@ export function createDefaultFormState(): MortgageFormState {
     tenorAdditionalMonths: '0',
     paymentMethod: 'annuity',
     startDate: `${yyyy}-${mm}-${dd}`,
+    calculationMethod: 'fixed_single_floating',
     hasFixedPeriod: true,
     fixedRate: '7.5',
     fixedDurationMonths: '24',
-    floatingMode: 'base',
     floatingBaseRate: '11',
     tiers: [],
     includeAdminFee: false,
@@ -67,6 +67,29 @@ export function formReducer(state: MortgageFormState, action: FormAction): Mortg
     case 'SET_START_DATE':
       return { ...state, startDate: action.value };
 
+    // ── Calculation method ───────────────────────────────────────────────────
+    case 'SET_CALCULATION_METHOD': {
+      const method = action.method;
+      if (method === state.calculationMethod) return state;
+
+      if (method === 'fixed_tiered_floating') {
+        // Switching to tiered: auto-create first tier if none exist
+        if (state.tiers.length === 0) {
+          const tenorTotal = getTenorTotal(state);
+          const tenorStr = tenorTotal > 0 ? String(tenorTotal) : '';
+          return {
+            ...state,
+            calculationMethod: method,
+            tiers: [newTier(tenorStr, state.floatingBaseRate)],
+          };
+        }
+        return { ...state, calculationMethod: method };
+      }
+
+      // Switching to fixed_only or fixed_single_floating: clear tiers
+      return { ...state, calculationMethod: method, tiers: [] };
+    }
+
     // ── Fixed rate ───────────────────────────────────────────────────────────
     case 'SET_HAS_FIXED_PERIOD':
       return { ...state, hasFixedPeriod: action.value };
@@ -76,18 +99,6 @@ export function formReducer(state: MortgageFormState, action: FormAction): Mortg
       return { ...state, fixedDurationMonths: action.value };
 
     // ── Floating rate ────────────────────────────────────────────────────────
-    case 'SET_FLOATING_MODE': {
-      if (action.mode === 'tiered' && state.tiers.length === 0) {
-        const tenorTotal = getTenorTotal(state);
-        const tenorStr = tenorTotal > 0 ? String(tenorTotal) : '';
-        return {
-          ...state,
-          floatingMode: 'tiered',
-          tiers: [newTier(tenorStr, state.floatingBaseRate)],
-        };
-      }
-      return { ...state, floatingMode: action.mode };
-    }
     case 'SET_FLOATING_BASE_RATE':
       return { ...state, floatingBaseRate: action.value };
 

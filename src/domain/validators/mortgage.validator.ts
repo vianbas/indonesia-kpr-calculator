@@ -58,8 +58,9 @@ export function validateMortgageInput(input: MortgageInput): ValidationResult {
 
   const { tenorMonths, fixedPeriod, floatingBaseRate, floatingTiers } = input;
 
-  // 2. Fixed period must be strictly shorter than the full tenor
-  if (fixedPeriod !== null && fixedPeriod.durationMonths >= tenorMonths) {
+  // 2. Fixed period must not exceed the full tenor
+  // Equality (durationMonths === tenorMonths) is valid for fixed_only loans
+  if (fixedPeriod !== null && fixedPeriod.durationMonths > tenorMonths) {
     errors.push({
       field: 'fixedPeriod.durationMonths',
       message: `Fixed period (${fixedPeriod.durationMonths} months) must be less than the total tenor (${tenorMonths} months).`,

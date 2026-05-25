@@ -12,6 +12,29 @@ export function FixedRateSection({ form, dispatch, fieldErrors }: Props) {
   const tenorTotal =
     (parseInt(form.tenorYears) || 0) * 12 + (parseInt(form.tenorAdditionalMonths) || 0);
   const fixedEnd = parseInt(form.fixedDurationMonths) || 0;
+
+  // ── Fixed Only: full tenor is fixed — only show the rate field ──────────────
+  if (form.calculationMethod === 'fixed_only') {
+    return (
+      <Card title="Suku Bunga Tetap (Fixed)" accent="blue">
+        <InputField
+          label="Suku Bunga Tetap"
+          value={form.fixedRate}
+          onChange={(v) => dispatch({ type: 'SET_FIXED_RATE', value: v })}
+          type="number"
+          suffix="% p.a."
+          placeholder="7.50"
+          min="0"
+          max="100"
+          step="0.25"
+          error={fieldErrors['fixedPeriod.annualRate']}
+          hint={tenorTotal > 0 ? `Berlaku selama ${tenorTotal} bulan penuh (tenor keseluruhan)` : undefined}
+        />
+      </Card>
+    );
+  }
+
+  // ── Fixed + Floating: show toggle and both rate/duration fields ─────────────
   const fixedEndMonth = fixedEnd > 0 ? `s/d Bulan ke-${fixedEnd}` : '';
 
   return (

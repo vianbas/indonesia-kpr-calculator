@@ -303,15 +303,15 @@ describe('invalid inputs — tenor', () => {
     expect(result.errors.some(e => e.field === 'tenorMonths')).toBe(true);
   });
 
-  it('validator rejects tenorMonths = 360 with a fixed period equal to tenor (no floating period)', () => {
-    // fixedPeriod.durationMonths must be strictly less than tenorMonths
+  it('validator accepts tenorMonths = 360 with a fixed period equal to tenor (Fixed Only loan)', () => {
+    // fixedPeriod.durationMonths === tenorMonths is valid for all-fixed loans.
+    // The rate schedule handles this by returning early when floatingStart > tenorMonths.
     const result = validateMortgageInput(makeInput({
       tenorMonths: 360,
       fixedPeriod: { annualRate: 0.07, durationMonths: 360 },
       floatingBaseRate: null,
     }));
-    expect(result.valid).toBe(false);
-    expect(result.errors.some(e => e.field === 'fixedPeriod.durationMonths')).toBe(true);
+    expect(result.valid).toBe(true);
   });
 
   it('validator accepts the maximum valid tenor of 360 months with a valid rate config', () => {
