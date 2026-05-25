@@ -6,6 +6,7 @@ import { AmortizationTable } from '../components/results/AmortizationTable';
 import { ExportButton } from '../components/export/ExportButton';
 import { ScenarioTabs } from '../components/scenarios/ScenarioTabs';
 import { ScenarioComparisonPanel } from '../components/scenarios/ScenarioComparisonPanel';
+import { ChartSection } from '../components/charts/ChartSection';
 import {
   FormIncompleteState,
   ValidationErrorState,
@@ -83,6 +84,7 @@ function ResultsPanel({ scenario, calculated }: ResultsPanelProps) {
         {summary.installmentGroups.length > 1 && (
           <InstallmentGroups summary={summary} />
         )}
+        <ChartSection calculated={calculated} />
         <AmortizationTable schedule={summary.schedule} />
       </>
     );
