@@ -3,9 +3,17 @@ import { Button } from '../common/Button';
 import type { MortgageFormState } from '../../../application/store/formTypes';
 import type { MortgageSummary } from '../../../domain/models/amortization.types';
 
+interface ScenarioExportItem {
+  label: string;
+  form: MortgageFormState;
+  summary: MortgageSummary;
+}
+
 interface Props {
   form: MortgageFormState;
   summary: MortgageSummary;
+  /** When ≥ 2 items, exports a multi-scenario comparison PDF instead of single. */
+  scenarios?: ScenarioExportItem[];
 }
 
 const DownloadIcon = () => (
@@ -38,14 +46,20 @@ const SpinnerIcon = () => (
   </svg>
 );
 
-export function ExportButton({ form, summary }: Props) {
+export function ExportButton({ form, summary, scenarios = [] }: Props) {
   const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle');
+
+  const isMulti = scenarios.length >= 2;
 
   async function handleExport() {
     setStatus('loading');
     try {
-      const { exportToPdf } = await import('../../../infrastructure/pdf/exportService');
-      await exportToPdf(form, summary);
+      const svc = await import('../../../infrastructure/pdf/exportService');
+      if (isMulti) {
+        await svc.exportMultiScenarioPdf(scenarios);
+      } else {
+        await svc.exportToPdf(form, summary);
+      }
       setStatus('idle');
     } catch (err) {
       console.error('PDF export failed:', err);
@@ -63,9 +77,13 @@ export function ExportButton({ form, summary }: Props) {
         icon={isLoading ? <SpinnerIcon /> : <DownloadIcon />}
         onClick={handleExport}
         disabled={isLoading}
-        aria-label="Unduh simulasi KPR sebagai PDF"
+        aria-label={
+          isMulti
+            ? 'Unduh perbandingan skenario sebagai PDF'
+            : 'Unduh simulasi KPR sebagai PDF'
+        }
       >
-        {isLoading ? 'Membuat PDF…' : 'Unduh PDF'}
+        {isLoading ? 'Membuat PDF…' : isMulti ? 'Unduh PDF Perbandingan' : 'Unduh PDF'}
       </Button>
 
       {status === 'error' && (

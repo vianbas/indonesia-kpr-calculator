@@ -1,4 +1,4 @@
-import { renderPdf } from './pdfRenderer';
+import { renderPdf, renderMultiScenarioPdf } from './pdfRenderer';
 import type {
   PdfExportData,
   PdfLoanInfo,
@@ -6,11 +6,22 @@ import type {
   PdfFinancialRow,
   PdfScheduleRow,
   PdfTotalRow,
+  PdfComparisonRow,
+  PdfComparisonCell,
+  PdfMultiScenarioExportData,
 } from './pdfTypes';
 import type { MortgageFormState } from '../../application/store/formTypes';
 import type { MortgageSummary } from '../../domain/models/amortization.types';
 import { formatIDR, formatPercent, formatTenor, monthToYear } from '../../domain/utils/currency';
 import { formatDateID } from '../../domain/utils/date';
+
+// ─── Multi-scenario types ─────────────────────────────────────────────────────
+
+interface ScenarioForPdf {
+  label: string;
+  form: MortgageFormState;
+  summary: MortgageSummary;
+}
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
@@ -46,6 +57,103 @@ export async function exportToPdf(
   const hh = String(now.getHours()).padStart(2, '0');
   const mm = String(now.getMinutes()).padStart(2, '0');
   doc.save(`SimulasiKPR_${dateStr}_${hh}${mm}.pdf`);
+}
+
+export async function exportMultiScenarioPdf(scenarios: ScenarioForPdf[]): Promise<void> {
+  const data = buildMultiScenarioExportData(scenarios);
+  const doc = renderMultiScenarioPdf(data);
+
+  const now = new Date();
+  const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+  const hh = String(now.getHours()).padStart(2, '0');
+  const mm = String(now.getMinutes()).padStart(2, '0');
+  doc.save(`PerbandinganKPR_${dateStr}_${hh}${mm}.pdf`);
+}
+
+function buildMultiScenarioExportData(scenarios: ScenarioForPdf[]): PdfMultiScenarioExportData {
+  const now = new Date();
+  const generatedAt =
+    formatDateID(now) +
+    ', ' +
+    now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+  const scenarioData: PdfExportData[] = scenarios.map((s) => ({
+    ...buildPdfExportData(s.form, s.summary),
+    generatedAt, // uniform timestamp across all pages
+    label: s.label,
+  }));
+
+  return {
+    generatedAt,
+    columnLabels: scenarios.map((s) => s.label),
+    comparisonRows: buildComparisonRows(scenarios),
+    scenarios: scenarioData,
+  };
+}
+
+function buildComparisonRows(scenarios: ScenarioForPdf[]): PdfComparisonRow[] {
+  function hints(values: number[]): PdfComparisonCell['hint'][] {
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    if (min === max) return values.map(() => 'normal' as const);
+    return values.map((v) => (v === min ? 'best' : v === max ? 'worst' : 'normal'));
+  }
+
+  function infoRow(label: string, valuesFn: (s: ScenarioForPdf) => string): PdfComparisonRow {
+    return {
+      label,
+      cells: scenarios.map((s) => ({ value: valuesFn(s), hint: 'normal' as const })),
+    };
+  }
+
+  function outcomeRow(
+    label: string,
+    displayFn: (s: ScenarioForPdf) => string,
+    numericFn: (s: ScenarioForPdf) => number,
+  ): PdfComparisonRow {
+    const numericValues = scenarios.map(numericFn);
+    const hintArr = hints(numericValues);
+    return {
+      label,
+      cells: scenarios.map((s, i) => ({ value: displayFn(s), hint: hintArr[i] })),
+    };
+  }
+
+  const principalDisplay = (s: ScenarioForPdf) => formatIDR(s.summary.totalPrincipal);
+  const tenorDisplay = (s: ScenarioForPdf) => {
+    const months = s.summary.schedule.length;
+    return `${formatTenor(months)} (${months} Bln)`;
+  };
+  const methodDisplay = (s: ScenarioForPdf) =>
+    s.form.paymentMethod === 'annuity' ? 'Anuitas' : 'Flat Rate';
+
+  return [
+    { label: 'Info Kredit', cells: [], isSectionHeader: true },
+    infoRow('Nilai Kredit', principalDisplay),
+    infoRow('Tenor', tenorDisplay),
+    infoRow('Metode Bayar', methodDisplay),
+    { label: 'Hasil Simulasi', cells: [], isSectionHeader: true },
+    outcomeRow(
+      'Cicilan Pertama',
+      (s) => formatIDR(s.summary.installmentGroups[0]?.installmentAmount ?? 0),
+      (s) => s.summary.installmentGroups[0]?.installmentAmount ?? 0,
+    ),
+    outcomeRow(
+      'Total Bunga',
+      (s) => formatIDR(s.summary.totalInterest),
+      (s) => s.summary.totalInterest,
+    ),
+    outcomeRow(
+      'Total Pembayaran',
+      (s) => formatIDR(s.summary.totalPayment),
+      (s) => s.summary.totalPayment,
+    ),
+    outcomeRow(
+      'Suku Bunga Efektif',
+      (s) => formatPercent(s.summary.effectiveAnnualRate, 2, true),
+      (s) => s.summary.effectiveAnnualRate,
+    ),
+  ];
 }
 
 // ─── Section builders ─────────────────────────────────────────────────────────

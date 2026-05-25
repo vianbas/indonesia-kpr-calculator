@@ -1,40 +1,64 @@
-import { useMortgageCalculator } from '../../application/hooks/useMortgageCalculator';
+import { useScenarios } from '../../application/hooks/useScenarios';
 import { LoanInputForm } from '../components/form/LoanInputForm';
 import { SummaryCard } from '../components/results/SummaryCard';
 import { InstallmentGroups } from '../components/results/InstallmentGroups';
 import { AmortizationTable } from '../components/results/AmortizationTable';
 import { ExportButton } from '../components/export/ExportButton';
+import { ScenarioTabs } from '../components/scenarios/ScenarioTabs';
+import { ScenarioComparisonPanel } from '../components/scenarios/ScenarioComparisonPanel';
 import {
   FormIncompleteState,
   ValidationErrorState,
   CalculationErrorState,
 } from '../components/results/EmptyState';
+import type { ScenarioState, CalculatedScenario } from '../../application/store/scenarioTypes';
 
 export function CalculatorPage() {
-  const { form, dispatch, summary, errors, fieldErrors, isReady, isCalcError } =
-    useMortgageCalculator();
+  const { scenarios, activeCount, activeTab, setActiveTab, canAdd, addScenario, removeScenario } =
+    useScenarios();
+
+  const active = scenarios.find((s) => s.id === activeTab) ?? scenarios[0];
+  const calculated = scenarios.filter(
+    (s): s is CalculatedScenario => s.summary !== null,
+  );
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[minmax(400px,480px)_1fr] gap-6 items-start">
-      {/* ── Left: form ─────────────────────────────────────────────────────── */}
-      <div>
-        <LoanInputForm
-          form={form}
-          dispatch={dispatch}
-          errors={errors}
-          fieldErrors={fieldErrors}
-        />
+    <div className="space-y-5">
+      {/* Scenario tab bar — always visible (shows "+ Tambah Skenario" even with 1 tab) */}
+      <ScenarioTabs
+        scenarios={scenarios}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        canAdd={canAdd}
+        onAdd={addScenario}
+        onRemove={removeScenario}
+      />
+
+      {/* Form + Results grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(400px,480px)_1fr] gap-6 items-start">
+        {/* ── Left: active scenario form ─────────────────────────────────── */}
+        <div>
+          <LoanInputForm
+            form={active.form}
+            dispatch={active.dispatch}
+            errors={active.errors}
+            fieldErrors={active.fieldErrors}
+          />
+        </div>
+
+        {/* ── Right: results for active scenario ─────────────────────────── */}
+        <div className="space-y-4 lg:sticky lg:top-6">
+          <ResultsPanel
+            scenario={active}
+            calculated={calculated}
+          />
+        </div>
       </div>
 
-      {/* ── Right: results ─────────────────────────────────────────────────── */}
-      <div className="space-y-4 lg:sticky lg:top-6">
-        <ResultsPanel
-          form={form}
-          summary={isReady ? summary : null}
-          errors={errors}
-          isCalcError={isCalcError}
-        />
-      </div>
+      {/* Comparison panel — shown when ≥ 2 scenarios have results */}
+      {activeCount > 1 && calculated.length >= 2 && (
+        <ScenarioComparisonPanel scenarios={calculated} />
+      )}
     </div>
   );
 }
@@ -42,18 +66,18 @@ export function CalculatorPage() {
 // ─── Results panel ────────────────────────────────────────────────────────────
 
 interface ResultsPanelProps {
-  form: ReturnType<typeof useMortgageCalculator>['form'];
-  summary: ReturnType<typeof useMortgageCalculator>['summary'];
-  errors: ReturnType<typeof useMortgageCalculator>['errors'];
-  isCalcError: boolean;
+  scenario: ScenarioState;
+  calculated: CalculatedScenario[];
 }
 
-function ResultsPanel({ form, summary, errors, isCalcError }: ResultsPanelProps) {
+function ResultsPanel({ scenario, calculated }: ResultsPanelProps) {
+  const { form, summary, errors, isCalcError } = scenario;
+
   if (summary) {
     return (
       <>
         <div className="flex justify-end">
-          <ExportButton form={form} summary={summary} />
+          <ExportButton form={form} summary={summary} scenarios={calculated} />
         </div>
         <SummaryCard summary={summary} />
         {summary.installmentGroups.length > 1 && (
@@ -64,16 +88,7 @@ function ResultsPanel({ form, summary, errors, isCalcError }: ResultsPanelProps)
     );
   }
 
-  // Engine threw unexpectedly (schema valid, but e.g. rate schedule gap)
-  if (isCalcError) {
-    return <CalculationErrorState />;
-  }
-
-  // Validation errors — guide user to fix them
-  if (errors.length > 0) {
-    return <ValidationErrorState errors={errors} />;
-  }
-
-  // No errors and no summary — form is still being filled in
+  if (isCalcError) return <CalculationErrorState />;
+  if (errors.length > 0) return <ValidationErrorState errors={errors} />;
   return <FormIncompleteState />;
 }

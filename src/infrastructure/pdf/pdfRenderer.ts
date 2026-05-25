@@ -38,7 +38,7 @@
 import jsPDF from 'jspdf';
 import { autoTable } from 'jspdf-autotable';
 import type { CellHookData, Color, RowInput } from 'jspdf-autotable';
-import type { PdfExportData, PdfScheduleRow } from './pdfTypes';
+import type { PdfExportData, PdfScheduleRow, PdfMultiScenarioExportData } from './pdfTypes';
 
 // ─── Type helpers ─────────────────────────────────────────────────────────────
 
@@ -78,6 +78,38 @@ const C: Record<string, Color> = {
 };
 
 // ─── Public entry point ───────────────────────────────────────────────────────
+
+/**
+ * Renders a multi-scenario comparison PDF.
+ * Page 1: comparison overview table.
+ * Subsequent pages: full individual sections (A–D) per scenario.
+ */
+export function renderMultiScenarioPdf(data: PdfMultiScenarioExportData): jsPDF {
+  const doc: DocWithAutoTable = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+    compress: true,
+  });
+
+  // ── Overview: document header + comparison table ──────────────────────────
+  let y = renderDocumentHeader(doc, data.generatedAt);
+  y = renderSectionTitle(doc, 'PERBANDINGAN SKENARIO', y);
+  renderComparisonTable(doc, y, data);
+
+  // ── Individual scenario sections ──────────────────────────────────────────
+  for (const scenario of data.scenarios) {
+    doc.addPage();
+    let sy = renderScenarioPageHeader(doc, scenario.label ?? '', scenario.generatedAt);
+    sy = renderLoanInfoSection(doc, sy, scenario);
+    sy = renderInterestSchemeSection(doc, sy, scenario);
+    sy = renderFinancialSummarySection(doc, sy, scenario);
+    renderAmortizationSection(doc, sy, scenario);
+  }
+
+  renderPageNumbers(doc);
+  return doc;
+}
 
 /** Renders all sections and returns the jsPDF document ready to save. */
 export function renderPdf(data: PdfExportData): jsPDF {
@@ -304,6 +336,131 @@ function renderAmortizationSection(doc: DocWithAutoTable, y: number, data: PdfEx
       }
     },
   });
+}
+
+// ─── Multi-scenario helpers ───────────────────────────────────────────────────
+
+/** Page header for individual scenario pages within a multi-scenario PDF. */
+function renderScenarioPageHeader(
+  doc: DocWithAutoTable,
+  label: string,
+  generatedAt: string,
+): number {
+  doc.setFillColor(...(C.blueDark as [number, number, number]));
+  doc.rect(0, 0, PAGE_W, 26, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(...(C.white as [number, number, number]));
+  doc.text(`SIMULASI KPR — ${label.toUpperCase()}`, M, 11);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(186, 210, 254); // blue-200
+  doc.text(
+    'Dokumen bersifat estimasi — bukan penawaran kredit resmi dari lembaga keuangan mana pun.',
+    M,
+    17.5,
+  );
+
+  doc.setFontSize(7);
+  doc.text(`Dibuat: ${generatedAt}`, PAGE_W - M, 22.5, { align: 'right' });
+
+  return 32;
+}
+
+/** Renders the side-by-side comparison autotable. */
+function renderComparisonTable(
+  doc: DocWithAutoTable,
+  y: number,
+  data: PdfMultiScenarioExportData,
+): number {
+  const nCols = data.columnLabels.length;
+  const labelW = 52;
+  const valueW = (CONTENT_W - labelW) / nCols;
+
+  const bestFill: Color = [220, 252, 231];  // green-100
+  const bestText: Color = [22, 101, 52];    // green-800
+  const worstFill: Color = [254, 226, 226]; // red-100
+  const worstText: Color = [153, 27, 27];   // red-800
+
+  const dataRows = data.comparisonRows.filter((r) => !r.isSectionHeader);
+  const sectionHeaderIndices = new Set<number>();
+  let bodyIdx = 0;
+  const bodyRows = data.comparisonRows.map((r) => {
+    if (r.isSectionHeader) {
+      sectionHeaderIndices.add(bodyIdx++);
+      return [{ content: r.label, colSpan: nCols + 1, styles: { halign: 'left' as const } }];
+    }
+    bodyIdx++;
+    return [r.label, ...r.cells.map((c) => c.value)];
+  });
+
+  autoTable(doc, {
+    startY: y,
+    margin: { left: M, right: M },
+    tableWidth: CONTENT_W,
+    head: [['', ...data.columnLabels]],
+    body: bodyRows,
+    styles: { fontSize: 8.5, cellPadding: { top: 2.8, bottom: 2.8, left: 3, right: 3 } },
+    headStyles: {
+      fillColor: C.blue as Color,
+      textColor: C.white as Color,
+      fontStyle: 'bold',
+      halign: 'center',
+      fontSize: 8,
+    },
+    alternateRowStyles: { fillColor: C.grayBg as Color },
+    columnStyles: {
+      0: { cellWidth: labelW, fontStyle: 'bold', fillColor: C.grayBg as Color, textColor: C.black as Color },
+      ...Object.fromEntries(
+        Array.from({ length: nCols }, (_, i) => [
+          i + 1,
+          { cellWidth: valueW, halign: 'right' as const },
+        ]),
+      ),
+    },
+    didParseCell: (d: CellHookData) => {
+      if (d.section !== 'body') return;
+      const idx = d.row.index;
+
+      if (sectionHeaderIndices.has(idx)) {
+        d.cell.styles.fillColor = C.blueDark as Color;
+        d.cell.styles.textColor = C.white as Color;
+        d.cell.styles.fontStyle = 'bold';
+        d.cell.styles.fontSize = 7.5;
+        return;
+      }
+
+      if (d.column.index === 0) return;
+
+      // Find corresponding data row for this body index
+      let dataRowIndex = 0;
+      let counted = 0;
+      for (let i = 0; i <= idx; i++) {
+        if (!sectionHeaderIndices.has(i)) {
+          if (i === idx) dataRowIndex = counted;
+          counted++;
+        }
+      }
+      const row = dataRows[dataRowIndex];
+      if (!row) return;
+      const cell = row.cells[d.column.index - 1];
+      if (!cell) return;
+
+      if (cell.hint === 'best') {
+        d.cell.styles.fillColor = bestFill;
+        d.cell.styles.textColor = bestText;
+        d.cell.styles.fontStyle = 'bold';
+      } else if (cell.hint === 'worst') {
+        d.cell.styles.fillColor = worstFill;
+        d.cell.styles.textColor = worstText;
+        d.cell.styles.fontStyle = 'bold';
+      }
+    },
+  });
+
+  return getLastTableY(doc, y) + 7;
 }
 
 // ─── Page numbers ─────────────────────────────────────────────────────────────

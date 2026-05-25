@@ -56,4 +56,6 @@ export type FormAction =
   | { type: 'UPDATE_TIER'; id: string; field: 'toMonth' | 'rate'; value: string }
   | { type: 'REMOVE_TIER'; id: string }
   | { type: 'SET_INCLUDE_ADMIN_FEE'; value: boolean }
-  | { type: 'SET_ADMIN_FEE_AMOUNT'; value: string };
+  | { type: 'SET_ADMIN_FEE_AMOUNT'; value: string }
+  | { type: 'RESET_TO_DEFAULT' }
+  | { type: 'LOAD_STATE'; state: MortgageFormState };

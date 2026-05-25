@@ -58,9 +58,33 @@ export interface PdfTotalRow {
 /** Top-level data bag passed from exportService → pdfRenderer */
 export interface PdfExportData {
   generatedAt: string;
+  /** Set when this is part of a multi-scenario export, e.g. "Skenario 1" */
+  label?: string;
   loanInfo: PdfLoanInfo;
   interestRows: PdfInterestRow[];
   financialRows: PdfFinancialRow[];
   scheduleRows: PdfScheduleRow[];
   totalRow: PdfTotalRow;
+}
+
+// ─── Multi-scenario types ─────────────────────────────────────────────────────
+
+export interface PdfComparisonCell {
+  value: string;
+  hint: 'best' | 'worst' | 'normal';
+}
+
+export interface PdfComparisonRow {
+  label: string;
+  cells: PdfComparisonCell[];
+  isSectionHeader?: boolean;
+}
+
+export interface PdfMultiScenarioExportData {
+  generatedAt: string;
+  /** Display labels for each scenario column, e.g. ["Skenario 1", "Skenario 2"] */
+  columnLabels: string[];
+  comparisonRows: PdfComparisonRow[];
+  /** Full individual data for each scenario (sections A–D) */
+  scenarios: PdfExportData[];
 }

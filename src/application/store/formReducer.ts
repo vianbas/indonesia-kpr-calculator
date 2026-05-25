@@ -147,5 +147,11 @@ export function formReducer(state: MortgageFormState, action: FormAction): Mortg
       return { ...state, includeAdminFee: action.value };
     case 'SET_ADMIN_FEE_AMOUNT':
       return { ...state, adminFeeAmount: action.value };
+
+    // ── Scenario management ───────────────────────────────────────────────────
+    case 'RESET_TO_DEFAULT':
+      return createDefaultFormState();
+    case 'LOAD_STATE':
+      return action.state;
   }
 }
