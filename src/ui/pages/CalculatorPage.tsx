@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useScenarios } from '../../application/hooks/useScenarios';
 import { LoanInputForm } from '../components/form/LoanInputForm';
 import { SummaryCard } from '../components/results/SummaryCard';
@@ -19,8 +20,11 @@ export function CalculatorPage() {
     useScenarios();
 
   const active = scenarios.find((s) => s.id === activeTab) ?? scenarios[0];
-  const calculated = scenarios.filter(
-    (s): s is CalculatedScenario => s.summary !== null,
+
+  // Memoized so chart useMemo deps are stable between renders that don't change scenario data
+  const calculated = useMemo(
+    () => scenarios.filter((s): s is CalculatedScenario => s.summary !== null),
+    [scenarios],
   );
 
   return (

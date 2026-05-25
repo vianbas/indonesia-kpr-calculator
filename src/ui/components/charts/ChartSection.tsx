@@ -12,7 +12,9 @@ export function ChartSection({ calculated }: Props) {
   const [barIdx, setBarIdx] = useState(0);
 
   const isMulti = calculated.length >= 2;
-  const barSchedule = (calculated[barIdx] ?? calculated[0]).summary.schedule;
+  // Clamp so the active button and schedule remain correct after a scenario is removed
+  const safeBarIdx = Math.min(barIdx, calculated.length - 1);
+  const barSchedule = calculated[safeBarIdx].summary.schedule;
 
   return (
     <Card title="Visualisasi">
@@ -27,7 +29,7 @@ export function ChartSection({ calculated }: Props) {
                   onClick={() => setBarIdx(i)}
                   className={[
                     'px-3 py-1 rounded-full text-xs font-medium transition-colors',
-                    barIdx === i
+                    safeBarIdx === i
                       ? 'bg-blue-600 text-white shadow-sm'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
                   ].join(' ')}
