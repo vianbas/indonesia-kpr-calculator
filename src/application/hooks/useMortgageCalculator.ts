@@ -22,9 +22,13 @@ export interface MortgageCalculatorState {
   isCalcError: boolean;
 }
 
-export function useMortgageCalculator(): MortgageCalculatorState {
+export function useMortgageCalculator(initialState?: MortgageFormState): MortgageCalculatorState {
   // Lazy initializer: date is captured at mount time, not at module-import time
-  const [form, dispatch] = useReducer(formReducer, undefined, () => createDefaultFormState());
+  const [form, dispatch] = useReducer(
+    formReducer,
+    undefined,
+    () => initialState ?? createDefaultFormState(),
+  );
   const [summary, setSummary] = useState<MortgageSummary | null>(null);
   const [errors, setErrors] = useState<ValidationError[]>([]);
   const [isCalcError, setIsCalcError] = useState(false);

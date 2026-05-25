@@ -1,10 +1,13 @@
 import { useMemo } from 'react';
 import { useScenarios } from '../../application/hooks/useScenarios';
+import { useUrlSync } from '../../hooks/useUrlSync';
+import { parseUrlInit } from '../../utils/urlState';
 import { LoanInputForm } from '../components/form/LoanInputForm';
 import { SummaryCard } from '../components/results/SummaryCard';
 import { InstallmentGroups } from '../components/results/InstallmentGroups';
 import { AmortizationTable } from '../components/results/AmortizationTable';
 import { ExportButton } from '../components/export/ExportButton';
+import { ShareButton } from '../components/export/ShareButton';
 import { ScenarioTabs } from '../components/scenarios/ScenarioTabs';
 import { ScenarioComparisonPanel } from '../components/scenarios/ScenarioComparisonPanel';
 import { ChartSection } from '../components/charts/ChartSection';
@@ -16,8 +19,22 @@ import {
 import type { ScenarioState, CalculatedScenario } from '../../application/store/scenarioTypes';
 
 export function CalculatorPage() {
-  const { scenarios, activeCount, activeTab, setActiveTab, canAdd, addScenario, removeScenario } =
-    useScenarios();
+  // Parse URL once at mount — returns null if no ?s= param or if data is invalid
+  const urlInit = useMemo(() => parseUrlInit(), []);
+
+  const { scenarios, activeCount, activeTab, setActiveTab, canAdd, addScenario, removeScenario, resetAll } =
+    useScenarios(
+      urlInit
+        ? {
+            initialForms: urlInit.forms,
+            initialActiveCount: urlInit.activeCount,
+            initialActiveTab: urlInit.activeTab,
+          }
+        : {},
+    );
+
+  // Sync state to URL after 500ms debounce whenever inputs change
+  const { suppressNext } = useUrlSync({ scenarios, activeCount, activeTab });
 
   const active = scenarios.find((s) => s.id === activeTab) ?? scenarios[0];
 
@@ -26,6 +43,15 @@ export function CalculatorPage() {
     () => scenarios.filter((s): s is CalculatedScenario => s.summary !== null),
     [scenarios],
   );
+
+  function handleReset() {
+    // Suppress the URL sync that would otherwise fire 500ms after the state reset
+    suppressNext();
+    resetAll();
+    const url = new URL(window.location.href);
+    url.searchParams.delete('s');
+    history.replaceState(null, '', url.toString());
+  }
 
   return (
     <div className="space-y-5">
@@ -56,6 +82,10 @@ export function CalculatorPage() {
           <ResultsPanel
             scenario={active}
             calculated={calculated}
+            scenarios={scenarios}
+            activeCount={activeCount}
+            activeTab={activeTab}
+            onReset={handleReset}
           />
         </div>
       </div>
@@ -73,15 +103,32 @@ export function CalculatorPage() {
 interface ResultsPanelProps {
   scenario: ScenarioState;
   calculated: CalculatedScenario[];
+  scenarios: ScenarioState[];
+  activeCount: 1 | 2 | 3;
+  activeTab: import('../../application/store/scenarioTypes').ScenarioId;
+  onReset: () => void;
 }
 
-function ResultsPanel({ scenario, calculated }: ResultsPanelProps) {
+function ResultsPanel({ scenario, calculated, scenarios, activeCount, activeTab, onReset }: ResultsPanelProps) {
   const { form, summary, errors, isCalcError } = scenario;
 
   if (summary) {
     return (
       <>
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onReset}
+            className="text-xs text-gray-400 hover:text-gray-600 underline underline-offset-2 transition-colors"
+            aria-label="Reset semua input ke nilai awal"
+          >
+            Reset
+          </button>
+          <ShareButton
+            scenarios={scenarios}
+            activeCount={activeCount}
+            activeTab={activeTab}
+          />
           <ExportButton form={form} summary={summary} scenarios={calculated} />
         </div>
         <SummaryCard summary={summary} />

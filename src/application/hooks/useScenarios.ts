@@ -12,6 +12,14 @@ import type { MortgageFormState } from '../store/formTypes';
 import type { ScenarioId, ScenarioState } from '../store/scenarioTypes';
 import { SCENARIO_LABELS } from '../store/scenarioTypes';
 
+// ─── Init options (used by URL state loading) ─────────────────────────────────
+
+export interface UseScenariosOptions {
+  initialForms?: readonly MortgageFormState[];
+  initialActiveCount?: 1 | 2 | 3;
+  initialActiveTab?: ScenarioId;
+}
+
 // ─── Internal types ───────────────────────────────────────────────────────────
 
 interface CalcResult {
@@ -76,18 +84,29 @@ export interface UseScenariosResult {
   canAdd: boolean;
   addScenario: () => void;
   removeScenario: (id: ScenarioId) => void;
+  resetAll: () => void;
 }
 
-export function useScenarios(): UseScenariosResult {
-  const [activeCount, setActiveCount] = useState<1 | 2 | 3>(1);
-  const [activeTab, setActiveTab] = useState<ScenarioId>(1);
+export function useScenarios(options: UseScenariosOptions = {}): UseScenariosResult {
+  const { initialForms, initialActiveCount, initialActiveTab } = options;
 
-  // Scenario 1 — delegates to the existing hook unchanged
-  const calc1 = useMortgageCalculator();
+  const [activeCount, setActiveCount] = useState<1 | 2 | 3>(initialActiveCount ?? 1);
+  const [activeTab, setActiveTab] = useState<ScenarioId>(initialActiveTab ?? 1);
+
+  // Scenario 1 — delegates to the existing hook, optionally pre-filled from URL
+  const calc1 = useMortgageCalculator(initialForms?.[0]);
 
   // Scenarios 2 and 3 — always mounted (rules of hooks: no conditional hook calls)
-  const [form2, dispatch2] = useReducer(formReducer, undefined, createDefaultFormState);
-  const [form3, dispatch3] = useReducer(formReducer, undefined, createDefaultFormState);
+  const [form2, dispatch2] = useReducer(
+    formReducer,
+    undefined,
+    () => initialForms?.[1] ?? createDefaultFormState(),
+  );
+  const [form3, dispatch3] = useReducer(
+    formReducer,
+    undefined,
+    () => initialForms?.[2] ?? createDefaultFormState(),
+  );
 
   const [r2, setR2] = useState<CalcResult>(emptyResult);
   const [r3, setR3] = useState<CalcResult>(emptyResult);
@@ -159,6 +178,16 @@ export function useScenarios(): UseScenariosResult {
     isCalcError: isCalcError1,
   } = calc1;
 
+  const resetAll = useCallback(() => {
+    dispatch1({ type: 'RESET_TO_DEFAULT' });
+    dispatch2({ type: 'RESET_TO_DEFAULT' });
+    dispatch3({ type: 'RESET_TO_DEFAULT' });
+    setR2(emptyResult);
+    setR3(emptyResult);
+    setActiveCount(1);
+    setActiveTab(1);
+  }, [dispatch1, dispatch2, dispatch3]);
+
   const scenarios = useMemo((): ScenarioState[] => {
     const s1: ScenarioState = {
       id: 1,
@@ -209,5 +238,6 @@ export function useScenarios(): UseScenariosResult {
     canAdd: activeCount < 3,
     addScenario,
     removeScenario,
+    resetAll,
   };
 }
