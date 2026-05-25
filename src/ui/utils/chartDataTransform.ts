@@ -9,6 +9,7 @@ export interface BarDataPoint {
   principal: number;
   interest: number;
   installment: number;
+  extraPayment: number;
 }
 
 export interface BalanceDataPoint {
@@ -56,10 +57,11 @@ export function buildBarData(schedule: AmortizationRow[]): BarDataPoint[] {
       principal: row.principal,
       interest: row.interest,
       installment: row.installment,
+      extraPayment: row.extraPayment,
     }));
   }
 
-  const yearMap = new Map<number, { principal: number; interest: number; installment: number }>();
+  const yearMap = new Map<number, { principal: number; interest: number; installment: number; extraPayment: number }>();
   for (const row of schedule) {
     const year = Math.ceil(row.month / 12);
     const acc = yearMap.get(year);
@@ -67,11 +69,13 @@ export function buildBarData(schedule: AmortizationRow[]): BarDataPoint[] {
       acc.principal += row.principal;
       acc.interest += row.interest;
       acc.installment += row.installment;
+      acc.extraPayment += row.extraPayment;
     } else {
       yearMap.set(year, {
         principal: row.principal,
         interest: row.interest,
         installment: row.installment,
+        extraPayment: row.extraPayment,
       });
     }
   }

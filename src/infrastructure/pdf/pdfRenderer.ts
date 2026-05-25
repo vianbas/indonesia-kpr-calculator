@@ -266,24 +266,59 @@ function renderAmortizationSection(doc: DocWithAutoTable, y: number, data: PdfEx
   y = ensureSpace(doc, y, 45);
   y = renderSectionTitle(doc, 'D.  JADWAL ANGSURAN (AMORTISASI)', y);
 
-  // Build body — separator rows use colSpan so text spans the row
-  const body = buildAmortizationBody(data.scheduleRows);
+  const { hasExtraPayment } = data;
+  const numCols = hasExtraPayment ? 8 : 7;
+
+  // Build body — separator rows use colSpan so text spans the full row width
+  const body = buildAmortizationBody(data.scheduleRows, numCols);
   const separatorSet = buildSeparatorIndexSet(data.scheduleRows);
 
   const { totalRow } = data;
-  const foot: RowInput[] = [[
-    { content: totalRow.label,        colSpan: 3, styles: { halign: 'left'  as const, fontStyle: 'bold' as const } },
-    { content: totalRow.installment,             styles: { halign: 'right' as const, fontStyle: 'bold' as const } },
-    { content: totalRow.principal,               styles: { halign: 'right' as const, fontStyle: 'bold' as const, textColor: C.blue } },
-    { content: totalRow.interest,                styles: { halign: 'right' as const, fontStyle: 'bold' as const, textColor: C.orange } },
-    { content: totalRow.finalBalance,            styles: { halign: 'right' as const, fontStyle: 'bold' as const, textColor: C.green } },
-  ]];
+  const foot: RowInput[] = hasExtraPayment
+    ? [[
+        { content: totalRow.label,       colSpan: 3, styles: { halign: 'left'  as const, fontStyle: 'bold' as const } },
+        { content: totalRow.installment,             styles: { halign: 'right' as const, fontStyle: 'bold' as const } },
+        { content: totalRow.principal,               styles: { halign: 'right' as const, fontStyle: 'bold' as const, textColor: C.blue } },
+        { content: totalRow.interest,                styles: { halign: 'right' as const, fontStyle: 'bold' as const, textColor: C.orange } },
+        { content: totalRow.finalBalance,            styles: { halign: 'right' as const, fontStyle: 'bold' as const, textColor: C.green } },
+        { content: '',                               styles: { halign: 'right' as const } },
+      ]]
+    : [[
+        { content: totalRow.label,       colSpan: 3, styles: { halign: 'left'  as const, fontStyle: 'bold' as const } },
+        { content: totalRow.installment,             styles: { halign: 'right' as const, fontStyle: 'bold' as const } },
+        { content: totalRow.principal,               styles: { halign: 'right' as const, fontStyle: 'bold' as const, textColor: C.blue } },
+        { content: totalRow.interest,                styles: { halign: 'right' as const, fontStyle: 'bold' as const, textColor: C.orange } },
+        { content: totalRow.finalBalance,            styles: { halign: 'right' as const, fontStyle: 'bold' as const, textColor: C.green } },
+      ]];
+
+  // Column widths: 7-col = 12+11+22+31+30+29+rem; 8-col splits remainder with extra column
+  const rem7 = CONTENT_W - 12 - 11 - 22 - 31 - 30 - 29;
+  const extraW = 24;
+  const rem8 = rem7 - extraW;
+
+  const colStyles7 = {
+    0: { halign: 'center' as const, cellWidth: 12 },
+    1: { halign: 'center' as const, cellWidth: 11 },
+    2: { halign: 'center' as const, cellWidth: 22 },
+    3: { halign: 'right'  as const, cellWidth: 31 },
+    4: { halign: 'right'  as const, cellWidth: 30 },
+    5: { halign: 'right'  as const, cellWidth: 29 },
+    6: { halign: 'right'  as const, cellWidth: rem7 },
+  };
+  const colStyles8 = {
+    ...colStyles7,
+    6: { halign: 'right' as const, cellWidth: rem8 },
+    7: { halign: 'right' as const, cellWidth: extraW },
+  };
+
+  const head7 = [['Bln', 'Thn', 'Suku Bunga', 'Cicilan', 'Pokok', 'Bunga', 'Saldo Akhir']];
+  const head8 = [['Bln', 'Thn', 'Suku Bunga', 'Cicilan', 'Pokok', 'Bunga', 'Saldo Akhir', 'Ekstra']];
 
   autoTable(doc, {
     startY: y,
     margin: { left: M, right: M },
     tableWidth: CONTENT_W,
-    head: [['Bln', 'Thn', 'Suku Bunga', 'Cicilan', 'Pokok', 'Bunga', 'Saldo Akhir']],
+    head: hasExtraPayment ? head8 : head7,
     body,
     foot,
     showHead: 'everyPage',
@@ -307,33 +342,25 @@ function renderAmortizationSection(doc: DocWithAutoTable, y: number, data: PdfEx
       fontSize: 7.5,
     },
     alternateRowStyles: { fillColor: C.grayBg as Color },
-    columnStyles: {
-      0: { halign: 'center', cellWidth: 12 },
-      1: { halign: 'center', cellWidth: 11 },
-      2: { halign: 'center', cellWidth: 22 },
-      3: { halign: 'right',  cellWidth: 31 },
-      4: { halign: 'right',  cellWidth: 30 },
-      5: { halign: 'right',  cellWidth: 29 },
-      6: { halign: 'right',  cellWidth: CONTENT_W - 12 - 11 - 22 - 31 - 30 - 29 },
-    },
+    columnStyles: hasExtraPayment ? colStyles8 : colStyles7,
     didParseCell: (d: CellHookData) => {
       if (d.section !== 'body') return;
       const idx = d.row.index;
 
       if (separatorSet.has(idx)) {
-        // Rate-change separator: indigo tinted banner row
         d.cell.styles.fillColor = C.indigoBg as Color;
         d.cell.styles.textColor = C.indigoDark as Color;
         d.cell.styles.fontStyle = 'bold';
         d.cell.styles.fontSize = 6.8;
       } else {
-        // Color-code principal and interest columns
         if (d.column.index === 4) d.cell.styles.textColor = C.blue as Color;    // Pokok
         if (d.column.index === 5) d.cell.styles.textColor = C.orange as Color;  // Bunga
-        // Final row (Lunas) highlight
+        if (hasExtraPayment && d.column.index === 7) {                          // Ekstra
+          d.cell.styles.textColor = [13, 148, 136] as Color;
+        }
         const nonSepIndices = [...Array(body.length).keys()].filter(i => !separatorSet.has(i));
         const lastDataIdx = nonSepIndices[nonSepIndices.length - 1];
-        if (idx === lastDataIdx) d.cell.styles.fillColor = [220, 252, 231] as Color; // green-100
+        if (idx === lastDataIdx) d.cell.styles.fillColor = [220, 252, 231] as Color;
       }
     },
   });
@@ -511,15 +538,16 @@ function ensureSpace(doc: DocWithAutoTable, currentY: number, needed: number): n
 }
 
 /**
- * Builds the autoTable body array. Separator rows use colSpan=7 so the
- * rate-change label spans the full width.
+ * Builds the autoTable body array. Separator rows use colSpan to span all columns.
  */
-function buildAmortizationBody(rows: PdfScheduleRow[]): RowInput[] {
+function buildAmortizationBody(rows: PdfScheduleRow[], numCols: number): RowInput[] {
   return rows.map((row): RowInput => {
     if (row.isRateChange) {
-      return [{ content: row.rateChangeLabel ?? '', colSpan: 7, styles: { halign: 'left' as const } }];
+      return [{ content: row.rateChangeLabel ?? '', colSpan: numCols, styles: { halign: 'left' as const } }];
     }
-    return [row.month, row.year, row.rate, row.installment, row.principal, row.interest, row.balance];
+    const base = [row.month, row.year, row.rate, row.installment, row.principal, row.interest, row.balance];
+    if (numCols === 8) base.push(row.extraPayment || '—');
+    return base;
   });
 }
 

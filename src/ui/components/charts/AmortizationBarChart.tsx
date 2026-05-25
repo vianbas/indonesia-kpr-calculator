@@ -35,6 +35,7 @@ function BarTooltip({ active, payload, label }: BarTooltipProps) {
 
   const principal = payload.find((p) => p.name === 'Pokok')?.value ?? 0;
   const interest = payload.find((p) => p.name === 'Bunga')?.value ?? 0;
+  const extra = payload.find((p) => p.name === 'Ekstra')?.value ?? 0;
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-xs min-w-[180px]">
@@ -54,10 +55,19 @@ function BarTooltip({ active, payload, label }: BarTooltipProps) {
           </span>
           <span className="font-medium tabular-nums text-orange-600">{formatIDR(interest)}</span>
         </div>
+        {extra > 0 && (
+          <div className="flex items-center justify-between gap-4">
+            <span className="flex items-center gap-1.5 text-gray-600">
+              <span className="w-2.5 h-2.5 rounded-sm bg-teal-500 inline-block shrink-0" />
+              Pembayaran Ekstra
+            </span>
+            <span className="font-medium tabular-nums text-teal-700">{formatIDR(extra)}</span>
+          </div>
+        )}
         <div className="flex items-center justify-between gap-4 border-t border-gray-100 pt-1.5">
-          <span className="text-gray-500">Total Cicilan</span>
+          <span className="text-gray-500">Total</span>
           <span className="font-semibold tabular-nums text-gray-900">
-            {formatIDR(principal + interest)}
+            {formatIDR(principal + interest + extra)}
           </span>
         </div>
       </div>
@@ -80,6 +90,7 @@ interface Props {
 export function AmortizationBarChart({ schedule }: Props) {
   const useYearly = shouldUseYearlyGrouping(schedule);
   const data = useMemo(() => buildBarData(schedule), [schedule]);
+  const hasExtraPayment = data.some((d) => d.extraPayment > 0);
 
   const xInterval = data.length > 24 ? Math.floor(data.length / 10) - 1 : 0;
 
@@ -117,8 +128,17 @@ export function AmortizationBarChart({ schedule }: Props) {
             name="Bunga"
             stackId="stack"
             fill="#F97316"
-            radius={[3, 3, 0, 0]}
+            radius={hasExtraPayment ? undefined : [3, 3, 0, 0]}
           />
+          {hasExtraPayment && (
+            <Bar
+              dataKey="extraPayment"
+              name="Ekstra"
+              stackId="stack"
+              fill="#0D9488"
+              radius={[3, 3, 0, 0]}
+            />
+          )}
         </BarChart>
       </ResponsiveContainer>
     </>

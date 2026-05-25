@@ -34,6 +34,8 @@ export interface AmortizationRow {
   annualRate: number;
   interestType: 'fixed' | 'floating';
   tierLabel?: string;
+  /** Extra principal paid this period beyond the regular installment (0 when none) */
+  extraPayment: number;
 }
 
 /**
@@ -62,4 +64,20 @@ export interface MortgageSummary {
   /** Simple weighted-average rate across all months (informational) */
   effectiveAnnualRate: number;
   schedule: AmortizationRow[];
+
+  // ── Early repayment comparison fields ──────────────────────────────────────
+  /** Actual months until balance = 0 (may be less than originalTenorMonths when early repayment active) */
+  effectiveTenorMonths: number;
+  /** Original tenor from input (unchanged by early repayment) */
+  originalTenorMonths: number;
+  /** effectiveTenorMonths shortfall vs originalTenorMonths; 0 when no early repayment */
+  monthsSaved: number;
+  /** Total interest without early repayment; equals totalInterest when mode is 'none' */
+  originalTotalInterest: number;
+  /** Total payment without early repayment; equals totalPayment when mode is 'none' */
+  originalTotalPayment: number;
+  /** originalTotalInterest − totalInterest; 0 when mode is 'none' */
+  interestSaved: number;
+  /** interestSaved as % of originalTotalInterest; 0 when mode is 'none' */
+  interestSavedPercent: number;
 }

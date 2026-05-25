@@ -36,7 +36,7 @@ function buildTableItems(schedule: AmortizationRow[]): TableItem[] {
 
 // ─── Column definitions ───────────────────────────────────────────────────────
 
-const COLUMNS = [
+const BASE_COLUMNS = [
   { key: 'month',   label: 'Bln',        align: 'text-center', width: 'w-12'  },
   { key: 'year',    label: 'Thn',        align: 'text-center', width: 'w-12'  },
   { key: 'rate',    label: 'Suku Bunga', align: 'text-center', width: 'w-24'  },
@@ -46,18 +46,20 @@ const COLUMNS = [
   { key: 'balance', label: 'Saldo Akhir',align: 'text-right',  width: ''      },
 ] as const;
 
-const COL_SPAN = COLUMNS.length;
+const EXTRA_COLUMN = { key: 'extra', label: 'Ekstra', align: 'text-right', width: '' } as const;
 
 // ─── Summary footer data ──────────────────────────────────────────────────────
 
 interface TableFooterProps {
   schedule: AmortizationRow[];
+  showExtra: boolean;
 }
 
-function TableFooter({ schedule }: TableFooterProps) {
+function TableFooter({ schedule, showExtra }: TableFooterProps) {
   const totalPrincipal = schedule.reduce((s, r) => s + r.principal, 0);
   const totalInterest  = schedule.reduce((s, r) => s + r.interest, 0);
-  const totalPayment   = schedule.reduce((s, r) => s + r.installment, 0);
+  const totalPayment   = schedule.reduce((s, r) => s + r.installment + r.extraPayment, 0);
+  const totalExtra     = schedule.reduce((s, r) => s + r.extraPayment, 0);
 
   return (
     <tfoot className="bg-blue-50 border-t-2 border-blue-200">
@@ -77,6 +79,11 @@ function TableFooter({ schedule }: TableFooterProps) {
         <td className="py-2.5 px-3 text-right text-xs font-semibold text-green-700 tabular-nums">
           {formatIDR(schedule[schedule.length - 1]?.closingBalance ?? 0)}
         </td>
+        {showExtra && (
+          <td className="py-2.5 px-3 text-right text-xs font-bold text-teal-700 tabular-nums">
+            {formatIDR(totalExtra)}
+          </td>
+        )}
       </tr>
     </tfoot>
   );
@@ -93,6 +100,10 @@ const VIRTUALIZE_THRESHOLD = 24;
 
 export function AmortizationTable({ schedule }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const showExtra = schedule.some((r) => r.extraPayment > 0);
+  const COLUMNS = showExtra ? [...BASE_COLUMNS, EXTRA_COLUMN] : BASE_COLUMNS;
+  const COL_SPAN = COLUMNS.length;
 
   // Pre-process once per schedule change
   const tableItems = useMemo(() => buildTableItems(schedule), [schedule]);
@@ -127,6 +138,9 @@ export function AmortizationTable({ schedule }: Props) {
       <SmallScheduleTable
         schedule={schedule}
         tableItems={tableItems}
+        showExtra={showExtra}
+        COL_SPAN={COL_SPAN}
+        COLUMNS={COLUMNS}
       />
     );
   }
@@ -137,7 +151,7 @@ export function AmortizationTable({ schedule }: Props) {
       subtitle={`${schedule.length} bulan — scroll untuk lihat semua. Baris dioptimasi dengan virtualisasi.`}
     >
       {/* Column legend */}
-      <ColumnLegend />
+      <ColumnLegend showExtra={showExtra} />
 
       {/* Scrollable + virtualized table */}
       <div
@@ -146,7 +160,7 @@ export function AmortizationTable({ schedule }: Props) {
         style={{ height: Math.min(520, schedule.length * DATA_ROW_HEIGHT + 80) }}
       >
         <table className="w-full text-xs border-collapse min-w-[640px]">
-          <TableHead />
+          <TableHead COLUMNS={COLUMNS} />
           <tbody>
             {/* Top spacer */}
             {topPadding > 0 && (
@@ -161,7 +175,7 @@ export function AmortizationTable({ schedule }: Props) {
               if (!item) return null;
 
               if (item.kind === 'separator') {
-                return <SeparatorRow key={`sep-${item.startMonth}`} item={item} />;
+                return <SeparatorRow key={`sep-${item.startMonth}`} item={item} COL_SPAN={COL_SPAN} />;
               }
 
               return (
@@ -169,6 +183,7 @@ export function AmortizationTable({ schedule }: Props) {
                   key={`row-${item.row.month}`}
                   row={item.row}
                   isEven={vRow.index % 2 === 0}
+                  showExtra={showExtra}
                 />
               );
             })}
@@ -180,7 +195,7 @@ export function AmortizationTable({ schedule }: Props) {
               </tr>
             )}
           </tbody>
-          <TableFooter schedule={schedule} />
+          <TableFooter schedule={schedule} showExtra={showExtra} />
         </table>
       </div>
     </Card>
@@ -192,27 +207,30 @@ export function AmortizationTable({ schedule }: Props) {
 interface SmallScheduleProps {
   schedule: AmortizationRow[];
   tableItems: TableItem[];
+  showExtra: boolean;
+  COL_SPAN: number;
+  COLUMNS: typeof BASE_COLUMNS | readonly (typeof BASE_COLUMNS[number] | typeof EXTRA_COLUMN)[];
 }
 
-function SmallScheduleTable({ schedule, tableItems }: SmallScheduleProps) {
+function SmallScheduleTable({ schedule, tableItems, showExtra, COL_SPAN, COLUMNS }: SmallScheduleProps) {
   return (
     <Card
       title="Tabel Amortisasi"
       subtitle={`${schedule.length} bulan`}
     >
-      <ColumnLegend />
+      <ColumnLegend showExtra={showExtra} />
       <div className="overflow-x-auto border border-gray-200 rounded-lg">
         <table className="w-full text-xs border-collapse min-w-[640px]">
-          <TableHead />
+          <TableHead COLUMNS={COLUMNS} />
           <tbody>
             {tableItems.map((item, i) => {
               if (item.kind === 'separator') {
-                return <SeparatorRow key={`sep-${item.startMonth}`} item={item} />;
+                return <SeparatorRow key={`sep-${item.startMonth}`} item={item} COL_SPAN={COL_SPAN} />;
               }
-              return <DataRow key={`row-${item.row.month}`} row={item.row} isEven={i % 2 === 0} />;
+              return <DataRow key={`row-${item.row.month}`} row={item.row} isEven={i % 2 === 0} showExtra={showExtra} />;
             })}
           </tbody>
-          <TableFooter schedule={schedule} />
+          <TableFooter schedule={schedule} showExtra={showExtra} />
         </table>
       </div>
     </Card>
@@ -221,7 +239,11 @@ function SmallScheduleTable({ schedule, tableItems }: SmallScheduleProps) {
 
 // ─── Shared sub-components ────────────────────────────────────────────────────
 
-function TableHead() {
+interface TableHeadProps {
+  COLUMNS: readonly { key: string; label: string; align: string; width: string }[];
+}
+
+function TableHead({ COLUMNS }: TableHeadProps) {
   return (
     <thead className="sticky top-0 z-10 bg-gray-100 shadow-sm">
       <tr>
@@ -247,17 +269,19 @@ function TableHead() {
 interface DataRowProps {
   row: AmortizationRow;
   isEven: boolean;
+  showExtra: boolean;
 }
 
-function DataRow({ row, isEven }: DataRowProps) {
+function DataRow({ row, isEven, showExtra }: DataRowProps) {
   const isFinal = row.closingBalance === 0;
   const year = monthToYear(row.month);
 
   const baseClass = [
     'border-t border-gray-100 transition-colors',
-    isFinal    ? 'bg-green-50'
-    : isEven   ? 'bg-white'
-               : 'bg-gray-50/60',
+    isFinal               ? 'bg-green-50'
+    : row.extraPayment > 0 ? 'bg-teal-50/50'
+    : isEven              ? 'bg-white'
+                          : 'bg-gray-50/60',
   ].join(' ');
 
   return (
@@ -312,15 +336,23 @@ function DataRow({ row, isEven }: DataRowProps) {
           formatIDR(row.closingBalance)
         )}
       </td>
+
+      {/* Extra payment — only rendered when the schedule has any extra payments */}
+      {showExtra && (
+        <td className="py-2 px-3 text-right text-teal-700 tabular-nums">
+          {row.extraPayment > 0 ? formatIDR(row.extraPayment) : '—'}
+        </td>
+      )}
     </tr>
   );
 }
 
 interface SeparatorRowProps {
   item: Extract<TableItem, { kind: 'separator' }>;
+  COL_SPAN: number;
 }
 
-function SeparatorRow({ item }: SeparatorRowProps) {
+function SeparatorRow({ item, COL_SPAN }: SeparatorRowProps) {
   return (
     <tr
       className={item.interestType === 'fixed' ? 'bg-blue-50' : 'bg-indigo-50'}
@@ -348,7 +380,11 @@ function SeparatorRow({ item }: SeparatorRowProps) {
   );
 }
 
-function ColumnLegend() {
+interface ColumnLegendProps {
+  showExtra: boolean;
+}
+
+function ColumnLegend({ showExtra }: ColumnLegendProps) {
   return (
     <div className="flex flex-wrap gap-x-4 gap-y-1.5 mb-3 text-xs text-gray-500">
       <span className="flex items-center gap-1.5">
@@ -359,6 +395,12 @@ function ColumnLegend() {
         <span className="inline-block w-2.5 h-2.5 rounded-sm bg-orange-100 border border-orange-300" />
         Bunga — biaya pinjaman
       </span>
+      {showExtra && (
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block w-2.5 h-2.5 rounded-sm bg-teal-100 border border-teal-300" />
+          Pembayaran Ekstra
+        </span>
+      )}
       <span className="flex items-center gap-1.5">
         <span className="inline-block w-2.5 h-2.5 rounded-sm bg-green-100 border border-green-300" />
         Bulan terakhir / lunas

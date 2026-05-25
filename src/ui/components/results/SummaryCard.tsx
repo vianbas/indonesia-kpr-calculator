@@ -43,11 +43,12 @@ export function SummaryCard({ summary }: Props) {
     totalPayment,
     adminFee,
     effectiveAnnualRate,
-    schedule,
+    effectiveTenorMonths,
+    monthsSaved,
   } = summary;
 
-  const tenorMonths = schedule.length;
-  const finalBalance = schedule[schedule.length - 1]?.closingBalance ?? 0;
+  const tenorMonths = effectiveTenorMonths;
+  const finalBalance = summary.schedule[summary.schedule.length - 1]?.closingBalance ?? 0;
   const firstGroup = installmentGroups[0];
   const hasMultipleRates = installmentGroups.length > 1;
 
@@ -81,6 +82,11 @@ export function SummaryCard({ summary }: Props) {
           )}
           <p className="text-xs text-blue-300 mt-2">
             {formatTenor(tenorMonths)} • {formatPercent(effectiveAnnualRate, 2, true)} efektif
+            {monthsSaved > 0 && (
+              <span className="ml-2 text-green-300 font-semibold">
+                ({monthsSaved} bln dihemat)
+              </span>
+            )}
           </p>
         </div>
 

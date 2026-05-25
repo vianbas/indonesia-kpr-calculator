@@ -28,6 +28,28 @@ export interface FloatingTier {
   annualRate: number;
 }
 
+export interface ExtraMonthlyPayment {
+  /** Additional IDR amount paid every month on top of the regular installment */
+  amount: number;
+  /** 1-based month to start (inclusive) */
+  startMonth: number;
+  /** 1-based month to end (inclusive); undefined = until loan is paid off */
+  endMonth?: number;
+}
+
+export interface LumpSumPayment {
+  /** One-time extra IDR payment */
+  amount: number;
+  /** 1-based month when the payment is applied */
+  month: number;
+}
+
+export interface EarlyRepaymentConfig {
+  mode: 'none' | 'extra_monthly' | 'lump_sum' | 'both';
+  extraMonthly?: ExtraMonthlyPayment;
+  lumpSum?: LumpSumPayment;
+}
+
 export interface MortgageInput {
   /** Loan principal in IDR (positive integer) */
   principalAmount: number;
@@ -51,6 +73,8 @@ export interface MortgageInput {
   includeAdminFee: boolean;
   /** One-time admin/processing fee in IDR */
   adminFeeAmount: number;
+  /** Optional early repayment configuration — omit or set mode 'none' for standard schedule */
+  earlyRepayment?: EarlyRepaymentConfig;
 }
 
 export interface ValidationError {

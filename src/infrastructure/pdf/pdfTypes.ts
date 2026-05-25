@@ -43,6 +43,8 @@ export interface PdfScheduleRow {
   principal: string;
   interest: string;
   balance: string;
+  /** Formatted extra payment; empty string when none */
+  extraPayment: string;
   isRateChange: boolean;
   /** Only populated when isRateChange is true */
   rateChangeLabel?: string;
@@ -66,6 +68,8 @@ export interface PdfExportData {
   financialRows: PdfFinancialRow[];
   scheduleRows: PdfScheduleRow[];
   totalRow: PdfTotalRow;
+  /** True when any schedule row has an extra payment — drives the 8-column amortization table */
+  hasExtraPayment: boolean;
 }
 
 // ─── Multi-scenario types ─────────────────────────────────────────────────────
