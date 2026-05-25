@@ -87,7 +87,7 @@ function buildMergedData(
   const seriesMap = new Map<number, Record<string, number>>();
 
   for (const s of calculated) {
-    const pts = buildBalanceData(s.summary.schedule);
+    const pts = buildBalanceData(s.summary.schedule, useYearly);
     for (const pt of pts) {
       allPeriods.add(pt.period);
       const existing = seriesMap.get(pt.period) ?? {};
@@ -112,9 +112,12 @@ interface Props {
 }
 
 export function BalanceLineChart({ calculated }: Props) {
-  // Use the primary scenario's schedule to determine grouping and rate marks
   const primarySchedule = calculated[0].summary.schedule;
-  const useYearly = shouldUseYearlyGrouping(primarySchedule);
+  // Yearly if ANY scenario exceeds the threshold — ensures all scenarios share one axis
+  const useYearly = useMemo(
+    () => calculated.some((s) => shouldUseYearlyGrouping(s.summary.schedule)),
+    [calculated],
+  );
 
   const mergedData = useMemo(
     () => buildMergedData(calculated, useYearly),
@@ -122,8 +125,8 @@ export function BalanceLineChart({ calculated }: Props) {
   );
 
   const rateMarks = useMemo(
-    () => buildRateChangeMarks(primarySchedule),
-    [primarySchedule],
+    () => buildRateChangeMarks(primarySchedule, useYearly),
+    [primarySchedule, useYearly],
   );
 
   const xInterval = mergedData.length > 24 ? Math.floor(mergedData.length / 10) - 1 : 0;

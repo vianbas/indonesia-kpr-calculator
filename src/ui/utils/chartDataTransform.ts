@@ -85,10 +85,20 @@ export function buildBarData(schedule: AmortizationRow[]): BarDataPoint[] {
 
 // ─── Balance line chart data ──────────────────────────────────────────────────
 
-export function buildBalanceData(schedule: AmortizationRow[]): BalanceDataPoint[] {
+/**
+ * @param forceYearly When provided, overrides the automatic threshold check.
+ * Pass this when building data for a multi-scenario chart so all scenarios
+ * use a consistent period axis.
+ */
+export function buildBalanceData(
+  schedule: AmortizationRow[],
+  forceYearly?: boolean,
+): BalanceDataPoint[] {
   if (schedule.length === 0) return [];
 
-  if (!shouldUseYearlyGrouping(schedule)) {
+  const useYearly = forceYearly !== undefined ? forceYearly : shouldUseYearlyGrouping(schedule);
+
+  if (!useYearly) {
     return schedule.map((row) => ({
       period: row.month,
       periodLabel: `Bln ${row.month}`,
@@ -115,9 +125,12 @@ export function buildBalanceData(schedule: AmortizationRow[]): BalanceDataPoint[
  * Returns one mark per rate-change boundary.
  * In yearly mode, deduplicates multiple changes within the same year.
  */
-export function buildRateChangeMarks(schedule: AmortizationRow[]): RateChangeMark[] {
+export function buildRateChangeMarks(
+  schedule: AmortizationRow[],
+  forceYearly?: boolean,
+): RateChangeMark[] {
   const marks: RateChangeMark[] = [];
-  const useYearly = shouldUseYearlyGrouping(schedule);
+  const useYearly = forceYearly !== undefined ? forceYearly : shouldUseYearlyGrouping(schedule);
   const seen = new Set<number>();
 
   for (let i = 1; i < schedule.length; i++) {
