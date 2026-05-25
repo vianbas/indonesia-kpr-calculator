@@ -56,8 +56,11 @@ export function TierRow({
         {/* From month — read-only */}
         <div className="flex flex-col gap-1">
           <span className="text-xs font-medium text-gray-600">Dari Bulan</span>
-          <div className="rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700">
-            {fromMonth}
+          <div className="rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 leading-tight">
+            <span>{fromMonth}</span>
+            <span className="block text-xs text-gray-400 font-normal">
+              Thn {Math.ceil(fromMonth / 12)}
+            </span>
           </div>
         </div>
 
@@ -65,8 +68,11 @@ export function TierRow({
         {isLast ? (
           <div className="flex flex-col gap-1">
             <span className="text-xs font-medium text-gray-600">Sampai Bulan</span>
-            <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2.5 text-sm text-blue-700 font-medium">
-              {tenorTotal} <span className="text-xs font-normal">(akhir)</span>
+            <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2.5 text-sm text-blue-700 font-medium leading-tight">
+              <span>{tenorTotal} <span className="text-xs font-normal">(akhir)</span></span>
+              <span className="block text-xs text-blue-400 font-normal">
+                Thn {Math.ceil(tenorTotal / 12)}
+              </span>
             </div>
           </div>
         ) : (
@@ -79,7 +85,7 @@ export function TierRow({
             min={String(fromMonth)}
             max={String(tenorTotal - 1)}
             placeholder={String(fromMonth + 11)}
-            hint={toMonthNum > 0 ? `${toMonthNum - fromMonth + 1} bln` : undefined}
+            hint={toMonthNum > 0 ? `Thn ${Math.ceil(toMonthNum / 12)} · ${toMonthNum - fromMonth + 1} bln` : undefined}
           />
         )}
 

@@ -85,7 +85,7 @@ export function TierBuilder({ form, dispatch, fieldErrors }: Props) {
       {/* Global tier coverage hint */}
       {tenorTotal > 0 && tiers.length > 0 && (
         <p className="text-xs text-gray-500">
-          Tier harus mencakup Bulan {fixedEnd + 1} hingga Bulan {tenorTotal} tanpa celah.
+          Tier harus mencakup Bulan {fixedEnd + 1} (Thn {Math.ceil((fixedEnd + 1) / 12)}) hingga Bulan {tenorTotal} (Thn {Math.ceil(tenorTotal / 12)}) tanpa celah.
         </p>
       )}
 

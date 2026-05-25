@@ -71,7 +71,7 @@ export function FloatingRateSection({ form, dispatch, fieldErrors }: Props) {
               error={fieldErrors['floatingBaseRate']}
               hint={
                 fixedEnd > 0
-                  ? `Berlaku mulai Bulan ${floatingStart} hingga Bulan ${tenorTotal}`
+                  ? `Berlaku mulai Bulan ${floatingStart} (Thn ${Math.ceil(floatingStart / 12)}) hingga Bulan ${tenorTotal} (Thn ${Math.ceil(tenorTotal / 12)})`
                   : `Berlaku selama ${tenorTotal} bulan penuh`
               }
             />
