@@ -44,6 +44,12 @@ export function createDefaultFormState(): MortgageFormState {
     tiers: [],
     includeAdminFee: false,
     adminFeeAmount: '0',
+    earlyRepaymentMode: 'none',
+    extraMonthlyAmount: '',
+    extraMonthlyStartMonth: '1',
+    extraMonthlyEndMonth: '',
+    lumpSumAmount: '',
+    lumpSumMonth: '',
   };
 }
 
@@ -158,6 +164,20 @@ export function formReducer(state: MortgageFormState, action: FormAction): Mortg
       return { ...state, includeAdminFee: action.value };
     case 'SET_ADMIN_FEE_AMOUNT':
       return { ...state, adminFeeAmount: action.value };
+
+    // ── Early repayment ───────────────────────────────────────────────────────
+    case 'SET_EARLY_REPAYMENT_MODE':
+      return { ...state, earlyRepaymentMode: action.mode };
+    case 'SET_EXTRA_MONTHLY_AMOUNT':
+      return { ...state, extraMonthlyAmount: action.value };
+    case 'SET_EXTRA_MONTHLY_START_MONTH':
+      return { ...state, extraMonthlyStartMonth: action.value };
+    case 'SET_EXTRA_MONTHLY_END_MONTH':
+      return { ...state, extraMonthlyEndMonth: action.value };
+    case 'SET_LUMP_SUM_AMOUNT':
+      return { ...state, lumpSumAmount: action.value };
+    case 'SET_LUMP_SUM_MONTH':
+      return { ...state, lumpSumMonth: action.value };
 
     // ── Scenario management ───────────────────────────────────────────────────
     case 'RESET_TO_DEFAULT':

@@ -1,5 +1,7 @@
 import type { PaymentMethod } from '../../domain/models/mortgage.types';
 
+export type EarlyRepaymentMode = 'none' | 'extra_monthly' | 'lump_sum' | 'both';
+
 export interface TierFormRow {
   id: string;
   /** User-editable end month (except for the last tier which is locked to tenor) */
@@ -46,6 +48,19 @@ export interface MortgageFormState {
   // ── Fees ───────────────────────────────────────────────────────────────────
   includeAdminFee: boolean;
   adminFeeAmount: string;
+
+  // ── Early repayment (Pelunasan Dipercepat) ─────────────────────────────────
+  earlyRepaymentMode: EarlyRepaymentMode;
+  /** Extra IDR amount paid every month on top of the regular installment */
+  extraMonthlyAmount: string;
+  /** 1-based month to start extra monthly payments */
+  extraMonthlyStartMonth: string;
+  /** 1-based month to stop extra monthly payments; empty = until loan ends */
+  extraMonthlyEndMonth: string;
+  /** One-time extra IDR payment amount */
+  lumpSumAmount: string;
+  /** 1-based month when the lump sum is applied */
+  lumpSumMonth: string;
 }
 
 // ─── Action types ─────────────────────────────────────────────────────────────
@@ -68,5 +83,11 @@ export type FormAction =
   | { type: 'REMOVE_TIER'; id: string }
   | { type: 'SET_INCLUDE_ADMIN_FEE'; value: boolean }
   | { type: 'SET_ADMIN_FEE_AMOUNT'; value: string }
+  | { type: 'SET_EARLY_REPAYMENT_MODE'; mode: EarlyRepaymentMode }
+  | { type: 'SET_EXTRA_MONTHLY_AMOUNT'; value: string }
+  | { type: 'SET_EXTRA_MONTHLY_START_MONTH'; value: string }
+  | { type: 'SET_EXTRA_MONTHLY_END_MONTH'; value: string }
+  | { type: 'SET_LUMP_SUM_AMOUNT'; value: string }
+  | { type: 'SET_LUMP_SUM_MONTH'; value: string }
   | { type: 'RESET_TO_DEFAULT' }
   | { type: 'LOAD_STATE'; state: MortgageFormState };

@@ -1,4 +1,9 @@
-import type { MortgageInput, FloatingTier, ValidationError } from '../../domain/models/mortgage.types';
+import type {
+  MortgageInput,
+  FloatingTier,
+  EarlyRepaymentConfig,
+  ValidationError,
+} from '../../domain/models/mortgage.types';
 import type { MortgageFormState } from '../store/formTypes';
 
 export interface ConversionResult {
@@ -111,9 +116,50 @@ export function formToMortgageInput(form: MortgageFormState): ConversionResult {
       startDate,
       includeAdminFee: form.includeAdminFee,
       adminFeeAmount: parsePositiveNumber(form.adminFeeAmount, true) ?? 0,
+      earlyRepayment: buildEarlyRepaymentConfig(form),
     },
     conversionErrors: [],
   };
+}
+
+// ─── Early repayment builder ──────────────────────────────────────────────────
+
+function buildEarlyRepaymentConfig(form: import('../store/formTypes').MortgageFormState): EarlyRepaymentConfig | undefined {
+  const { earlyRepaymentMode } = form;
+  if (earlyRepaymentMode === 'none') return undefined;
+
+  const config: EarlyRepaymentConfig = { mode: earlyRepaymentMode };
+
+  if (earlyRepaymentMode === 'extra_monthly' || earlyRepaymentMode === 'both') {
+    const amount = parsePositiveNumber(form.extraMonthlyAmount);
+    const startMonth = parseInt(form.extraMonthlyStartMonth) || 1;
+    const endMonthRaw = parseInt(form.extraMonthlyEndMonth);
+    const endMonth = !isNaN(endMonthRaw) && endMonthRaw > 0 ? endMonthRaw : undefined;
+    if (amount !== null && amount > 0) {
+      config.extraMonthly = { amount, startMonth, endMonth };
+    }
+  }
+
+  if (earlyRepaymentMode === 'lump_sum' || earlyRepaymentMode === 'both') {
+    const amount = parsePositiveNumber(form.lumpSumAmount);
+    const month = parseInt(form.lumpSumMonth);
+    if (amount !== null && amount > 0 && !isNaN(month) && month > 0) {
+      config.lumpSum = { amount, month };
+    }
+  }
+
+  // If the mode requires data but none was provided, treat as 'none'
+  const hasExtra = Boolean(config.extraMonthly);
+  const hasLump = Boolean(config.lumpSum);
+  if (
+    (earlyRepaymentMode === 'extra_monthly' && !hasExtra) ||
+    (earlyRepaymentMode === 'lump_sum' && !hasLump) ||
+    (earlyRepaymentMode === 'both' && !hasExtra && !hasLump)
+  ) {
+    return undefined;
+  }
+
+  return config;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

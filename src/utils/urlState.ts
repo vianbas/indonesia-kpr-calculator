@@ -5,6 +5,7 @@ import type {
   TierFormRow,
   DownPaymentMode,
   CalculationMethod,
+  EarlyRepaymentMode,
 } from '../application/store/formTypes';
 import type { ScenarioId } from '../application/store/scenarioTypes';
 import type { PaymentMethod } from '../domain/models/mortgage.types';
@@ -29,6 +30,9 @@ const CALC_METHODS: ReadonlySet<CalculationMethod> = new Set([
   'fixed_tiered_floating',
 ]);
 const DP_MODES: ReadonlySet<DownPaymentMode> = new Set(['amount', 'percent']);
+const ER_MODES: ReadonlySet<EarlyRepaymentMode> = new Set([
+  'none', 'extra_monthly', 'lump_sum', 'both',
+]);
 
 function isStr(v: unknown): v is string {
   return typeof v === 'string';
@@ -45,6 +49,9 @@ function isCalcMethod(v: unknown): v is CalculationMethod {
 function isDpMode(v: unknown): v is DownPaymentMode {
   return isStr(v) && DP_MODES.has(v as DownPaymentMode);
 }
+function isErMode(v: unknown): v is EarlyRepaymentMode {
+  return isStr(v) && ER_MODES.has(v as EarlyRepaymentMode);
+}
 
 function isTier(t: unknown): t is TierFormRow {
   if (!t || typeof t !== 'object') return false;
@@ -52,10 +59,12 @@ function isTier(t: unknown): t is TierFormRow {
   return isStr(o.id) && isStr(o.toMonth) && isStr(o.rate);
 }
 
-function isForm(f: unknown): f is MortgageFormState {
+function isForm(f: unknown): f is Omit<MortgageFormState, 'earlyRepaymentMode' | 'extraMonthlyAmount' | 'extraMonthlyStartMonth' | 'extraMonthlyEndMonth' | 'lumpSumAmount' | 'lumpSumMonth'> {
   if (!f || typeof f !== 'object') return false;
   const o = f as Record<string, unknown>;
-  return (
+
+  // Core 15 fields — always required
+  if (!(
     isStr(o.propertyPrice) &&
     isDpMode(o.downPaymentMode) &&
     isStr(o.downPaymentValue) &&
@@ -72,7 +81,31 @@ function isForm(f: unknown): f is MortgageFormState {
     (o.tiers as unknown[]).every(isTier) &&
     isBool(o.includeAdminFee) &&
     isStr(o.adminFeeAmount)
-  );
+  )) return false;
+
+  // Early repayment fields — optional for backward compat; validate if present
+  if ('earlyRepaymentMode' in o && !isErMode(o.earlyRepaymentMode)) return false;
+  if ('extraMonthlyAmount' in o && !isStr(o.extraMonthlyAmount)) return false;
+  if ('extraMonthlyStartMonth' in o && !isStr(o.extraMonthlyStartMonth)) return false;
+  if ('extraMonthlyEndMonth' in o && !isStr(o.extraMonthlyEndMonth)) return false;
+  if ('lumpSumAmount' in o && !isStr(o.lumpSumAmount)) return false;
+  if ('lumpSumMonth' in o && !isStr(o.lumpSumMonth)) return false;
+
+  return true;
+}
+
+/** Fills early repayment fields with defaults when loading an older URL that lacks them. */
+function normalizeForm(f: unknown): MortgageFormState {
+  const o = f as Record<string, unknown>;
+  return {
+    ...(f as MortgageFormState),
+    earlyRepaymentMode: isErMode(o.earlyRepaymentMode) ? o.earlyRepaymentMode : 'none',
+    extraMonthlyAmount: isStr(o.extraMonthlyAmount) ? o.extraMonthlyAmount : '',
+    extraMonthlyStartMonth: isStr(o.extraMonthlyStartMonth) ? o.extraMonthlyStartMonth : '1',
+    extraMonthlyEndMonth: isStr(o.extraMonthlyEndMonth) ? o.extraMonthlyEndMonth : '',
+    lumpSumAmount: isStr(o.lumpSumAmount) ? o.lumpSumAmount : '',
+    lumpSumMonth: isStr(o.lumpSumMonth) ? o.lumpSumMonth : '',
+  };
 }
 
 function isStoredPayload(raw: unknown): raw is StoredPayload {
@@ -103,7 +136,9 @@ export function decodeUrlState(b64: string): UrlState | null {
     const raw: unknown = JSON.parse(json);
     if (!isStoredPayload(raw)) return null;
     const { v: _v, ...urlState } = raw;
-    return urlState;
+    // Normalize early repayment fields for URLs created before this feature existed
+    urlState.forms = (urlState.forms as unknown[]).map(normalizeForm);
+    return urlState as UrlState;
   } catch (err) {
     captureError(err, { feature: 'url_decode' });
     return null;

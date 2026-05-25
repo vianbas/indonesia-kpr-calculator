@@ -29,6 +29,12 @@ function makeForm(overrides: Partial<MortgageFormState> = {}): MortgageFormState
     tiers: [],
     includeAdminFee: false,
     adminFeeAmount: '0',
+    earlyRepaymentMode: 'none',
+    extraMonthlyAmount: '',
+    extraMonthlyStartMonth: '1',
+    extraMonthlyEndMonth: '',
+    lumpSumAmount: '',
+    lumpSumMonth: '',
     ...overrides,
   };
 }

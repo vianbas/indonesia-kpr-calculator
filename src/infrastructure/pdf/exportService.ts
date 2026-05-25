@@ -37,13 +37,16 @@ export function buildPdfExportData(
     ', ' +
     now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 
+  const scheduleRows = buildScheduleRows(summary);
+  const hasExtraPayment = summary.schedule.some((r) => r.extraPayment > 0);
   return {
     generatedAt,
     loanInfo: buildLoanInfo(form, summary),
     interestRows: buildInterestRows(summary),
     financialRows: buildFinancialRows(summary),
-    scheduleRows: buildScheduleRows(summary),
+    scheduleRows,
     totalRow: buildTotalRow(summary),
+    hasExtraPayment,
   };
 }
 
@@ -242,6 +245,22 @@ function buildFinancialRows(summary: MortgageSummary): PdfFinancialRow[] {
     hint: 'normal',
   });
 
+  // Early repayment savings
+  if (summary.monthsSaved > 0) {
+    rows.push({
+      label: 'Tenor Efektif',
+      value: `${formatTenor(summary.effectiveTenorMonths)} (hemat ${summary.monthsSaved} bulan)`,
+      hint: 'normal',
+    });
+  }
+  if (summary.interestSaved > 0) {
+    rows.push({
+      label: 'Bunga Dihemat',
+      value: `${formatIDR(summary.interestSaved)} (${summary.interestSavedPercent.toFixed(1)}%)`,
+      hint: 'normal',
+    });
+  }
+
   return rows;
 }
 
@@ -263,6 +282,7 @@ function buildScheduleRows(summary: MortgageSummary): PdfScheduleRow[] {
         principal: '',
         interest: '',
         balance: '',
+        extraPayment: '',
         isRateChange: true,
         rateChangeLabel: `Perubahan suku bunga mulai Bulan ${row.month} → ${formatPercent(row.annualRate, 2, true)} (${typeLabel})`,
       });
@@ -276,6 +296,7 @@ function buildScheduleRows(summary: MortgageSummary): PdfScheduleRow[] {
       principal: formatIDR(row.principal),
       interest: formatIDR(row.interest),
       balance: formatIDR(row.closingBalance),
+      extraPayment: row.extraPayment > 0 ? formatIDR(row.extraPayment) : '',
       isRateChange: false,
     });
   }
