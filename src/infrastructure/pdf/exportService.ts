@@ -11,10 +11,14 @@ import type {
   PdfComparisonRow,
   PdfComparisonCell,
   PdfMultiScenarioExportData,
+  PdfAffordabilitySection,
+  PdfStressRow,
 } from './pdfTypes';
 import type { MortgageFormState } from '../../application/store/formTypes';
 import type { MortgageSummary } from '../../domain/models/amortization.types';
-import { formatIDR, formatPercent, formatTenor, monthToYear } from '../../domain/utils/currency';
+import type { AffordabilityFormState } from '../../application/store/affordabilityTypes';
+import type { AffordabilityResult } from '../../domain/calculators/affordability';
+import { formatIDR, formatIDRCompact, formatPercent, formatTenor, monthToYear } from '../../domain/utils/currency';
 import { formatDateID } from '../../domain/utils/date';
 
 // ─── Multi-scenario types ─────────────────────────────────────────────────────
@@ -25,11 +29,18 @@ interface ScenarioForPdf {
   summary: MortgageSummary;
 }
 
+export interface AffordabilityExportData {
+  form: AffordabilityFormState;
+  /** One result per scenario, aligned with the scenarios array. */
+  results: AffordabilityResult[];
+}
+
 // ─── Public API ───────────────────────────────────────────────────────────────
 
 export function buildPdfExportData(
   form: MortgageFormState,
   summary: MortgageSummary,
+  affordability?: { form: AffordabilityFormState; result: AffordabilityResult },
 ): PdfExportData {
   const now = new Date();
   const generatedAt =
@@ -47,23 +58,25 @@ export function buildPdfExportData(
     scheduleRows,
     totalRow: buildTotalRow(summary),
     hasExtraPayment,
+    affordability: affordability
+      ? buildAffordabilitySection(affordability.form, affordability.result)
+      : undefined,
   };
 }
 
 export async function exportToPdf(
   form: MortgageFormState,
   summary: MortgageSummary,
+  affordability?: AffordabilityExportData,
 ): Promise<void> {
   return Sentry.startSpan({ name: 'kpr.pdf_export', op: 'pdf.export' }, async () => {
     try {
-      const data = buildPdfExportData(form, summary);
+      const afData = affordability?.results[0]
+        ? { form: affordability.form, result: affordability.results[0] }
+        : undefined;
+      const data = buildPdfExportData(form, summary, afData);
       const doc = renderPdf(data);
-
-      const now = new Date();
-      const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
-      const hh = String(now.getHours()).padStart(2, '0');
-      const mm = String(now.getMinutes()).padStart(2, '0');
-      doc.save(`SimulasiKPR_${dateStr}_${hh}${mm}.pdf`);
+      doc.save(makeSingleFilename());
     } catch (err) {
       captureError(err, { feature: 'pdf_export', scenarioCount: 1 });
       throw err;
@@ -71,17 +84,15 @@ export async function exportToPdf(
   });
 }
 
-export async function exportMultiScenarioPdf(scenarios: ScenarioForPdf[]): Promise<void> {
+export async function exportMultiScenarioPdf(
+  scenarios: ScenarioForPdf[],
+  affordability?: AffordabilityExportData,
+): Promise<void> {
   return Sentry.startSpan({ name: 'kpr.pdf_export_multi', op: 'pdf.export' }, async () => {
     try {
-      const data = buildMultiScenarioExportData(scenarios);
+      const data = buildMultiScenarioExportData(scenarios, affordability);
       const doc = renderMultiScenarioPdf(data);
-
-      const now = new Date();
-      const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
-      const hh = String(now.getHours()).padStart(2, '0');
-      const mm = String(now.getMinutes()).padStart(2, '0');
-      doc.save(`PerbandinganKPR_${dateStr}_${hh}${mm}.pdf`);
+      doc.save(makeMultiFilename());
     } catch (err) {
       captureError(err, { feature: 'pdf_export', scenarioCount: scenarios.length });
       throw err;
@@ -89,28 +100,82 @@ export async function exportMultiScenarioPdf(scenarios: ScenarioForPdf[]): Promi
   });
 }
 
-function buildMultiScenarioExportData(scenarios: ScenarioForPdf[]): PdfMultiScenarioExportData {
+/** Returns a Blob + filename — used by the share path in ExportButton. */
+export async function buildPdfBlob(
+  form: MortgageFormState,
+  summary: MortgageSummary,
+  affordability?: AffordabilityExportData,
+): Promise<{ blob: Blob; filename: string }> {
+  return Sentry.startSpan({ name: 'kpr.pdf_blob', op: 'pdf.export' }, async () => {
+    try {
+      const afData = affordability?.results[0]
+        ? { form: affordability.form, result: affordability.results[0] }
+        : undefined;
+      const data = buildPdfExportData(form, summary, afData);
+      const doc = renderPdf(data);
+      const filename = makeSingleFilename();
+      const blob = doc.output('blob');
+      return { blob, filename };
+    } catch (err) {
+      captureError(err, { feature: 'pdf_blob', scenarioCount: 1 });
+      throw err;
+    }
+  });
+}
+
+/** Returns a Blob + filename for multi-scenario — used by the share path. */
+export async function buildMultiPdfBlob(
+  scenarios: ScenarioForPdf[],
+  affordability?: AffordabilityExportData,
+): Promise<{ blob: Blob; filename: string }> {
+  return Sentry.startSpan({ name: 'kpr.pdf_blob_multi', op: 'pdf.export' }, async () => {
+    try {
+      const data = buildMultiScenarioExportData(scenarios, affordability);
+      const doc = renderMultiScenarioPdf(data);
+      const filename = makeMultiFilename();
+      const blob = doc.output('blob');
+      return { blob, filename };
+    } catch (err) {
+      captureError(err, { feature: 'pdf_blob', scenarioCount: scenarios.length });
+      throw err;
+    }
+  });
+}
+
+function buildMultiScenarioExportData(
+  scenarios: ScenarioForPdf[],
+  affordability?: AffordabilityExportData,
+): PdfMultiScenarioExportData {
   const now = new Date();
   const generatedAt =
     formatDateID(now) +
     ', ' +
     now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 
-  const scenarioData: PdfExportData[] = scenarios.map((s) => ({
-    ...buildPdfExportData(s.form, s.summary),
-    generatedAt, // uniform timestamp across all pages
+  const scenarioData: PdfExportData[] = scenarios.map((s, i) => ({
+    ...buildPdfExportData(
+      s.form,
+      s.summary,
+      affordability?.results[i]
+        ? { form: affordability.form, result: affordability.results[i] }
+        : undefined,
+    ),
+    generatedAt,
     label: s.label,
   }));
 
   return {
     generatedAt,
     columnLabels: scenarios.map((s) => s.label),
-    comparisonRows: buildComparisonRows(scenarios),
+    comparisonRows: buildComparisonRows(scenarios, affordability),
     scenarios: scenarioData,
   };
 }
 
-function buildComparisonRows(scenarios: ScenarioForPdf[]): PdfComparisonRow[] {
+function buildComparisonRows(
+  scenarios: ScenarioForPdf[],
+  affordability?: AffordabilityExportData,
+): PdfComparisonRow[] {
   function hints(values: number[]): PdfComparisonCell['hint'][] {
     const min = Math.min(...values);
     const max = Math.max(...values);
@@ -146,7 +211,7 @@ function buildComparisonRows(scenarios: ScenarioForPdf[]): PdfComparisonRow[] {
   const methodDisplay = (s: ScenarioForPdf) =>
     s.form.paymentMethod === 'annuity' ? 'Anuitas' : 'Flat Rate';
 
-  return [
+  const rows: PdfComparisonRow[] = [
     { label: 'Info Kredit', cells: [], isSectionHeader: true },
     infoRow('Nilai Kredit', principalDisplay),
     infoRow('Tenor', tenorDisplay),
@@ -173,6 +238,37 @@ function buildComparisonRows(scenarios: ScenarioForPdf[]): PdfComparisonRow[] {
       (s) => s.summary.effectiveAnnualRate,
     ),
   ];
+
+  if (affordability && affordability.results.length === scenarios.length) {
+    const results = affordability.results;
+    const bandLabel = (r: AffordabilityResult) =>
+      r.riskBand === 'safe' ? 'Aman' : r.riskBand === 'watch' ? 'Waspada' : 'Berisiko';
+
+    rows.push({ label: 'Kemampuan Bayar', cells: [], isSectionHeader: true });
+    rows.push({
+      label: 'DSR Tertinggi',
+      cells: results.map((r) => ({
+        value: formatPercent(r.dsrAtHighest, 1),
+        hint: 'normal' as const,
+      })),
+    });
+    rows.push({
+      label: 'Surplus Terendah',
+      cells: results.map((r) => ({
+        value: formatIDRCompact(r.netSurplusAtHighest),
+        hint: 'normal' as const,
+      })),
+    });
+    rows.push({
+      label: 'Status Risiko',
+      cells: results.map((r) => ({
+        value: bandLabel(r),
+        hint: 'normal' as const,
+      })),
+    });
+  }
+
+  return rows;
 }
 
 // ─── Section builders ─────────────────────────────────────────────────────────
@@ -319,4 +415,66 @@ function buildTotalRow(summary: MortgageSummary): PdfTotalRow {
 
 function parseFormNumber(value: string): number {
   return parseFloat(value.replace(/[^0-9.]/g, '')) || 0;
+}
+
+function makeDateTag(): string {
+  const now = new Date();
+  const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+  const hh = String(now.getHours()).padStart(2, '0');
+  const mm = String(now.getMinutes()).padStart(2, '0');
+  return `${dateStr}_${hh}${mm}`;
+}
+
+function makeSingleFilename(): string {
+  return `SimulasiKPR_${makeDateTag()}.pdf`;
+}
+
+function makeMultiFilename(): string {
+  return `PerbandinganKPR_${makeDateTag()}.pdf`;
+}
+
+// ─── Affordability section builder ───────────────────────────────────────────
+
+function buildAffordabilitySection(
+  form: AffordabilityFormState,
+  result: AffordabilityResult,
+): PdfAffordabilitySection {
+  const totalIncome = (parseFloat(form.monthlyIncome) || 0) + (parseFloat(form.spouseIncome) || 0);
+  const existingDebt = parseFloat(form.existingMonthlyDebt) || 0;
+  const livingExpense = parseFloat(form.monthlyLivingExpense) || 0;
+  const maxDsr = Math.max(0.01, (parseFloat(form.maxDSRPercent) || 35) / 100);
+
+  const bandLabel = (band: AffordabilityResult['riskBand']) =>
+    band === 'safe' ? 'Aman' : band === 'watch' ? 'Waspada' : 'Berisiko';
+
+  const stressRows: PdfStressRow[] = result.stressTest.map((row) => ({
+    scenario:
+      row.rateOffsetPct === 0
+        ? `${formatPercent(row.annualRate, 0)} (kini)`
+        : `+${row.rateOffsetPct}%`,
+    installment: formatIDR(row.installment),
+    dsr: formatPercent(row.dsr, 1),
+    dsrOverLimit: row.dsr > maxDsr,
+    netSurplus: formatIDR(row.netSurplus),
+    surplusNegative: row.netSurplus < 0,
+    band: bandLabel(row.band),
+    bandType: row.band,
+  }));
+
+  return {
+    totalIncome: formatIDR(totalIncome) + '/bln',
+    existingDebt: formatIDR(existingDebt) + '/bln',
+    livingExpense: formatIDR(livingExpense) + '/bln',
+    maxDsr: formatPercent(maxDsr, 0),
+    dsrNow: formatPercent(result.dsrNow, 1),
+    dsrAtHighest: formatPercent(result.dsrAtHighest, 1),
+    dsrAtHighestOverLimit: result.dsrAtHighest > maxDsr,
+    netSurplusAtHighest: formatIDR(result.netSurplusAtHighest),
+    surplusNegative: result.netSurplusAtHighest < 0,
+    riskBand: bandLabel(result.riskBand),
+    riskBandType: result.riskBand,
+    maxAffordableLoan: formatIDR(result.maxAffordableLoan),
+    minRecommendedIncome: formatIDR(result.minRecommendedIncome) + '/bln',
+    stressRows,
+  };
 }

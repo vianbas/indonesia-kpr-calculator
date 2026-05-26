@@ -38,7 +38,12 @@
 import jsPDF from 'jspdf';
 import { autoTable } from 'jspdf-autotable';
 import type { CellHookData, Color, RowInput } from 'jspdf-autotable';
-import type { PdfExportData, PdfScheduleRow, PdfMultiScenarioExportData } from './pdfTypes';
+import type {
+  PdfExportData,
+  PdfScheduleRow,
+  PdfMultiScenarioExportData,
+  PdfAffordabilitySection,
+} from './pdfTypes';
 
 // ─── Type helpers ─────────────────────────────────────────────────────────────
 
@@ -104,6 +109,9 @@ export function renderMultiScenarioPdf(data: PdfMultiScenarioExportData): jsPDF 
     sy = renderLoanInfoSection(doc, sy, scenario);
     sy = renderInterestSchemeSection(doc, sy, scenario);
     sy = renderFinancialSummarySection(doc, sy, scenario);
+    if (scenario.affordability) {
+      sy = renderAffordabilitySection(doc, sy, scenario.affordability);
+    }
     renderAmortizationSection(doc, sy, scenario);
   }
 
@@ -124,6 +132,9 @@ export function renderPdf(data: PdfExportData): jsPDF {
   y = renderLoanInfoSection(doc, y, data);
   y = renderInterestSchemeSection(doc, y, data);
   y = renderFinancialSummarySection(doc, y, data);
+  if (data.affordability) {
+    y = renderAffordabilitySection(doc, y, data.affordability);
+  }
   renderAmortizationSection(doc, y, data);
   renderPageNumbers(doc);
 
@@ -260,11 +271,162 @@ function renderFinancialSummarySection(doc: DocWithAutoTable, y: number, data: P
   return getLastTableY(doc, y) + 7;
 }
 
-// ─── Section D: Amortization schedule ────────────────────────────────────────
+// ─── Section D: Affordability analysis ───────────────────────────────────────
+
+function renderAffordabilitySection(
+  doc: DocWithAutoTable,
+  y: number,
+  af: PdfAffordabilitySection,
+): number {
+  y = ensureSpace(doc, y, 60);
+  y = renderSectionTitle(doc, 'D.  ANALISIS KEMAMPUAN BAYAR', y);
+
+  // ── Input summary (compact 2-column) ──────────────────────────────────────
+  const inputRows: [string, string][] = [
+    ['Penghasilan Total', af.totalIncome],
+    ['Hutang / Cicilan Lain', af.existingDebt],
+    ['Pengeluaran Hidup', af.livingExpense],
+    ['Batas DSR', af.maxDsr],
+  ];
+
+  autoTable(doc, {
+    startY: y,
+    margin: { left: M, right: M },
+    tableWidth: CONTENT_W,
+    head: [],
+    body: inputRows,
+    theme: 'plain',
+    styles: { fontSize: 8, cellPadding: { top: 2.4, bottom: 2.4, left: 3.5, right: 3.5 } },
+    columnStyles: {
+      0: { cellWidth: 58, fontStyle: 'bold', fillColor: C.grayBg as Color, textColor: C.gray as Color },
+      1: { textColor: C.black as Color },
+    },
+  });
+  y = getLastTableY(doc, y) + 4;
+
+  // ── Results (2-column) ────────────────────────────────────────────────────
+  const bandFill: Color =
+    af.riskBandType === 'safe'
+      ? [220, 252, 231]
+      : af.riskBandType === 'watch'
+        ? [254, 249, 195]
+        : [254, 226, 226];
+  const bandText: Color =
+    af.riskBandType === 'safe'
+      ? [22, 101, 52]
+      : af.riskBandType === 'watch'
+        ? [133, 77, 14]
+        : [153, 27, 27];
+
+  const resultRows: [string, string][] = [
+    ['DSR Saat Ini', af.dsrNow],
+    ['DSR Tertinggi', af.dsrAtHighest],
+    ['Surplus Terendah', af.netSurplusAtHighest],
+    ['Maks. Kredit Terjangkau', af.maxAffordableLoan],
+    ['Min. Penghasilan Disarankan', af.minRecommendedIncome],
+    ['Status Risiko', af.riskBand],
+  ];
+
+  const dsrHighestIdx = 1;
+  const surplusIdx = 2;
+  const bandIdx = 5;
+
+  autoTable(doc, {
+    startY: y,
+    margin: { left: M, right: M },
+    tableWidth: CONTENT_W,
+    head: [],
+    body: resultRows,
+    theme: 'plain',
+    styles: { fontSize: 8.5, cellPadding: { top: 2.8, bottom: 2.8, left: 3.5, right: 3.5 } },
+    columnStyles: {
+      0: { cellWidth: 68, fontStyle: 'bold', fillColor: C.grayBg as Color, textColor: C.black as Color },
+      1: { fontStyle: 'bold', textColor: C.black as Color },
+    },
+    didParseCell: (d: CellHookData) => {
+      if (d.section !== 'body' || d.column.index !== 1) return;
+      if (d.row.index === dsrHighestIdx && af.dsrAtHighestOverLimit) {
+        d.cell.styles.textColor = C.orange as Color;
+      }
+      if (d.row.index === surplusIdx && af.surplusNegative) {
+        d.cell.styles.textColor = C.orange as Color;
+      }
+      if (d.row.index === bandIdx) {
+        d.cell.styles.fillColor = bandFill;
+        d.cell.styles.textColor = bandText;
+      }
+    },
+  });
+  y = getLastTableY(doc, y) + 4;
+
+  // ── Stress test table ─────────────────────────────────────────────────────
+  y = ensureSpace(doc, y, 38);
+
+  const stressHead = [['Skenario', 'Cicilan', 'DSR', 'Surplus', 'Status']];
+  const stressBody = af.stressRows.map((r) => [
+    r.scenario,
+    r.installment,
+    r.dsr,
+    r.netSurplus,
+    r.band,
+  ]);
+
+  autoTable(doc, {
+    startY: y,
+    margin: { left: M, right: M },
+    tableWidth: CONTENT_W,
+    head: stressHead,
+    body: stressBody,
+    styles: { fontSize: 8, cellPadding: { top: 2.5, bottom: 2.5, left: 3, right: 3 } },
+    headStyles: {
+      fillColor: C.indigoDark as Color,
+      textColor: C.white as Color,
+      fontStyle: 'bold',
+      halign: 'center',
+      fontSize: 7.5,
+    },
+    alternateRowStyles: { fillColor: C.grayBg as Color },
+    columnStyles: {
+      0: { cellWidth: 30, fontStyle: 'bold' },
+      1: { cellWidth: 40, halign: 'right' as const },
+      2: { cellWidth: 22, halign: 'center' as const },
+      3: { cellWidth: CONTENT_W - 30 - 40 - 22 - 24, halign: 'right' as const },
+      4: { cellWidth: 24, halign: 'center' as const, fontStyle: 'bold' },
+    },
+    didParseCell: (d: CellHookData) => {
+      if (d.section !== 'body') return;
+      const row = af.stressRows[d.row.index];
+      if (!row) return;
+      if (d.column.index === 2 && row.dsrOverLimit) {
+        d.cell.styles.textColor = C.orange as Color;
+        d.cell.styles.fontStyle = 'bold';
+      }
+      if (d.column.index === 3 && row.surplusNegative) {
+        d.cell.styles.textColor = C.orange as Color;
+      }
+      if (d.column.index === 4) {
+        if (row.bandType === 'safe') {
+          d.cell.styles.fillColor = [220, 252, 231] as Color;
+          d.cell.styles.textColor = [22, 101, 52] as Color;
+        } else if (row.bandType === 'watch') {
+          d.cell.styles.fillColor = [254, 249, 195] as Color;
+          d.cell.styles.textColor = [133, 77, 14] as Color;
+        } else {
+          d.cell.styles.fillColor = [254, 226, 226] as Color;
+          d.cell.styles.textColor = [153, 27, 27] as Color;
+        }
+      }
+    },
+  });
+
+  return getLastTableY(doc, y) + 7;
+}
+
+// ─── Section E: Amortization schedule ────────────────────────────────────────
 
 function renderAmortizationSection(doc: DocWithAutoTable, y: number, data: PdfExportData): void {
   y = ensureSpace(doc, y, 45);
-  y = renderSectionTitle(doc, 'D.  JADWAL ANGSURAN (AMORTISASI)', y);
+  y = renderSectionTitle(doc, 'E.  JADWAL ANGSURAN (AMORTISASI)', y);
 
   const { hasExtraPayment } = data;
   const numCols = hasExtraPayment ? 8 : 7;

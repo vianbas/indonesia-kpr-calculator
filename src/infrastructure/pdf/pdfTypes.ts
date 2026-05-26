@@ -58,6 +58,36 @@ export interface PdfTotalRow {
   finalBalance: string;
 }
 
+// ─── Affordability section types ─────────────────────────────────────────────
+
+export interface PdfStressRow {
+  scenario: string;         // "11% (kini)" | "+1%" | "+2%" | "+3%"
+  installment: string;
+  dsr: string;
+  dsrOverLimit: boolean;
+  netSurplus: string;
+  surplusNegative: boolean;
+  band: string;             // "Aman" | "Waspada" | "Berisiko"
+  bandType: 'safe' | 'watch' | 'risky';
+}
+
+export interface PdfAffordabilitySection {
+  totalIncome: string;
+  existingDebt: string;
+  livingExpense: string;
+  maxDsr: string;
+  dsrNow: string;
+  dsrAtHighest: string;
+  dsrAtHighestOverLimit: boolean;
+  netSurplusAtHighest: string;
+  surplusNegative: boolean;
+  riskBand: string;
+  riskBandType: 'safe' | 'watch' | 'risky';
+  maxAffordableLoan: string;
+  minRecommendedIncome: string;
+  stressRows: PdfStressRow[];
+}
+
 /** Top-level data bag passed from exportService → pdfRenderer */
 export interface PdfExportData {
   generatedAt: string;
@@ -70,6 +100,8 @@ export interface PdfExportData {
   totalRow: PdfTotalRow;
   /** True when any schedule row has an extra payment — drives the 8-column amortization table */
   hasExtraPayment: boolean;
+  /** Present when the user filled in income data before exporting */
+  affordability?: PdfAffordabilitySection;
 }
 
 // ─── Multi-scenario types ─────────────────────────────────────────────────────
