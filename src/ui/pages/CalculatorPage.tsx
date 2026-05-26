@@ -13,6 +13,7 @@ import { ScenarioComparisonPanel } from '../components/scenarios/ScenarioCompari
 import { ChartSection } from '../components/charts/ChartSection';
 import { EarlyRepaymentSummary } from '../components/results/EarlyRepaymentSummary';
 import { KprFeesSummary } from '../components/results/KprFeesSummary';
+import { AffordabilityPanel } from '../components/affordability/AffordabilityPanel';
 import {
   FormIncompleteState,
   ValidationErrorState,
@@ -96,6 +97,9 @@ export function CalculatorPage() {
       {activeCount > 1 && calculated.length >= 2 && (
         <ScenarioComparisonPanel scenarios={calculated} />
       )}
+
+      {/* Affordability + stress test — shown whenever ≥ 1 scenario has results */}
+      {calculated.length >= 1 && <AffordabilityPanel calculated={calculated} />}
     </div>
   );
 }
