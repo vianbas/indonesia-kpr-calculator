@@ -88,6 +88,27 @@ export interface PdfAffordabilitySection {
   stressRows: PdfStressRow[];
 }
 
+// ─── Refinancing section types ────────────────────────────────────────────────
+
+export interface PdfRefinancingSection {
+  remainingBalance: string;
+  currentRate: string;
+  remainingMonths: string;
+  newRate: string;
+  newTenorMonths: string;
+  currentMonthlyPayment: string;
+  newMonthlyPayment: string;
+  monthlySavings: string;
+  savingsNegative: boolean;
+  totalSwitchingCost: string;
+  totalInterestSavings: string;
+  netSavings: string;
+  netSavingsNegative: boolean;
+  breakEvenMonths: string;
+  recommendation: string;
+  recommendationType: 'worth_it' | 'marginal' | 'not_worth_it';
+}
+
 /** Top-level data bag passed from exportService → pdfRenderer */
 export interface PdfExportData {
   generatedAt: string;
@@ -102,6 +123,8 @@ export interface PdfExportData {
   hasExtraPayment: boolean;
   /** Present when the user filled in income data before exporting */
   affordability?: PdfAffordabilitySection;
+  /** Present when the user filled in refinancing data before exporting */
+  refinancing?: PdfRefinancingSection;
 }
 
 // ─── Multi-scenario types ─────────────────────────────────────────────────────

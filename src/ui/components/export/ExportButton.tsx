@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button } from '../common/Button';
 import type { MortgageFormState } from '../../../application/store/formTypes';
 import type { MortgageSummary } from '../../../domain/models/amortization.types';
-import type { AffordabilityExportData } from '../../../infrastructure/pdf/exportService';
+import type { AffordabilityExportData, RefinancingExportData } from '../../../infrastructure/pdf/exportService';
 
 interface ScenarioExportItem {
   label: string;
@@ -17,6 +17,8 @@ interface Props {
   scenarios?: ScenarioExportItem[];
   /** When provided, a section D (affordability) is included in the PDF. */
   affordability?: AffordabilityExportData;
+  /** When provided, a refinancing section is included in the PDF. */
+  refinancing?: RefinancingExportData;
 }
 
 const DownloadIcon = () => (
@@ -61,7 +63,7 @@ const SpinnerIcon = () => (
   </svg>
 );
 
-export function ExportButton({ form, summary, scenarios = [], affordability }: Props) {
+export function ExportButton({ form, summary, scenarios = [], affordability, refinancing }: Props) {
   const [status, setStatus] = useState<'idle' | 'loading' | 'sharing' | 'error'>('idle');
 
   const isMulti = scenarios.length >= 2;
@@ -72,9 +74,9 @@ export function ExportButton({ form, summary, scenarios = [], affordability }: P
     try {
       const svc = await import('../../../infrastructure/pdf/exportService');
       if (isMulti) {
-        await svc.exportMultiScenarioPdf(scenarios, affordability);
+        await svc.exportMultiScenarioPdf(scenarios, affordability, refinancing);
       } else {
-        await svc.exportToPdf(form, summary, affordability);
+        await svc.exportToPdf(form, summary, affordability, refinancing);
       }
       setStatus('idle');
     } catch (err) {
@@ -91,9 +93,9 @@ export function ExportButton({ form, summary, scenarios = [], affordability }: P
       let filename: string;
 
       if (isMulti) {
-        ({ blob, filename } = await svc.buildMultiPdfBlob(scenarios, affordability));
+        ({ blob, filename } = await svc.buildMultiPdfBlob(scenarios, affordability, refinancing));
       } else {
-        ({ blob, filename } = await svc.buildPdfBlob(form, summary, affordability));
+        ({ blob, filename } = await svc.buildPdfBlob(form, summary, affordability, refinancing));
       }
 
       const file = new File([blob], filename, { type: 'application/pdf' });

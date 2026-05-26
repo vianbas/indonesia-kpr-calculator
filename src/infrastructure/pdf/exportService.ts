@@ -13,11 +13,14 @@ import type {
   PdfMultiScenarioExportData,
   PdfAffordabilitySection,
   PdfStressRow,
+  PdfRefinancingSection,
 } from './pdfTypes';
 import type { MortgageFormState } from '../../application/store/formTypes';
 import type { MortgageSummary } from '../../domain/models/amortization.types';
 import type { AffordabilityFormState } from '../../application/store/affordabilityTypes';
 import type { AffordabilityResult } from '../../domain/calculators/affordability';
+import type { RefinancingFormState } from '../../application/store/refinancingTypes';
+import type { RefinancingResult } from '../../domain/calculators/refinancing';
 import { formatIDR, formatIDRCompact, formatPercent, formatTenor, monthToYear } from '../../domain/utils/currency';
 import { formatDateID } from '../../domain/utils/date';
 
@@ -35,12 +38,18 @@ export interface AffordabilityExportData {
   results: AffordabilityResult[];
 }
 
+export interface RefinancingExportData {
+  form: RefinancingFormState;
+  result: RefinancingResult;
+}
+
 // ─── Public API ───────────────────────────────────────────────────────────────
 
 export function buildPdfExportData(
   form: MortgageFormState,
   summary: MortgageSummary,
   affordability?: { form: AffordabilityFormState; result: AffordabilityResult },
+  refinancing?: RefinancingExportData,
 ): PdfExportData {
   const now = new Date();
   const generatedAt =
@@ -61,6 +70,9 @@ export function buildPdfExportData(
     affordability: affordability
       ? buildAffordabilitySection(affordability.form, affordability.result)
       : undefined,
+    refinancing: refinancing
+      ? buildRefinancingSection(refinancing.form, refinancing.result)
+      : undefined,
   };
 }
 
@@ -68,13 +80,14 @@ export async function exportToPdf(
   form: MortgageFormState,
   summary: MortgageSummary,
   affordability?: AffordabilityExportData,
+  refinancing?: RefinancingExportData,
 ): Promise<void> {
   return Sentry.startSpan({ name: 'kpr.pdf_export', op: 'pdf.export' }, async () => {
     try {
       const afData = affordability?.results[0]
         ? { form: affordability.form, result: affordability.results[0] }
         : undefined;
-      const data = buildPdfExportData(form, summary, afData);
+      const data = buildPdfExportData(form, summary, afData, refinancing);
       const doc = renderPdf(data);
       doc.save(makeSingleFilename());
     } catch (err) {
@@ -87,10 +100,11 @@ export async function exportToPdf(
 export async function exportMultiScenarioPdf(
   scenarios: ScenarioForPdf[],
   affordability?: AffordabilityExportData,
+  refinancing?: RefinancingExportData,
 ): Promise<void> {
   return Sentry.startSpan({ name: 'kpr.pdf_export_multi', op: 'pdf.export' }, async () => {
     try {
-      const data = buildMultiScenarioExportData(scenarios, affordability);
+      const data = buildMultiScenarioExportData(scenarios, affordability, refinancing);
       const doc = renderMultiScenarioPdf(data);
       doc.save(makeMultiFilename());
     } catch (err) {
@@ -105,13 +119,14 @@ export async function buildPdfBlob(
   form: MortgageFormState,
   summary: MortgageSummary,
   affordability?: AffordabilityExportData,
+  refinancing?: RefinancingExportData,
 ): Promise<{ blob: Blob; filename: string }> {
   return Sentry.startSpan({ name: 'kpr.pdf_blob', op: 'pdf.export' }, async () => {
     try {
       const afData = affordability?.results[0]
         ? { form: affordability.form, result: affordability.results[0] }
         : undefined;
-      const data = buildPdfExportData(form, summary, afData);
+      const data = buildPdfExportData(form, summary, afData, refinancing);
       const doc = renderPdf(data);
       const filename = makeSingleFilename();
       const blob = doc.output('blob');
@@ -127,10 +142,11 @@ export async function buildPdfBlob(
 export async function buildMultiPdfBlob(
   scenarios: ScenarioForPdf[],
   affordability?: AffordabilityExportData,
+  refinancing?: RefinancingExportData,
 ): Promise<{ blob: Blob; filename: string }> {
   return Sentry.startSpan({ name: 'kpr.pdf_blob_multi', op: 'pdf.export' }, async () => {
     try {
-      const data = buildMultiScenarioExportData(scenarios, affordability);
+      const data = buildMultiScenarioExportData(scenarios, affordability, refinancing);
       const doc = renderMultiScenarioPdf(data);
       const filename = makeMultiFilename();
       const blob = doc.output('blob');
@@ -145,6 +161,7 @@ export async function buildMultiPdfBlob(
 function buildMultiScenarioExportData(
   scenarios: ScenarioForPdf[],
   affordability?: AffordabilityExportData,
+  refinancing?: RefinancingExportData,
 ): PdfMultiScenarioExportData {
   const now = new Date();
   const generatedAt =
@@ -159,6 +176,8 @@ function buildMultiScenarioExportData(
       affordability?.results[i]
         ? { form: affordability.form, result: affordability.results[i] }
         : undefined,
+      // Refinancing is global — only include it in the first scenario to avoid duplication
+      i === 0 ? refinancing : undefined,
     ),
     generatedAt,
     label: s.label,
@@ -431,6 +450,44 @@ function makeSingleFilename(): string {
 
 function makeMultiFilename(): string {
   return `PerbandinganKPR_${makeDateTag()}.pdf`;
+}
+
+// ─── Refinancing section builder ─────────────────────────────────────────────
+
+function buildRefinancingSection(
+  form: RefinancingFormState,
+  result: RefinancingResult,
+): PdfRefinancingSection {
+  const recLabel =
+    result.recommendation === 'worth_it'
+      ? 'Disarankan'
+      : result.recommendation === 'marginal'
+        ? 'Perlu Pertimbangan'
+        : 'Tidak Disarankan';
+
+  return {
+    remainingBalance: formatIDR(parseFloat(form.remainingBalance) || 0),
+    currentRate: formatPercent((parseFloat(form.currentAnnualRatePercent) || 0) / 100, 2, true),
+    remainingMonths: `${form.remainingMonths} bulan`,
+    newRate: formatPercent((parseFloat(form.newAnnualRatePercent) || 0) / 100, 2, true),
+    newTenorMonths: `${form.newTenorMonths} bulan`,
+    currentMonthlyPayment: formatIDR(result.currentMonthlyPayment),
+    newMonthlyPayment: formatIDR(result.newMonthlyPayment),
+    monthlySavings: formatIDR(Math.abs(result.monthlySavings)),
+    savingsNegative: result.monthlySavings < 0,
+    totalSwitchingCost: formatIDR(result.totalSwitchingCost),
+    totalInterestSavings: formatIDR(Math.abs(result.totalInterestSavings)),
+    netSavings: formatIDR(Math.abs(result.netSavings)),
+    netSavingsNegative: result.netSavings < 0,
+    breakEvenMonths:
+      result.breakEvenMonths === null
+        ? 'Tidak tercapai'
+        : result.breakEvenMonths === 0
+          ? 'Segera'
+          : `${result.breakEvenMonths} bulan`,
+    recommendation: recLabel,
+    recommendationType: result.recommendation,
+  };
 }
 
 // ─── Affordability section builder ───────────────────────────────────────────

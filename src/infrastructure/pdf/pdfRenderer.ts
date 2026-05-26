@@ -43,6 +43,7 @@ import type {
   PdfScheduleRow,
   PdfMultiScenarioExportData,
   PdfAffordabilitySection,
+  PdfRefinancingSection,
 } from './pdfTypes';
 
 // ─── Type helpers ─────────────────────────────────────────────────────────────
@@ -112,6 +113,9 @@ export function renderMultiScenarioPdf(data: PdfMultiScenarioExportData): jsPDF 
     if (scenario.affordability) {
       sy = renderAffordabilitySection(doc, sy, scenario.affordability);
     }
+    if (scenario.refinancing) {
+      sy = renderRefinancingSection(doc, sy, scenario.refinancing);
+    }
     renderAmortizationSection(doc, sy, scenario);
   }
 
@@ -134,6 +138,9 @@ export function renderPdf(data: PdfExportData): jsPDF {
   y = renderFinancialSummarySection(doc, y, data);
   if (data.affordability) {
     y = renderAffordabilitySection(doc, y, data.affordability);
+  }
+  if (data.refinancing) {
+    y = renderRefinancingSection(doc, y, data.refinancing);
   }
   renderAmortizationSection(doc, y, data);
   renderPageNumbers(doc);
@@ -422,11 +429,115 @@ function renderAffordabilitySection(
   return getLastTableY(doc, y) + 7;
 }
 
-// ─── Section E: Amortization schedule ────────────────────────────────────────
+// ─── Section E: Refinancing analysis ─────────────────────────────────────────
+
+function renderRefinancingSection(
+  doc: DocWithAutoTable,
+  y: number,
+  rf: PdfRefinancingSection,
+): number {
+  y = ensureSpace(doc, y, 60);
+
+  const sectionLetter = 'E';
+  y = renderSectionTitle(doc, `${sectionLetter}.  ANALISIS REFINANCING`, y);
+
+  // ── Input summary ─────────────────────────────────────────────────────────
+  const inputRows: [string, string][] = [
+    ['Sisa Pokok Hutang',  rf.remainingBalance],
+    ['Suku Bunga Saat Ini', rf.currentRate],
+    ['Sisa Tenor',         rf.remainingMonths],
+    ['Suku Bunga Baru',    rf.newRate],
+    ['Tenor Baru',         rf.newTenorMonths],
+    ['Total Biaya Pindah', rf.totalSwitchingCost],
+  ];
+
+  autoTable(doc, {
+    startY: y,
+    margin: { left: M, right: M },
+    tableWidth: CONTENT_W,
+    head: [],
+    body: inputRows,
+    theme: 'plain',
+    styles: { fontSize: 8, cellPadding: { top: 2.4, bottom: 2.4, left: 3.5, right: 3.5 } },
+    columnStyles: {
+      0: { cellWidth: 58, fontStyle: 'bold', fillColor: C.grayBg as Color, textColor: C.gray as Color },
+      1: { textColor: C.black as Color },
+    },
+  });
+  y = getLastTableY(doc, y) + 4;
+
+  // ── Results ───────────────────────────────────────────────────────────────
+  const recFill: Color =
+    rf.recommendationType === 'worth_it'
+      ? [220, 252, 231]
+      : rf.recommendationType === 'marginal'
+        ? [254, 249, 195]
+        : [254, 226, 226];
+  const recText: Color =
+    rf.recommendationType === 'worth_it'
+      ? [22, 101, 52]
+      : rf.recommendationType === 'marginal'
+        ? [133, 77, 14]
+        : [153, 27, 27];
+
+  const monthlySavingsLabel = rf.savingsNegative
+    ? `Naik ${rf.monthlySavings}/bln`
+    : `Hemat ${rf.monthlySavings}/bln`;
+
+  const resultRows: [string, string][] = [
+    ['Cicilan Saat Ini',       rf.currentMonthlyPayment],
+    ['Cicilan Baru',           rf.newMonthlyPayment],
+    ['Selisih Cicilan',        monthlySavingsLabel],
+    ['Penghematan Bunga',      rf.totalInterestSavings],
+    ['Penghematan Bersih',     rf.netSavings],
+    ['Break-Even',             rf.breakEvenMonths],
+    ['Rekomendasi',            rf.recommendation],
+  ];
+
+  const newPaymentIdx = 1;
+  const savingsIdx = 2;
+  const netSavingsIdx = 4;
+  const recIdx = 6;
+
+  autoTable(doc, {
+    startY: y,
+    margin: { left: M, right: M },
+    tableWidth: CONTENT_W,
+    head: [],
+    body: resultRows,
+    theme: 'plain',
+    styles: { fontSize: 8.5, cellPadding: { top: 2.8, bottom: 2.8, left: 3.5, right: 3.5 } },
+    columnStyles: {
+      0: { cellWidth: 68, fontStyle: 'bold', fillColor: C.grayBg as Color, textColor: C.black as Color },
+      1: { fontStyle: 'bold', textColor: C.black as Color },
+    },
+    didParseCell: (d: CellHookData) => {
+      if (d.section !== 'body' || d.column.index !== 1) return;
+      if (d.row.index === newPaymentIdx && !rf.savingsNegative) {
+        d.cell.styles.textColor = C.green as Color;
+      }
+      if (d.row.index === savingsIdx) {
+        d.cell.styles.textColor = rf.savingsNegative ? (C.orange as Color) : (C.green as Color);
+      }
+      if (d.row.index === netSavingsIdx) {
+        d.cell.styles.textColor = rf.netSavingsNegative ? (C.orange as Color) : (C.green as Color);
+      }
+      if (d.row.index === recIdx) {
+        d.cell.styles.fillColor = recFill;
+        d.cell.styles.textColor = recText;
+      }
+    },
+  });
+
+  return getLastTableY(doc, y) + 7;
+}
+
+// ─── Section F: Amortization schedule ────────────────────────────────────────
 
 function renderAmortizationSection(doc: DocWithAutoTable, y: number, data: PdfExportData): void {
   y = ensureSpace(doc, y, 45);
-  y = renderSectionTitle(doc, 'E.  JADWAL ANGSURAN (AMORTISASI)', y);
+  const amortLetter = data.refinancing ? 'F' : 'E';
+  y = renderSectionTitle(doc, `${amortLetter}.  JADWAL ANGSURAN (AMORTISASI)`, y);
 
   const { hasExtraPayment } = data;
   const numCols = hasExtraPayment ? 8 : 7;
