@@ -49,6 +49,11 @@ export function createDefaultFormState(): MortgageFormState {
     appraisalFeeAmount: '0',
     notaryFeePercent: '0.75',
     bphtbPercent: '5',
+    ppnEnabled: false,
+    ppnPercent: '11',
+    insuranceEnabled: false,
+    lifeInsurancePremiumPercent: '0.2',
+    fireInsurancePremiumPercent: '0.075',
     earlyRepaymentMode: 'none',
     extraMonthlyAmount: '',
     extraMonthlyStartMonth: '1',
@@ -179,6 +184,16 @@ export function formReducer(state: MortgageFormState, action: FormAction): Mortg
       return { ...state, notaryFeePercent: action.value };
     case 'SET_BPHTB_PERCENT':
       return { ...state, bphtbPercent: action.value };
+    case 'SET_PPN_ENABLED':
+      return { ...state, ppnEnabled: action.value };
+    case 'SET_PPN_PERCENT':
+      return { ...state, ppnPercent: action.value };
+    case 'SET_INSURANCE_ENABLED':
+      return { ...state, insuranceEnabled: action.value };
+    case 'SET_LIFE_INSURANCE_PREMIUM_PERCENT':
+      return { ...state, lifeInsurancePremiumPercent: action.value };
+    case 'SET_FIRE_INSURANCE_PREMIUM_PERCENT':
+      return { ...state, fireInsurancePremiumPercent: action.value };
 
     // ── Early repayment ───────────────────────────────────────────────────────
     case 'SET_EARLY_REPAYMENT_MODE':

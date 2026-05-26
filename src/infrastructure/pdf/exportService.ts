@@ -376,6 +376,19 @@ function buildFinancialRows(summary: MortgageSummary): PdfFinancialRow[] {
     });
   }
 
+  // Upfront / cash-to-close section (adminFee already shown above in loan summary)
+  if (summary.totalUpfrontCost > 0) {
+    rows.push({ label: 'Uang Muka (DP)', value: formatIDR(summary.downPayment), hint: 'normal' });
+    if (summary.provisionFee > 0) rows.push({ label: 'Biaya Provisi', value: formatIDR(summary.provisionFee), hint: 'normal' });
+    if (summary.appraisalFee > 0) rows.push({ label: 'Biaya Appraisal', value: formatIDR(summary.appraisalFee), hint: 'normal' });
+    if (summary.notaryFee > 0) rows.push({ label: 'Biaya Notaris / PPAT', value: formatIDR(summary.notaryFee), hint: 'normal' });
+    if (summary.bphtb > 0) rows.push({ label: 'BPHTB', value: formatIDR(summary.bphtb), hint: 'normal' });
+    if (summary.ppnAmount > 0) rows.push({ label: 'PPN', value: formatIDR(summary.ppnAmount), hint: 'normal' });
+    if (summary.lifeInsurance > 0) rows.push({ label: 'Asuransi Jiwa KPR (est.)', value: formatIDR(summary.lifeInsurance), hint: 'normal' });
+    if (summary.fireInsurance > 0) rows.push({ label: 'Asuransi Kebakaran (est.)', value: formatIDR(summary.fireInsurance), hint: 'normal' });
+    rows.push({ label: 'Total Dana Awal (Akad)', value: formatIDR(summary.totalUpfrontCost), hint: 'paid' });
+  }
+
   return rows;
 }
 

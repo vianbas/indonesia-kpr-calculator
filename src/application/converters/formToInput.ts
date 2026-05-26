@@ -117,7 +117,7 @@ export function formToMortgageInput(form: MortgageFormState): ConversionResult {
       includeAdminFee: form.includeAdminFee,
       adminFeeAmount: parsePositiveNumber(form.adminFeeAmount, true) ?? 0,
       earlyRepayment: buildEarlyRepaymentConfig(form),
-      kprFees: buildKprFees(form, propertyPrice, principalAmount),
+      kprFees: buildKprFees(form, propertyPrice, principalAmount, tenorMonths),
     },
     conversionErrors: [],
   };
@@ -129,6 +129,7 @@ function buildKprFees(
   form: import('../store/formTypes').MortgageFormState,
   propertyPrice: number,
   principalAmount: number,
+  tenorMonths: number,
 ): import('../../domain/models/mortgage.types').MortgageInput['kprFees'] {
   if (!form.includeKprFees) return undefined;
 
@@ -136,12 +137,29 @@ function buildKprFees(
   const notaryPct = (parseFloat(form.notaryFeePercent) || 0) / 100;
   const bphtbPct = (parseFloat(form.bphtbPercent) || 0) / 100;
 
+  const tenorYears = tenorMonths / 12;
+
+  const ppnAmount = form.ppnEnabled
+    ? Math.round(((parseFloat(form.ppnPercent) || 0) / 100) * propertyPrice)
+    : 0;
+
+  const lifeInsurance = form.insuranceEnabled
+    ? Math.round(((parseFloat(form.lifeInsurancePremiumPercent) || 0) / 100) * principalAmount * tenorYears)
+    : 0;
+
+  const fireInsurance = form.insuranceEnabled
+    ? Math.round(((parseFloat(form.fireInsurancePremiumPercent) || 0) / 100) * propertyPrice * tenorYears)
+    : 0;
+
   return {
     downPayment: Math.max(0, propertyPrice - principalAmount),
     provisionFee: Math.round(provisionPct * principalAmount),
     appraisalFee: parsePositiveNumber(form.appraisalFeeAmount, true) ?? 0,
     notaryFee: Math.round(notaryPct * propertyPrice),
     bphtb: Math.round(bphtbPct * propertyPrice),
+    ppnAmount,
+    lifeInsurance,
+    fireInsurance,
   };
 }
 

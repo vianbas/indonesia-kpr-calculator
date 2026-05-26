@@ -40,6 +40,11 @@ function makeForm(overrides: Partial<MortgageFormState> = {}): MortgageFormState
     appraisalFeeAmount: '0',
     notaryFeePercent: '0.75',
     bphtbPercent: '5',
+    ppnEnabled: false,
+    ppnPercent: '11',
+    insuranceEnabled: false,
+    lifeInsurancePremiumPercent: '0.2',
+    fireInsurancePremiumPercent: '0.075',
     ...overrides,
   };
 }

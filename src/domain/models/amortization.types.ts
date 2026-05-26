@@ -92,6 +92,12 @@ export interface MortgageSummary {
   notaryFee: number;
   /** BPHTB (land/building acquisition tax) in IDR; 0 when not enabled */
   bphtb: number;
-  /** DP + adminFee + provisionFee + appraisalFee + notaryFee + bphtb */
+  /** PPN (property VAT) in IDR; 0 when not enabled */
+  ppnAmount: number;
+  /** Life insurance premium (upfront total for full tenor) in IDR; 0 when not enabled */
+  lifeInsurance: number;
+  /** Fire/property insurance premium (upfront total for full tenor) in IDR; 0 when not enabled */
+  fireInsurance: number;
+  /** DP + adminFee + provisionFee + appraisalFee + notaryFee + bphtb + ppnAmount + lifeInsurance + fireInsurance */
   totalUpfrontCost: number;
 }
