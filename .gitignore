@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# CodeGraph semantic index (generated locally, not committed)
+.codegraph/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
