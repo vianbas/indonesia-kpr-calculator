@@ -44,8 +44,6 @@ function groupLines(s: CalculatedScenario): string[] {
 
 function pasangan(s: CalculatedScenario, url: string): string {
   const d = coreData(s);
-  const g0 = d.groups[0];
-  const gN = d.groups[d.groups.length - 1];
 
   const lines = [
     'Halo! Ini hasil simulasi KPR yang aku hitung:',
@@ -56,10 +54,6 @@ function pasangan(s: CalculatedScenario, url: string): string {
     '📅 Cicilan:',
     ...groupLines(s).map((l) => '   ' + l),
   ];
-
-  if (gN && gN !== g0 && d.groups.length === 2) {
-    // already shown in groupLines — no duplication needed
-  }
 
   if (d.totalUpfront > 0) {
     lines.push(`💵 Dana awal (DP + biaya): ${formatIDRCompact(d.totalUpfront)}`);
