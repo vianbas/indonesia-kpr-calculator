@@ -59,6 +59,16 @@ export interface MortgageFormState {
   notaryFeePercent: string;
   /** % of property price, e.g. "5" */
   bphtbPercent: string;
+  /** PPN (VAT) for new developer properties */
+  ppnEnabled: boolean;
+  /** % of property price, e.g. "11" for 11% */
+  ppnPercent: string;
+  /** Life and fire insurance bundled with the KPR */
+  insuranceEnabled: boolean;
+  /** Annual life insurance premium as % of loan amount, e.g. "0.2" */
+  lifeInsurancePremiumPercent: string;
+  /** Annual fire insurance premium as % of property value, e.g. "0.075" */
+  fireInsurancePremiumPercent: string;
 
   // ── Early repayment (Pelunasan Dipercepat) ─────────────────────────────────
   earlyRepaymentMode: EarlyRepaymentMode;
@@ -99,6 +109,11 @@ export type FormAction =
   | { type: 'SET_APPRAISAL_FEE_AMOUNT'; value: string }
   | { type: 'SET_NOTARY_FEE_PERCENT'; value: string }
   | { type: 'SET_BPHTB_PERCENT'; value: string }
+  | { type: 'SET_PPN_ENABLED'; value: boolean }
+  | { type: 'SET_PPN_PERCENT'; value: string }
+  | { type: 'SET_INSURANCE_ENABLED'; value: boolean }
+  | { type: 'SET_LIFE_INSURANCE_PREMIUM_PERCENT'; value: string }
+  | { type: 'SET_FIRE_INSURANCE_PREMIUM_PERCENT'; value: string }
   | { type: 'SET_EARLY_REPAYMENT_MODE'; mode: EarlyRepaymentMode }
   | { type: 'SET_EXTRA_MONTHLY_AMOUNT'; value: string }
   | { type: 'SET_EXTRA_MONTHLY_START_MONTH'; value: string }

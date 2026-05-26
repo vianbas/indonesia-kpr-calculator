@@ -82,6 +82,12 @@ export interface MortgageInput {
     appraisalFee: number;
     notaryFee: number;
     bphtb: number;
+    /** PPN (property VAT) in IDR; omit or 0 when not applicable */
+    ppnAmount?: number;
+    /** Life insurance upfront total in IDR; omit or 0 when not applicable */
+    lifeInsurance?: number;
+    /** Fire insurance upfront total in IDR; omit or 0 when not applicable */
+    fireInsurance?: number;
   };
 }
 

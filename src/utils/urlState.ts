@@ -97,6 +97,12 @@ function isForm(f: unknown): f is Omit<MortgageFormState, 'earlyRepaymentMode' |
   if ('appraisalFeeAmount' in o && !isStr(o.appraisalFeeAmount)) return false;
   if ('notaryFeePercent' in o && !isStr(o.notaryFeePercent)) return false;
   if ('bphtbPercent' in o && !isStr(o.bphtbPercent)) return false;
+  // Cash-to-close fields (added in Phase 19)
+  if ('ppnEnabled' in o && !isBool(o.ppnEnabled)) return false;
+  if ('ppnPercent' in o && !isStr(o.ppnPercent)) return false;
+  if ('insuranceEnabled' in o && !isBool(o.insuranceEnabled)) return false;
+  if ('lifeInsurancePremiumPercent' in o && !isStr(o.lifeInsurancePremiumPercent)) return false;
+  if ('fireInsurancePremiumPercent' in o && !isStr(o.fireInsurancePremiumPercent)) return false;
 
   return true;
 }
@@ -119,6 +125,12 @@ function normalizeForm(f: unknown): MortgageFormState {
     appraisalFeeAmount: isStr(o.appraisalFeeAmount) ? o.appraisalFeeAmount : '0',
     notaryFeePercent: isStr(o.notaryFeePercent) ? o.notaryFeePercent : '0.75',
     bphtbPercent: isStr(o.bphtbPercent) ? o.bphtbPercent : '5',
+    // Cash-to-close fields (added in Phase 19)
+    ppnEnabled: isBool(o.ppnEnabled) ? o.ppnEnabled : false,
+    ppnPercent: isStr(o.ppnPercent) ? o.ppnPercent : '11',
+    insuranceEnabled: isBool(o.insuranceEnabled) ? o.insuranceEnabled : false,
+    lifeInsurancePremiumPercent: isStr(o.lifeInsurancePremiumPercent) ? o.lifeInsurancePremiumPercent : '0.2',
+    fireInsurancePremiumPercent: isStr(o.fireInsurancePremiumPercent) ? o.fireInsurancePremiumPercent : '0.075',
   };
 }
 

@@ -180,6 +180,9 @@ export function calculateMortgageSummary(
   const appraisalFee = fees?.appraisalFee ?? 0;
   const notaryFee = fees?.notaryFee ?? 0;
   const bphtb = fees?.bphtb ?? 0;
+  const ppnAmount = fees?.ppnAmount ?? 0;
+  const lifeInsurance = fees?.lifeInsurance ?? 0;
+  const fireInsurance = fees?.fireInsurance ?? 0;
 
   const emptyBase = {
     installmentGroups: [],
@@ -201,6 +204,9 @@ export function calculateMortgageSummary(
     appraisalFee,
     notaryFee,
     bphtb,
+    ppnAmount,
+    lifeInsurance,
+    fireInsurance,
     totalUpfrontCost: 0,
   };
 
@@ -262,7 +268,10 @@ export function calculateMortgageSummary(
       .plus(provisionFee)
       .plus(appraisalFee)
       .plus(notaryFee)
-      .plus(bphtb),
+      .plus(bphtb)
+      .plus(ppnAmount)
+      .plus(lifeInsurance)
+      .plus(fireInsurance),
   );
 
   return {
@@ -285,6 +294,9 @@ export function calculateMortgageSummary(
     appraisalFee,
     notaryFee,
     bphtb,
+    ppnAmount,
+    lifeInsurance,
+    fireInsurance,
     totalUpfrontCost,
   };
 }

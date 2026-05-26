@@ -42,10 +42,17 @@ function LineItem({ label, amount, bold, accent }: LineItemProps) {
 }
 
 export function KprFeesSummary({ summary }: Props) {
-  const { downPayment, adminFee, provisionFee, appraisalFee, notaryFee, bphtb, totalUpfrontCost } =
-    summary;
+  const {
+    downPayment, adminFee, provisionFee, appraisalFee,
+    notaryFee, bphtb, ppnAmount, lifeInsurance, fireInsurance,
+    totalUpfrontCost,
+  } = summary;
 
-  const hasAnyFee = provisionFee > 0 || appraisalFee > 0 || notaryFee > 0 || bphtb > 0 || adminFee > 0;
+  const hasBankFees = provisionFee > 0 || appraisalFee > 0 || adminFee > 0;
+  const hasLegalFees = notaryFee > 0 || bphtb > 0;
+  const hasTaxFees = ppnAmount > 0;
+  const hasInsurance = lifeInsurance > 0 || fireInsurance > 0;
+  const hasAnyFee = hasBankFees || hasLegalFees || hasTaxFees || hasInsurance;
 
   return (
     <Card accent="orange">
@@ -67,11 +74,37 @@ export function KprFeesSummary({ summary }: Props) {
         {/* Itemized breakdown */}
         <div className="rounded-xl border border-orange-100 overflow-hidden divide-y divide-orange-100">
           <LineItem label="Uang Muka (DP)" amount={downPayment} />
-          {adminFee > 0 && <LineItem label="Biaya Administrasi" amount={adminFee} />}
-          {provisionFee > 0 && <LineItem label="Biaya Provisi" amount={provisionFee} />}
-          {appraisalFee > 0 && <LineItem label="Biaya Appraisal" amount={appraisalFee} />}
-          {notaryFee > 0 && <LineItem label="Biaya Notaris / PPAT" amount={notaryFee} />}
-          {bphtb > 0 && <LineItem label="BPHTB" amount={bphtb} />}
+
+          {hasBankFees && (
+            <>
+              {adminFee > 0 && <LineItem label="Biaya Administrasi" amount={adminFee} />}
+              {provisionFee > 0 && <LineItem label="Biaya Provisi (Bank)" amount={provisionFee} />}
+              {appraisalFee > 0 && <LineItem label="Biaya Appraisal" amount={appraisalFee} />}
+            </>
+          )}
+
+          {hasLegalFees && (
+            <>
+              {notaryFee > 0 && <LineItem label="Biaya Notaris / PPAT" amount={notaryFee} />}
+              {bphtb > 0 && <LineItem label="BPHTB" amount={bphtb} />}
+            </>
+          )}
+
+          {hasTaxFees && (
+            <LineItem label="PPN (Pajak Pertambahan Nilai)" amount={ppnAmount} />
+          )}
+
+          {hasInsurance && (
+            <>
+              {lifeInsurance > 0 && (
+                <LineItem label="Asuransi Jiwa KPR (estimasi)" amount={lifeInsurance} />
+              )}
+              {fireInsurance > 0 && (
+                <LineItem label="Asuransi Kebakaran (estimasi)" amount={fireInsurance} />
+              )}
+            </>
+          )}
+
           {!hasAnyFee && (
             <div className="px-4 py-2.5 text-sm text-gray-400 italic">
               Tidak ada biaya tambahan
