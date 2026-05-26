@@ -7,7 +7,7 @@ import { SummaryCard } from '../components/results/SummaryCard';
 import { InstallmentGroups } from '../components/results/InstallmentGroups';
 import { AmortizationTable } from '../components/results/AmortizationTable';
 import { ExportButton } from '../components/export/ExportButton';
-import { ShareButton } from '../components/export/ShareButton';
+import { ShareReportModal } from '../components/export/ShareReportModal';
 import { ScenarioTabs } from '../components/scenarios/ScenarioTabs';
 import { ScenarioComparisonPanel } from '../components/scenarios/ScenarioComparisonPanel';
 import { ChartSection } from '../components/charts/ChartSection';
@@ -296,10 +296,12 @@ function ResultsPanel({
           >
             Reset
           </button>
-          <ShareButton
-            scenarios={scenarios}
+          <ShareReportModal
+            calculated={calculated}
+            allScenarios={scenarios}
             activeCount={activeCount}
             activeTab={activeTab}
+            disabled={calculated.length === 0}
           />
           <ExportButton
             form={form}
