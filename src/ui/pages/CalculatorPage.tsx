@@ -14,15 +14,19 @@ import { ChartSection } from '../components/charts/ChartSection';
 import { EarlyRepaymentSummary } from '../components/results/EarlyRepaymentSummary';
 import { KprFeesSummary } from '../components/results/KprFeesSummary';
 import { AffordabilityPanel } from '../components/affordability/AffordabilityPanel';
+import { RefinancingPanel } from '../components/refinancing/RefinancingPanel';
 import {
   FormIncompleteState,
   ValidationErrorState,
   CalculationErrorState,
 } from '../components/results/EmptyState';
 import { calculateAffordability } from '../../domain/calculators/affordability';
+import { calculateRefinancing } from '../../domain/calculators/refinancing';
 import { DEFAULT_AFFORDABILITY } from '../../application/store/affordabilityTypes';
+import { DEFAULT_REFINANCING } from '../../application/store/refinancingTypes';
 import type { AffordabilityFormState } from '../../application/store/affordabilityTypes';
 import type { AffordabilityInput } from '../../domain/calculators/affordability';
+import type { RefinancingFormState } from '../../application/store/refinancingTypes';
 import type { ScenarioState, CalculatedScenario } from '../../application/store/scenarioTypes';
 
 // ─── Affordability helpers ────────────────────────────────────────────────────
@@ -123,6 +127,59 @@ export function CalculatorPage() {
         }
       : undefined;
 
+  // ── Refinancing state (global — applies to a specific loan situation) ──────
+  const [refinancingForm, setRefinancingForm] =
+    useState<RefinancingFormState>(DEFAULT_REFINANCING);
+
+  function handleRefinancingChange(key: keyof RefinancingFormState, value: string) {
+    setRefinancingForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  const activeCalculated = calculated.find((s) => s.id === activeTab) ?? calculated[0] ?? null;
+
+  function handleRefinancingPrefill() {
+    if (!activeCalculated) return;
+    const { summary } = activeCalculated;
+    const firstFloating = summary.schedule.find((r) => r.interestType === 'floating');
+    const remainingBalance = firstFloating?.openingBalance ?? summary.totalPrincipal;
+    const currentRate = firstFloating?.annualRate ?? summary.installmentGroups[0]?.annualRate ?? 0;
+    const remainingMonths = firstFloating
+      ? Math.max(1, summary.effectiveTenorMonths - firstFloating.month + 1)
+      : summary.effectiveTenorMonths;
+    setRefinancingForm((prev) => ({
+      ...prev,
+      remainingBalance: String(Math.round(remainingBalance)),
+      currentAnnualRatePercent: String((currentRate * 100).toFixed(2)),
+      remainingMonths: String(remainingMonths),
+    }));
+  }
+
+  const refinancingResult = useMemo(() => {
+    const balance = parseFloat(refinancingForm.remainingBalance);
+    const currentRate = parseFloat(refinancingForm.currentAnnualRatePercent) / 100;
+    const remaining = parseInt(refinancingForm.remainingMonths);
+    const newRate = parseFloat(refinancingForm.newAnnualRatePercent) / 100;
+    const newTenor = parseInt(refinancingForm.newTenorMonths);
+    if (balance > 0 && currentRate > 0 && remaining > 0 && newRate > 0 && newTenor > 0) {
+      return calculateRefinancing({
+        remainingBalance: balance,
+        currentAnnualRate: currentRate,
+        remainingMonths: remaining,
+        newAnnualRate: newRate,
+        newTenorMonths: newTenor,
+        provisionFeePercent: (parseFloat(refinancingForm.provisionFeePercent) || 0) / 100,
+        appraisalFeeIDR: parseFloat(refinancingForm.appraisalFeeIDR) || 0,
+        adminFeeIDR: parseFloat(refinancingForm.adminFeeIDR) || 0,
+      });
+    }
+    return null;
+  }, [refinancingForm]);
+
+  const refinancingExportData =
+    refinancingResult !== null
+      ? { form: refinancingForm, result: refinancingResult }
+      : undefined;
+
   // ──────────────────────────────────────────────────────────────────────────
 
   function handleReset() {
@@ -168,6 +225,7 @@ export function CalculatorPage() {
             activeTab={activeTab}
             onReset={handleReset}
             affordability={affordabilityExportData}
+            refinancing={refinancingExportData}
           />
         </div>
       </div>
@@ -186,6 +244,17 @@ export function CalculatorPage() {
           results={affordabilityResults}
         />
       )}
+
+      {/* Refinancing calculator — shown whenever ≥ 1 scenario has results */}
+      {calculated.length >= 1 && (
+        <RefinancingPanel
+          form={refinancingForm}
+          onChange={handleRefinancingChange}
+          result={refinancingResult}
+          activeScenario={activeCalculated}
+          onPrefill={handleRefinancingPrefill}
+        />
+      )}
     </div>
   );
 }
@@ -200,6 +269,7 @@ interface ResultsPanelProps {
   activeTab: import('../../application/store/scenarioTypes').ScenarioId;
   onReset: () => void;
   affordability: import('../../infrastructure/pdf/exportService').AffordabilityExportData | undefined;
+  refinancing: import('../../infrastructure/pdf/exportService').RefinancingExportData | undefined;
 }
 
 function ResultsPanel({
@@ -210,6 +280,7 @@ function ResultsPanel({
   activeTab,
   onReset,
   affordability,
+  refinancing,
 }: ResultsPanelProps) {
   const { form, summary, errors, isCalcError } = scenario;
 
@@ -235,6 +306,7 @@ function ResultsPanel({
             summary={summary}
             scenarios={calculated}
             affordability={affordability}
+            refinancing={refinancing}
           />
         </div>
         <SummaryCard summary={summary} />
