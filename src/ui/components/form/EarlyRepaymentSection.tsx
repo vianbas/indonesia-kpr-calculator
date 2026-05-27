@@ -33,8 +33,15 @@ export function EarlyRepaymentSection({ form, dispatch }: Props) {
     ? 'Masukkan jumlah lebih dari 0' : '';
   const extraStartErr   = showExtra && form.extraMonthlyStartMonth !== '' && !isPositiveInt(form.extraMonthlyStartMonth)
     ? 'Bulan mulai harus bilangan ≥ 1' : '';
-  const extraEndErr     = showExtra && form.extraMonthlyEndMonth !== '' && !isPositiveInt(form.extraMonthlyEndMonth)
-    ? 'Bulan berakhir harus bilangan ≥ 1' : '';
+  const extraEndRaw = parseInt(form.extraMonthlyEndMonth);
+  const extraStartRaw = parseInt(form.extraMonthlyStartMonth) || 1;
+  const extraEndErr     = showExtra && form.extraMonthlyEndMonth !== ''
+    ? !isPositiveInt(form.extraMonthlyEndMonth)
+      ? 'Bulan berakhir harus bilangan ≥ 1'
+      : extraEndRaw < extraStartRaw
+      ? `Harus ≥ bulan mulai (${extraStartRaw})`
+      : ''
+    : '';
   const lumpAmountErr   = showLump  && form.lumpSumAmount !== ''      && !isPositiveNumber(form.lumpSumAmount)
     ? 'Masukkan jumlah lebih dari 0' : '';
   const lumpMonthErr    = showLump  && form.lumpSumMonth !== ''       && !isPositiveInt(form.lumpSumMonth)

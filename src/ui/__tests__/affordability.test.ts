@@ -170,6 +170,28 @@ describe('calculateAffordability — max affordable loan', () => {
     const flat = calculateAffordability(makeInput({ paymentMethod: 'flat' }));
     expect(annuity.maxAffordableLoan).not.toBe(flat.maxAffordableLoan);
   });
+
+  it('flat max loan matches exact formula: maxInstallment / (1/n + annualRate/12)', () => {
+    // maxInstallment = 25M*0.35 - 2M = 6_750_000
+    // divisor = 1/120 + 0.11/12; loan ≈ 385_714_286
+    const r = calculateAffordability(makeInput({ paymentMethod: 'flat', stressBaseRate: 0.11, tenorMonths: 120 }));
+    const maxInstallment = 25_000_000 * 0.35 - 2_000_000;
+    const expected = Math.round(maxInstallment / (1 / 120 + 0.11 / 12));
+    expect(r.maxAffordableLoan).toBe(expected);
+  });
+
+  it('flat max loan satisfies installment = L/n + L*monthlyRate within rounding', () => {
+    const r = calculateAffordability(makeInput({ paymentMethod: 'flat', stressBaseRate: 0.11, tenorMonths: 120 }));
+    const implied = r.maxAffordableLoan / 120 + r.maxAffordableLoan * (0.11 / 12);
+    const maxInstallment = 25_000_000 * 0.35 - 2_000_000;
+    expect(implied).toBeCloseTo(maxInstallment, -2); // within ±100 Rp (rounding noise)
+  });
+
+  it('flat max loan is less than annuity max loan (flat front-loads interest per Rupiah)', () => {
+    const flat = calculateAffordability(makeInput({ paymentMethod: 'flat' }));
+    const annuity = calculateAffordability(makeInput({ paymentMethod: 'annuity' }));
+    expect(flat.maxAffordableLoan).toBeLessThan(annuity.maxAffordableLoan);
+  });
 });
 
 // ─── Stress test ──────────────────────────────────────────────────────────────

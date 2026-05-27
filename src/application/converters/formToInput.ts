@@ -116,7 +116,7 @@ export function formToMortgageInput(form: MortgageFormState): ConversionResult {
       startDate,
       includeAdminFee: form.includeAdminFee,
       adminFeeAmount: parsePositiveNumber(form.adminFeeAmount, true) ?? 0,
-      earlyRepayment: buildEarlyRepaymentConfig(form),
+      earlyRepayment: buildEarlyRepaymentConfig(form, tenorMonths),
       kprFees: buildKprFees(form, propertyPrice, principalAmount, tenorMonths),
     },
     conversionErrors: [],
@@ -165,7 +165,7 @@ function buildKprFees(
 
 // ─── Early repayment builder ──────────────────────────────────────────────────
 
-function buildEarlyRepaymentConfig(form: import('../store/formTypes').MortgageFormState): EarlyRepaymentConfig | undefined {
+function buildEarlyRepaymentConfig(form: import('../store/formTypes').MortgageFormState, tenorMonths: number): EarlyRepaymentConfig | undefined {
   const { earlyRepaymentMode } = form;
   if (earlyRepaymentMode === 'none') return undefined;
 
@@ -175,7 +175,9 @@ function buildEarlyRepaymentConfig(form: import('../store/formTypes').MortgageFo
     const amount = parsePositiveNumber(form.extraMonthlyAmount);
     const startMonth = parseInt(form.extraMonthlyStartMonth) || 1;
     const endMonthRaw = parseInt(form.extraMonthlyEndMonth);
-    const endMonth = !isNaN(endMonthRaw) && endMonthRaw > 0 ? endMonthRaw : undefined;
+    let endMonth = !isNaN(endMonthRaw) && endMonthRaw > 0 ? endMonthRaw : undefined;
+    // If endMonth is before startMonth, the window is impossible — treat as open-ended
+    if (endMonth !== undefined && endMonth < startMonth) endMonth = undefined;
     if (amount !== null && amount > 0) {
       config.extraMonthly = { amount, startMonth, endMonth };
     }
@@ -183,7 +185,9 @@ function buildEarlyRepaymentConfig(form: import('../store/formTypes').MortgageFo
 
   if (earlyRepaymentMode === 'lump_sum' || earlyRepaymentMode === 'both') {
     const amount = parsePositiveNumber(form.lumpSumAmount);
-    const month = parseInt(form.lumpSumMonth);
+    const monthRaw = parseInt(form.lumpSumMonth);
+    // Cap to tenor so a month beyond the loan end doesn't silently vanish
+    const month = !isNaN(monthRaw) ? Math.min(monthRaw, tenorMonths) : NaN;
     if (amount !== null && amount > 0 && !isNaN(month) && month > 0) {
       config.lumpSum = { amount, month };
     }
