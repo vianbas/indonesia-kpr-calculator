@@ -43,8 +43,8 @@ function makeForm(overrides: Partial<MortgageFormState> = {}): MortgageFormState
     ppnEnabled: false,
     ppnPercent: '11',
     insuranceEnabled: false,
-    lifeInsurancePremiumPercent: '0.2',
-    fireInsurancePremiumPercent: '0.075',
+    lifeInsurancePremiumPercent: '0',
+    fireInsurancePremiumPercent: '0',
     ...overrides,
   };
 }

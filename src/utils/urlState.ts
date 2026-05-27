@@ -129,8 +129,8 @@ function normalizeForm(f: unknown): MortgageFormState {
     ppnEnabled: isBool(o.ppnEnabled) ? o.ppnEnabled : false,
     ppnPercent: isStr(o.ppnPercent) ? o.ppnPercent : '11',
     insuranceEnabled: isBool(o.insuranceEnabled) ? o.insuranceEnabled : false,
-    lifeInsurancePremiumPercent: isStr(o.lifeInsurancePremiumPercent) ? o.lifeInsurancePremiumPercent : '0.2',
-    fireInsurancePremiumPercent: isStr(o.fireInsurancePremiumPercent) ? o.fireInsurancePremiumPercent : '0.075',
+    lifeInsurancePremiumPercent: isStr(o.lifeInsurancePremiumPercent) ? o.lifeInsurancePremiumPercent : '0',
+    fireInsurancePremiumPercent: isStr(o.fireInsurancePremiumPercent) ? o.fireInsurancePremiumPercent : '0',
   };
 }
 
