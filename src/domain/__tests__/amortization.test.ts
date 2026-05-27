@@ -320,6 +320,99 @@ describe('flat vs annuity interest comparison', () => {
   });
 });
 
+// ─── PPN (property VAT) ───────────────────────────────────────────────────────
+
+describe('calculateMortgageSummary — PPN', () => {
+  it('ppnAmount is 0 and excluded from totalUpfrontCost when kprFees omits ppnAmount', () => {
+    const input = makeInput({
+      tenorMonths: 12,
+      floatingBaseRate: 0.09,
+      kprFees: { downPayment: 100_000_000, provisionFee: 0, appraisalFee: 0, notaryFee: 0, bphtb: 0 },
+    });
+    const schedule = generateAmortizationSchedule(input);
+    const summary = calculateMortgageSummary(input, schedule);
+    expect(summary.ppnAmount).toBe(0);
+    expect(summary.totalUpfrontCost).toBe(100_000_000);
+  });
+
+  it('ppnAmount is 0 and excluded from totalUpfrontCost when ppnAmount is explicitly 0', () => {
+    const input = makeInput({
+      tenorMonths: 12,
+      floatingBaseRate: 0.09,
+      kprFees: { downPayment: 100_000_000, provisionFee: 0, appraisalFee: 0, notaryFee: 0, bphtb: 0, ppnAmount: 0 },
+    });
+    const schedule = generateAmortizationSchedule(input);
+    const summary = calculateMortgageSummary(input, schedule);
+    expect(summary.ppnAmount).toBe(0);
+    expect(summary.totalUpfrontCost).toBe(100_000_000);
+  });
+
+  it('ppnAmount is included in summary and totalUpfrontCost when provided', () => {
+    const ppnAmount = 22_000_000;
+    const input = makeInput({
+      tenorMonths: 12,
+      floatingBaseRate: 0.09,
+      kprFees: { downPayment: 100_000_000, provisionFee: 0, appraisalFee: 0, notaryFee: 0, bphtb: 0, ppnAmount },
+    });
+    const schedule = generateAmortizationSchedule(input);
+    const summary = calculateMortgageSummary(input, schedule);
+    expect(summary.ppnAmount).toBe(ppnAmount);
+    expect(summary.totalUpfrontCost).toBe(100_000_000 + ppnAmount);
+  });
+});
+
+// ─── Insurance ────────────────────────────────────────────────────────────────
+
+describe('calculateMortgageSummary — insurance fees', () => {
+  it('lifeInsurance and fireInsurance are 0 and excluded from totalUpfrontCost when omitted', () => {
+    const input = makeInput({
+      tenorMonths: 12,
+      floatingBaseRate: 0.09,
+      kprFees: { downPayment: 100_000_000, provisionFee: 0, appraisalFee: 0, notaryFee: 0, bphtb: 0 },
+    });
+    const schedule = generateAmortizationSchedule(input);
+    const summary = calculateMortgageSummary(input, schedule);
+    expect(summary.lifeInsurance).toBe(0);
+    expect(summary.fireInsurance).toBe(0);
+    expect(summary.totalUpfrontCost).toBe(100_000_000);
+  });
+
+  it('lifeInsurance and fireInsurance appear in summary and totalUpfrontCost when provided', () => {
+    const lifeInsurance = 6_000_000;
+    const fireInsurance = 2_500_000;
+    const input = makeInput({
+      tenorMonths: 12,
+      floatingBaseRate: 0.09,
+      kprFees: { downPayment: 100_000_000, provisionFee: 0, appraisalFee: 0, notaryFee: 0, bphtb: 0, lifeInsurance, fireInsurance },
+    });
+    const schedule = generateAmortizationSchedule(input);
+    const summary = calculateMortgageSummary(input, schedule);
+    expect(summary.lifeInsurance).toBe(lifeInsurance);
+    expect(summary.fireInsurance).toBe(fireInsurance);
+    expect(summary.totalUpfrontCost).toBe(100_000_000 + lifeInsurance + fireInsurance);
+  });
+
+  it('totalUpfrontCost sums all fee components including PPN, lifeInsurance, and fireInsurance', () => {
+    const input = makeInput({
+      tenorMonths: 12,
+      floatingBaseRate: 0.09,
+      kprFees: {
+        downPayment: 100_000_000,
+        provisionFee: 5_000_000,
+        appraisalFee: 3_000_000,
+        notaryFee: 4_000_000,
+        bphtb: 10_000_000,
+        ppnAmount: 11_000_000,
+        lifeInsurance: 6_000_000,
+        fireInsurance: 2_500_000,
+      },
+    });
+    const schedule = generateAmortizationSchedule(input);
+    const summary = calculateMortgageSummary(input, schedule);
+    expect(summary.totalUpfrontCost).toBe(141_500_000);
+  });
+});
+
 // ─── Payment date calculation ─────────────────────────────────────────────────
 
 describe('payment dates', () => {

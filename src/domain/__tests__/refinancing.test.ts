@@ -135,6 +135,38 @@ describe('calculateRefinancing', () => {
     expect(r.currentTotalInterest).toBeGreaterThanOrEqual(0);
   });
 
+  it('positive monthly savings but negative net savings → not_worth_it (switching cost exceeds total interest benefit)', () => {
+    // 9% vs 10%: monthly payment drops (positive monthlySavings) but 20% provision
+    // fee (80M) is larger than total interest savings (~63M) → netSavings < 0
+    const r = calculateRefinancing(makeInput({
+      newAnnualRate: 0.09,
+      newTenorMonths: 240,
+      provisionFeePercent: 0.20,
+      appraisalFeeIDR: 0,
+      adminFeeIDR: 0,
+    }));
+    expect(r.monthlySavings).toBeGreaterThan(0);
+    expect(r.netSavings).toBeLessThan(0);
+    expect(r.recommendation).toBe('not_worth_it');
+    expect(r.recommendation).not.toBe('worth_it');
+  });
+
+  it('breakEvenMonths is non-null even when netSavings < 0 — monthly cash-flow recovery is not total interest recovery', () => {
+    // Domain documents this behavior: breakEven is from monthly cash-flow alone;
+    // recommendation (not_worth_it) is the correct guard when netSavings < 0.
+    const r = calculateRefinancing(makeInput({
+      newAnnualRate: 0.09,
+      newTenorMonths: 240,
+      provisionFeePercent: 0.20,
+      appraisalFeeIDR: 0,
+      adminFeeIDR: 0,
+    }));
+    expect(r.monthlySavings).toBeGreaterThan(0);
+    expect(r.breakEvenMonths).not.toBeNull();
+    expect(r.netSavings).toBeLessThan(0);
+    expect(r.recommendation).toBe('not_worth_it');
+  });
+
   it('shorter new tenor with lower rate may still be not_worth_it if interest savings negative', () => {
     // Lower rate but MUCH shorter tenor → lower total interest (savings negative means interest savings is negative)
     // Actually shorter tenor = less total interest = interest savings can be negative
