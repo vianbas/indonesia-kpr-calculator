@@ -10,6 +10,7 @@ A client-side Indonesian mortgage (KPR) simulation tool built with React 18, Typ
 |---|---|
 | Annuity & flat-rate simulation | Both payment methods supported; flat yields constant principal, annuity yields constant installment |
 | Fixed / floating / tiered rates | Fixed period → single floating rate, or multi-tier floating schedule |
+| **KPR Syariah / iB (v1.1.0)** | Murabahah (margin tetap) and Musyarakah Mutanaqishah (ujrah menurun) simulation |
 | Upfront cost / cash-to-close | Down payment, provision, appraisal, notary, BPHTB, PPN, life & fire insurance |
 | Affordability analysis | DSR calculation, net surplus, max affordable loan, min recommended income |
 | Stress test | Rate-shock simulation (+0 – +3%) from the first floating period |
@@ -29,6 +30,32 @@ A client-side Indonesian mortgage (KPR) simulation tool built with React 18, Typ
 - **Affordability output is guidance, not approval.** The DSR limit and stress-test results are indicative. Banks apply their own credit-scoring criteria, income verification, and internal risk policies.
 - **Stress test scope.** The +1–+3% stress scenarios simulate a uniform rate shift applied from the opening balance of the first floating period for the remaining tenor. They do not regenerate a full per-tier schedule.
 - **Decimal precision.** All monetary arithmetic uses `Decimal.js` (banker's rounding) to avoid floating-point drift.
+
+### KPR Syariah / iB — Assumptions and Limitations
+
+> **Important:** The Syariah simulation is an **estimate only** and does not certify Sharia compliance. It does not replicate any specific bank's akad, product terms, or pricing methodology. Always confirm details, margins, and fees directly with your bank before signing any agreement.
+
+**Murabahah**
+
+- The bank purchases the property and resells it to the buyer at a fixed mark-up (margin).
+- Formula: `totalMargin = financingAmount × annualMarginRate × (tenorMonths / 12)` — a simple flat calculation over the full tenor.
+- Monthly installment = `totalSalePrice / tenorMonths` — equal every month (flat-equivalent).
+- The margin rate entered is assumed constant for the full tenor; no repricing is modeled.
+- Stress-test rate escalation is not applicable (margin is contractually fixed at akad signing).
+
+**Musyarakah Mutanaqishah (MMQ)**
+
+- Bank and buyer jointly own the property. The buyer progressively buys out the bank's share.
+- The ujrah (rental-equivalent charge on the bank's share) is modeled using an annuity-equivalent formula: `installment = P × r(1+r)^n / ((1+r)^n − 1)` where `r = annualUjrahRate / 12`.
+- Each month: `ujrah = balance × annualUjrahRate / 12`, `principal = installment − ujrah` — balance declines over time.
+- `bankSharePercent` is recorded for display; it does not affect the payment schedule calculation (the annuity formula already models declining balance accurately).
+- The ujrah rate is assumed constant; actual MMQ products may reprice periodically.
+
+**General Syariah limitations**
+
+- Admin fee, provision, appraisal, notary, BPHTB, PPN, and insurance behave identically to the conventional path — input them the same way.
+- Early repayment (prepayment) is not modeled for the Syariah path. Actual penalty or waiver terms depend on the akad.
+- URL state for Syariah scenarios is fully backward-compatible: URLs created before v1.1.0 decode as conventional.
 
 ---
 
@@ -112,4 +139,5 @@ This tool is for **educational and simulation purposes only**.
 - This calculator does not constitute financial advice, a credit offer, or any guarantee of loan approval.
 - Always confirm interest rates, fees, and terms directly with your bank or financing institution.
 - Notary fees, BPHTB, PPN, and insurance premiums should be verified with a licensed notary (PPAT) and your insurer.
+- **Syariah / iB simulations are estimates and do not constitute a Sharia-compliant certification or an official akad offer.** Confirm all details with your bank.
 - The developer accepts no liability for decisions made based on the output of this calculator.

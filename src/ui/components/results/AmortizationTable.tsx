@@ -4,6 +4,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { Card } from '../common/Card';
 import { formatIDR, formatPercent, monthToYear } from '../../../domain/utils/currency';
 import type { AmortizationRow } from '../../../domain';
+import type { FinancingMode, SyariahAkadType } from '../../../domain/models/mortgage.types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -88,13 +89,25 @@ function TableFooter({ schedule, showExtra, totalLabel }: TableFooterProps) {
 
 interface Props {
   schedule: AmortizationRow[];
+  financingMode?: FinancingMode;
+  syariahAkadType?: SyariahAkadType;
 }
 
 const VIRTUALIZE_THRESHOLD = 24;
 
-export function AmortizationTable({ schedule }: Props) {
+export function AmortizationTable({ schedule, financingMode, syariahAkadType }: Props) {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const isSyariah = financingMode === 'syariah';
+  const interestColLabel = isSyariah
+    ? syariahAkadType === 'murabahah'
+      ? t('syariah.amortColumnMargin')
+      : t('syariah.amortColumnUjrah')
+    : t('results.amortColInt');
+  const installmentColLabel = isSyariah
+    ? t('syariah.amortColumnInstallment')
+    : t('results.amortColInst');
 
   const showExtra = schedule.some((r) => r.extraPayment > 0);
 
@@ -102,9 +115,9 @@ export function AmortizationTable({ schedule }: Props) {
     { key: 'month',   label: t('results.amortColMonth'),  align: 'text-center', width: 'w-12'  },
     { key: 'year',    label: t('results.amortColYear'),   align: 'text-center', width: 'w-12'  },
     { key: 'rate',    label: t('results.amortColRate'),   align: 'text-center', width: 'w-24'  },
-    { key: 'inst',    label: t('results.amortColInst'),   align: 'text-right',  width: ''      },
+    { key: 'inst',    label: installmentColLabel,          align: 'text-right',  width: ''      },
     { key: 'princ',   label: t('results.amortColPrinc'),  align: 'text-right',  width: ''      },
-    { key: 'int',     label: t('results.amortColInt'),    align: 'text-right',  width: ''      },
+    { key: 'int',     label: interestColLabel,             align: 'text-right',  width: ''      },
     { key: 'balance', label: t('results.amortColBalance'),align: 'text-right',  width: ''      },
   ];
 

@@ -1,6 +1,11 @@
 import type { CalculatedScenario } from '../../application/store/scenarioTypes';
 import { formatIDR, formatIDRCompact, formatPercent, formatTenor } from '../../domain/utils/currency';
 
+const AKAD_LABEL: Record<string, string> = {
+  murabahah: 'Murabahah',
+  musyarakah_mutanaqishah: 'Musyarakah Mutanaqishah (MMQ)',
+};
+
 export type SharePreset = 'pasangan' | 'agen' | 'bank';
 
 export const PRESET_LABELS: Record<SharePreset, string> = {
@@ -30,6 +35,9 @@ function coreData(s: CalculatedScenario) {
     totalPayment: summary.totalPayment,
     totalUpfront: summary.totalUpfrontCost,
     groups: summary.installmentGroups,
+    isSyariah: summary.financingMode === 'syariah',
+    akadType: summary.syariahAkadType,
+    totalSalePrice: summary.totalSalePrice,
   };
 }
 
@@ -44,16 +52,24 @@ function groupLines(s: CalculatedScenario): string[] {
 
 function pasangan(s: CalculatedScenario, url: string): string {
   const d = coreData(s);
+  const loanWord = d.isSyariah ? 'Pembiayaan' : 'Pinjaman';
+  const installWord = d.isSyariah ? 'Angsuran' : 'Cicilan';
+  const akadLine = d.isSyariah && d.akadType ? `🕌 Akad: ${AKAD_LABEL[d.akadType] ?? d.akadType}` : null;
 
   const lines = [
-    'Halo! Ini hasil simulasi KPR yang aku hitung:',
+    `Halo! Ini hasil simulasi KPR${d.isSyariah ? ' Syariah' : ''} yang aku hitung:`,
     '',
     `🏠 Properti: ${formatIDRCompact(d.propertyPrice)}`,
     `💰 Uang Muka: ${formatIDRCompact(d.dpAmount)}${d.dpPct > 0 ? ` (${d.dpPct}%)` : ''}`,
-    `📋 Pinjaman: ${formatIDRCompact(d.loanAmount)} selama ${formatTenor(d.tenorMonths)}`,
-    '📅 Cicilan:',
+    `📋 ${loanWord}: ${formatIDRCompact(d.loanAmount)} selama ${formatTenor(d.tenorMonths)}`,
+    ...(akadLine ? [akadLine] : []),
+    `📅 ${installWord}:`,
     ...groupLines(s).map((l) => '   ' + l),
   ];
+
+  if (d.isSyariah && d.akadType === 'murabahah' && d.totalSalePrice) {
+    lines.push(`🏦 Harga Jual Bank: ${formatIDRCompact(d.totalSalePrice)}`);
+  }
 
   if (d.totalUpfront > 0) {
     lines.push(`💵 Dana awal (DP + biaya): ${formatIDRCompact(d.totalUpfront)}`);
@@ -66,19 +82,27 @@ function pasangan(s: CalculatedScenario, url: string): string {
 function agen(s: CalculatedScenario, url: string): string {
   const d = coreData(s);
   const sep = '══════════════════════════';
+  const title = d.isSyariah ? `Simulasi KPR Syariah — ${s.label}` : `Simulasi KPR — ${s.label}`;
+  const loanWord = d.isSyariah ? 'Nilai Pembiayaan' : 'Nilai Kredit';
 
   const lines = [
-    `Simulasi KPR — ${s.label}`,
+    title,
     sep,
     `Harga Properti   : ${formatIDR(d.propertyPrice)}`,
     `Uang Muka        : ${formatIDR(d.dpAmount)}${d.dpPct > 0 ? ` (${d.dpPct}%)` : ''}`,
-    `Nilai Kredit     : ${formatIDR(d.loanAmount)}`,
+    `${loanWord.padEnd(16)} : ${formatIDR(d.loanAmount)}`,
     `Tenor            : ${formatTenor(d.tenorMonths)} (${d.tenorMonths} bulan)`,
-    `Metode Angsuran  : ${d.method}`,
+    ...(d.isSyariah && d.akadType
+      ? [`Akad             : ${AKAD_LABEL[d.akadType] ?? d.akadType}`]
+      : [`Metode Angsuran  : ${d.method}`]),
     '',
-    'Jadwal Angsuran:',
+    d.isSyariah ? 'Jadwal Angsuran:' : 'Jadwal Angsuran:',
     ...groupLines(s),
   ];
+
+  if (d.isSyariah && d.akadType === 'murabahah' && d.totalSalePrice) {
+    lines.push('', `Harga Jual Bank  : ${formatIDR(d.totalSalePrice)}`);
+  }
 
   if (d.totalUpfront > 0) {
     lines.push('', `Dana Awal        : ${formatIDR(d.totalUpfront)}`);
@@ -91,26 +115,44 @@ function agen(s: CalculatedScenario, url: string): string {
 function bank(s: CalculatedScenario, url: string): string {
   const d = coreData(s);
   const sep = '══════════════════════════════════════';
+  const title = d.isSyariah ? 'SIMULASI KPR SYARIAH / iB' : 'PERMOHONAN KREDIT PEMILIKAN RUMAH';
+  const interestWord = d.isSyariah
+    ? d.akadType === 'murabahah' ? 'Total Margin' : 'Total Ujrah'
+    : 'Total Bunga';
 
   const lines = [
-    'PERMOHONAN KREDIT PEMILIKAN RUMAH',
+    title,
     sep,
     `Nilai Properti        : ${formatIDR(d.propertyPrice)}`,
     `Uang Muka             : ${formatIDR(d.dpAmount)}${d.dpPct > 0 ? ` (${d.dpPct}%)` : ''}`,
-    `Plafon Kredit         : ${formatIDR(d.loanAmount)}`,
+    `${(d.isSyariah ? 'Nilai Pembiayaan' : 'Plafon Kredit').padEnd(21)} : ${formatIDR(d.loanAmount)}`,
     `Jangka Waktu          : ${d.tenorMonths} bulan (${formatTenor(d.tenorMonths)})`,
-    `Metode Angsuran       : ${d.method}`,
-    '',
-    'JADWAL SUKU BUNGA',
-    '─────────────────────────────────────',
-    'Periode          Jenis      Suku Bunga  Angsuran',
+    ...(d.isSyariah && d.akadType
+      ? [`Akad                  : ${AKAD_LABEL[d.akadType] ?? d.akadType}`]
+      : [`Metode Angsuran       : ${d.method}`]),
   ];
 
-  for (const g of d.groups) {
-    const period = `Bln ${g.fromMonth}–${g.toMonth}`.padEnd(16);
-    const type = (g.type === 'fixed' ? 'Fixed' : 'Floating').padEnd(10);
-    const rate = formatPercent(g.annualRate).padEnd(11);
-    lines.push(`${period} ${type} ${rate} ${formatIDR(g.installmentAmount)}`);
+  if (!d.isSyariah) {
+    lines.push(
+      '',
+      'JADWAL SUKU BUNGA',
+      '─────────────────────────────────────',
+      'Periode          Jenis      Suku Bunga  Angsuran',
+    );
+    for (const g of d.groups) {
+      const period = `Bln ${g.fromMonth}–${g.toMonth}`.padEnd(16);
+      const type = (g.type === 'fixed' ? 'Fixed' : 'Floating').padEnd(10);
+      const rate = formatPercent(g.annualRate).padEnd(11);
+      lines.push(`${period} ${type} ${rate} ${formatIDR(g.installmentAmount)}`);
+    }
+  } else {
+    const g0 = d.groups[0];
+    if (g0) {
+      lines.push('', `Angsuran              : ${formatIDR(g0.installmentAmount)}/bulan`);
+    }
+    if (d.akadType === 'murabahah' && d.totalSalePrice) {
+      lines.push(`Harga Jual Bank       : ${formatIDR(d.totalSalePrice)}`);
+    }
   }
 
   lines.push(
@@ -118,12 +160,16 @@ function bank(s: CalculatedScenario, url: string): string {
     'RINGKASAN FINANSIAL',
     '─────────────────────────────────────',
     `Total Pokok           : ${formatIDR(d.loanAmount)}`,
-    `Total Bunga           : ${formatIDR(d.totalInterest)}`,
+    `${interestWord.padEnd(21)} : ${formatIDR(d.totalInterest)}`,
     `Total Pembayaran      : ${formatIDR(d.totalPayment)}`,
   );
 
   if (d.totalUpfront > 0) {
     lines.push(`Dana Awal (Cash-to-Close) : ${formatIDR(d.totalUpfront)}`);
+  }
+
+  if (d.isSyariah) {
+    lines.push('', 'Simulasi ini bersifat estimasi. Tidak menggantikan penawaran resmi dari bank.');
   }
 
   lines.push('', `Link simulasi: ${url}`);

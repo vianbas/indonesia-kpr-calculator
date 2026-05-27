@@ -3,13 +3,29 @@ import type {
   FloatingTier,
   EarlyRepaymentConfig,
   ValidationError,
+  SyariahAkadType,
 } from '../../domain/models/mortgage.types';
 import type { MortgageFormState } from '../store/formTypes';
+
+export interface SyariahConversionParams {
+  akadType: SyariahAkadType;
+  financingAmount: number;
+  tenorMonths: number;
+  startDate: Date;
+  includeAdminFee: boolean;
+  adminFeeAmount: number;
+  kprFees: MortgageInput['kprFees'];
+  annualMarginRate: number;
+  annualUjrahRate: number;
+  bankSharePercent: number;
+}
 
 export interface ConversionResult {
   input: MortgageInput | null;
   /** Pre-validation errors detected during conversion (e.g. DP ≥ property price) */
   conversionErrors: ValidationError[];
+  /** Present when financingMode === 'syariah' and fields are valid */
+  syariahParams?: SyariahConversionParams;
 }
 
 /**
@@ -19,6 +35,11 @@ export interface ConversionResult {
  */
 export function formToMortgageInput(form: MortgageFormState): ConversionResult {
   const none: ConversionResult = { input: null, conversionErrors: [] };
+
+  // ── Syariah mode — return syariahParams instead of conventional MortgageInput ─
+  if (form.financingMode === 'syariah') {
+    return buildSyariahConversionResult(form);
+  }
 
   const propertyPrice = parsePositiveNumber(form.propertyPrice);
   if (propertyPrice === null) return none;
@@ -221,6 +242,69 @@ function parsePositiveNumber(value: string, allowZero = false): number | null {
 /** Converts a percent string "7.5" to decimal 0.075 */
 function percentToDecimal(value: string): number {
   return parseFloat(value) / 100;
+}
+
+// ─── Syariah conversion ───────────────────────────────────────────────────────
+
+function buildSyariahConversionResult(form: MortgageFormState): ConversionResult {
+  const none: ConversionResult = { input: null, conversionErrors: [] };
+
+  const propertyPrice = parsePositiveNumber(form.propertyPrice);
+  if (propertyPrice === null) return none;
+
+  const downPaymentRaw = parsePositiveNumber(form.downPaymentValue, true);
+  if (downPaymentRaw === null) return none;
+
+  const downPayment =
+    form.downPaymentMode === 'percent'
+      ? propertyPrice * (downPaymentRaw / 100)
+      : downPaymentRaw;
+
+  const financingAmount = propertyPrice - downPayment;
+  if (financingAmount <= 0) {
+    return {
+      input: null,
+      conversionErrors: [{
+        field: 'downPaymentValue',
+        message: 'Uang muka melebihi atau sama dengan harga properti. Nilai pembiayaan harus lebih dari Rp 0.',
+      }],
+    };
+  }
+
+  const tenorYears = parseInt(form.tenorYears) || 0;
+  const tenorAdditional = parseInt(form.tenorAdditionalMonths) || 0;
+  const tenorMonths = tenorYears * 12 + tenorAdditional;
+  if (tenorMonths <= 0) return none;
+
+  const startDate = parseLocalDate(form.startDate);
+  if (startDate === null) return none;
+
+  const annualMarginRate = percentToDecimal(form.syariahMarginPercent);
+  const annualUjrahRate = percentToDecimal(form.syariahUjrahPercent);
+  const bankSharePercent = (parseFloat(form.syariahBankSharePercent) || 80) / 100;
+
+  if (isNaN(annualMarginRate) || annualMarginRate < 0) return none;
+  if (isNaN(annualUjrahRate) || annualUjrahRate < 0) return none;
+
+  const adminFeeAmount = parsePositiveNumber(form.adminFeeAmount, true) ?? 0;
+  const kprFees = buildKprFees(form, propertyPrice, financingAmount, tenorMonths);
+
+  return {
+    input: null, // no conventional MortgageInput for Syariah
+    conversionErrors: [],
+    syariahParams: {
+      akadType: form.syariahAkadType,
+      financingAmount,
+      tenorMonths,
+      startDate,
+      includeAdminFee: form.includeAdminFee,
+      adminFeeAmount,
+      kprFees,
+      annualMarginRate,
+      annualUjrahRate,
+      bankSharePercent,
+    },
+  };
 }
 
 /**

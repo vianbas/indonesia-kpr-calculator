@@ -58,6 +58,7 @@ export function AffordabilityPanel({ calculated, form, onChange, results }: Prop
                     }
                     result={result}
                     maxDSR={maxDSR}
+                    isMurabahah={scenario.summary.syariahAkadType === 'murabahah'}
                   />
                 ))}
               </div>

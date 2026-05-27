@@ -377,7 +377,13 @@ function ResultsPanel({
               <ChevronIcon open={amortizationOpen} />
             </div>
           </button>
-          {amortizationOpen && <AmortizationTable schedule={summary.schedule} />}
+          {amortizationOpen && (
+            <AmortizationTable
+              schedule={summary.schedule}
+              financingMode={summary.financingMode}
+              syariahAkadType={summary.syariahAkadType}
+            />
+          )}
         </div>
       </>
     );

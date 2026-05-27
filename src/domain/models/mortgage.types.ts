@@ -5,6 +5,12 @@
 
 export type PaymentMethod = 'annuity' | 'flat';
 
+/** Top-level financing mode — conventional bank interest vs Syariah akad */
+export type FinancingMode = 'conventional' | 'syariah';
+
+/** Syariah akad (contract) type */
+export type SyariahAkadType = 'murabahah' | 'musyarakah_mutanaqishah';
+
 /**
  * annuity – equal total installment each period; interest share falls over time
  * flat    – equal principal each period; interest calculated on INITIAL principal (constant)

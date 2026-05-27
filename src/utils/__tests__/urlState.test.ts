@@ -38,6 +38,11 @@ function minimalForm() {
     insuranceEnabled: false,
     lifeInsurancePremiumPercent: '0',
     fireInsurancePremiumPercent: '0',
+    financingMode: 'conventional' as const,
+    syariahAkadType: 'murabahah' as const,
+    syariahMarginPercent: '8',
+    syariahUjrahPercent: '8',
+    syariahBankSharePercent: '80',
   };
 }
 
@@ -135,6 +140,83 @@ describe('encodeUrlState / decodeUrlState — round-trip with PPN and insurance 
 
   it('returns null when activeCount does not match forms length', () => {
     const raw = { v: 1, forms: [minimalForm()], activeCount: 2, activeTab: 1 };
+    expect(decodeUrlState(btoa(JSON.stringify(raw)))).toBeNull();
+  });
+});
+
+// ─── Syariah backward-compat ──────────────────────────────────────────────────
+
+describe('decodeUrlState — backward compatibility: old v1.0.0 URLs without Syariah fields', () => {
+  // Simulate a URL saved before Syariah was added — no financingMode etc.
+  const {
+    financingMode, syariahAkadType, syariahMarginPercent,
+    syariahUjrahPercent, syariahBankSharePercent,
+    ...oldForm
+  } = minimalForm();
+  void financingMode; void syariahAkadType; void syariahMarginPercent;
+  void syariahUjrahPercent; void syariahBankSharePercent;
+
+  const b64 = btoa(JSON.stringify({ v: 1, forms: [oldForm], activeCount: 1, activeTab: 1 }));
+  const result = decodeUrlState(b64);
+
+  it('decodes successfully when Syariah fields are absent', () => {
+    expect(result).not.toBeNull();
+  });
+
+  it('defaults financingMode to conventional', () => {
+    expect(result!.forms[0].financingMode).toBe('conventional');
+  });
+
+  it('defaults syariahAkadType to murabahah', () => {
+    expect(result!.forms[0].syariahAkadType).toBe('murabahah');
+  });
+
+  it('defaults syariahMarginPercent to "8"', () => {
+    expect(result!.forms[0].syariahMarginPercent).toBe('8');
+  });
+
+  it('defaults syariahUjrahPercent to "8"', () => {
+    expect(result!.forms[0].syariahUjrahPercent).toBe('8');
+  });
+
+  it('defaults syariahBankSharePercent to "80"', () => {
+    expect(result!.forms[0].syariahBankSharePercent).toBe('80');
+  });
+});
+
+describe('encodeUrlState / decodeUrlState — Syariah round-trip', () => {
+  it('Syariah Murabahah state survives encode → decode', () => {
+    const state = makeUrlState();
+    state.forms[0].financingMode = 'syariah';
+    state.forms[0].syariahAkadType = 'murabahah';
+    state.forms[0].syariahMarginPercent = '9.5';
+    const decoded = decodeUrlState(encodeUrlState(state));
+    expect(decoded).not.toBeNull();
+    expect(decoded!.forms[0].financingMode).toBe('syariah');
+    expect(decoded!.forms[0].syariahAkadType).toBe('murabahah');
+    expect(decoded!.forms[0].syariahMarginPercent).toBe('9.5');
+  });
+
+  it('Syariah MMQ state survives encode → decode', () => {
+    const state = makeUrlState();
+    state.forms[0].financingMode = 'syariah';
+    state.forms[0].syariahAkadType = 'musyarakah_mutanaqishah';
+    state.forms[0].syariahUjrahPercent = '7.75';
+    state.forms[0].syariahBankSharePercent = '85';
+    const decoded = decodeUrlState(encodeUrlState(state));
+    expect(decoded).not.toBeNull();
+    expect(decoded!.forms[0].syariahAkadType).toBe('musyarakah_mutanaqishah');
+    expect(decoded!.forms[0].syariahUjrahPercent).toBe('7.75');
+    expect(decoded!.forms[0].syariahBankSharePercent).toBe('85');
+  });
+
+  it('rejects an invalid financingMode value', () => {
+    const raw = {
+      v: 1,
+      forms: [{ ...minimalForm(), financingMode: 'islamic' }],
+      activeCount: 1,
+      activeTab: 1,
+    };
     expect(decodeUrlState(btoa(JSON.stringify(raw)))).toBeNull();
   });
 });

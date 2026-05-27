@@ -45,6 +45,11 @@ function makeForm(overrides: Partial<MortgageFormState> = {}): MortgageFormState
     insuranceEnabled: false,
     lifeInsurancePremiumPercent: '0',
     fireInsurancePremiumPercent: '0',
+    financingMode: 'conventional',
+    syariahAkadType: 'murabahah',
+    syariahMarginPercent: '8',
+    syariahUjrahPercent: '8',
+    syariahBankSharePercent: '80',
     ...overrides,
   };
 }
@@ -238,5 +243,68 @@ describe('formToMortgageInput — incomplete or unparseable form fields', () => 
       ],
     }));
     expect(input?.floatingTiers).toHaveLength(0);
+  });
+});
+
+// ─── Syariah path ─────────────────────────────────────────────────────────────
+
+describe('formToMortgageInput — Syariah mode', () => {
+  const syariahBase = {
+    financingMode: 'syariah' as const,
+    propertyPrice: '500000000',
+    downPaymentMode: 'percent' as const,
+    downPaymentValue: '20',
+    tenorYears: '10',
+    tenorAdditionalMonths: '0',
+    syariahAkadType: 'murabahah' as const,
+    syariahMarginPercent: '8',
+    syariahUjrahPercent: '8',
+    syariahBankSharePercent: '80',
+  };
+
+  it('returns null MortgageInput and syariahParams for valid Murabahah form', () => {
+    const result = formToMortgageInput(makeForm(syariahBase));
+    expect(result.input).toBeNull();
+    expect(result.syariahParams).toBeDefined();
+    expect(result.syariahParams!.akadType).toBe('murabahah');
+    expect(result.syariahParams!.financingAmount).toBe(400_000_000); // 500M - 20%
+    expect(result.syariahParams!.tenorMonths).toBe(120); // 10 years
+    expect(result.syariahParams!.annualMarginRate).toBeCloseTo(0.08);
+  });
+
+  it('returns syariahParams for MMQ akad', () => {
+    const result = formToMortgageInput(makeForm({
+      ...syariahBase,
+      syariahAkadType: 'musyarakah_mutanaqishah',
+    }));
+    expect(result.syariahParams!.akadType).toBe('musyarakah_mutanaqishah');
+    expect(result.syariahParams!.annualUjrahRate).toBeCloseTo(0.08);
+    expect(result.syariahParams!.bankSharePercent).toBeCloseTo(0.8);
+  });
+
+  it('returns conversionError when DP ≥ property price in Syariah mode', () => {
+    const { input, conversionErrors, syariahParams } = formToMortgageInput(makeForm({
+      ...syariahBase,
+      downPaymentValue: '100',
+    }));
+    expect(input).toBeNull();
+    expect(syariahParams).toBeUndefined();
+    expect(conversionErrors[0].field).toBe('downPaymentValue');
+  });
+
+  it('returns null without syariahParams when propertyPrice is empty', () => {
+    const result = formToMortgageInput(makeForm({ ...syariahBase, propertyPrice: '' }));
+    expect(result.input).toBeNull();
+    expect(result.syariahParams).toBeUndefined();
+  });
+
+  it('includes kprFees in syariahParams when includeKprFees is true', () => {
+    const result = formToMortgageInput(makeForm({
+      ...syariahBase,
+      includeKprFees: true,
+      provisionFeePercent: '1',
+    }));
+    expect(result.syariahParams!.kprFees).toBeDefined();
+    expect(result.syariahParams!.kprFees!.provisionFee).toBeGreaterThan(0);
   });
 });

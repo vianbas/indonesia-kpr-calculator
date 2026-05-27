@@ -8,7 +8,7 @@ import type {
   EarlyRepaymentMode,
 } from '../application/store/formTypes';
 import type { ScenarioId } from '../application/store/scenarioTypes';
-import type { PaymentMethod } from '../domain/models/mortgage.types';
+import type { PaymentMethod, FinancingMode, SyariahAkadType } from '../domain/models/mortgage.types';
 
 // ─── Public shape ─────────────────────────────────────────────────────────────
 
@@ -33,6 +33,10 @@ const DP_MODES: ReadonlySet<DownPaymentMode> = new Set(['amount', 'percent']);
 const ER_MODES: ReadonlySet<EarlyRepaymentMode> = new Set([
   'none', 'extra_monthly', 'lump_sum', 'both',
 ]);
+const FINANCING_MODES: ReadonlySet<FinancingMode> = new Set(['conventional', 'syariah']);
+const SYARIAH_AKAD_TYPES: ReadonlySet<SyariahAkadType> = new Set([
+  'murabahah', 'musyarakah_mutanaqishah',
+]);
 
 function isStr(v: unknown): v is string {
   return typeof v === 'string';
@@ -45,6 +49,12 @@ function isPaymentMethod(v: unknown): v is PaymentMethod {
 }
 function isCalcMethod(v: unknown): v is CalculationMethod {
   return isStr(v) && CALC_METHODS.has(v as CalculationMethod);
+}
+function isFinancingMode(v: unknown): v is FinancingMode {
+  return isStr(v) && FINANCING_MODES.has(v as FinancingMode);
+}
+function isSyariahAkadType(v: unknown): v is SyariahAkadType {
+  return isStr(v) && SYARIAH_AKAD_TYPES.has(v as SyariahAkadType);
 }
 function isDpMode(v: unknown): v is DownPaymentMode {
   return isStr(v) && DP_MODES.has(v as DownPaymentMode);
@@ -104,6 +114,13 @@ function isForm(f: unknown): f is Omit<MortgageFormState, 'earlyRepaymentMode' |
   if ('lifeInsurancePremiumPercent' in o && !isStr(o.lifeInsurancePremiumPercent)) return false;
   if ('fireInsurancePremiumPercent' in o && !isStr(o.fireInsurancePremiumPercent)) return false;
 
+  // Syariah fields (optional — old URLs decode as conventional)
+  if ('financingMode' in o && !isFinancingMode(o.financingMode)) return false;
+  if ('syariahAkadType' in o && !isSyariahAkadType(o.syariahAkadType)) return false;
+  if ('syariahMarginPercent' in o && !isStr(o.syariahMarginPercent)) return false;
+  if ('syariahUjrahPercent' in o && !isStr(o.syariahUjrahPercent)) return false;
+  if ('syariahBankSharePercent' in o && !isStr(o.syariahBankSharePercent)) return false;
+
   return true;
 }
 
@@ -131,6 +148,12 @@ function normalizeForm(f: unknown): MortgageFormState {
     insuranceEnabled: isBool(o.insuranceEnabled) ? o.insuranceEnabled : false,
     lifeInsurancePremiumPercent: isStr(o.lifeInsurancePremiumPercent) ? o.lifeInsurancePremiumPercent : '0',
     fireInsurancePremiumPercent: isStr(o.fireInsurancePremiumPercent) ? o.fireInsurancePremiumPercent : '0',
+    // Syariah fields (v1.1.0) — default to conventional for old URLs
+    financingMode: isFinancingMode(o.financingMode) ? o.financingMode : 'conventional',
+    syariahAkadType: isSyariahAkadType(o.syariahAkadType) ? o.syariahAkadType : 'murabahah',
+    syariahMarginPercent: isStr(o.syariahMarginPercent) ? o.syariahMarginPercent : '8',
+    syariahUjrahPercent: isStr(o.syariahUjrahPercent) ? o.syariahUjrahPercent : '8',
+    syariahBankSharePercent: isStr(o.syariahBankSharePercent) ? o.syariahBankSharePercent : '80',
   };
 }
 

@@ -229,6 +229,88 @@ export const REFI_NOT_WORTH_IT: RefinancingResult = {
   recommendation: 'not_worth_it',
 };
 
+// ─── Syariah MortgageSummary fixtures ────────────────────────────────────────
+
+// Murabahah: 400 jt, margin 8% p.a., tenor 120 bulan
+// totalMargin = 400M × 0.08 × 10 = 320M, totalSalePrice = 720M, angsuran = 6M/bln
+const MOCK_MURABAHAH_SCHEDULE: AmortizationRow[] = Array.from({ length: 12 }, (_, i) => {
+  const month = i + 1;
+  const openingBalance = 400_000_000 - i * 3_333_333;
+  return makeRow(month, openingBalance, 3_333_333, 2_666_667, 0.08, 'fixed');
+});
+
+export const SUMMARY_MURABAHAH: MortgageSummary = {
+  installmentGroups: [
+    { label: 'Bulan 1–120 (Margin 8.00%)', fromMonth: 1, toMonth: 120, installmentAmount: 6_000_000, annualRate: 0.08, type: 'fixed' },
+  ],
+  totalPrincipal: 400_000_000,
+  totalInterest: 320_000_000,
+  totalPayment: 720_000_000,
+  adminFee: 0,
+  effectiveAnnualRate: 0.08,
+  schedule: MOCK_MURABAHAH_SCHEDULE,
+  effectiveTenorMonths: 120,
+  originalTenorMonths: 120,
+  monthsSaved: 0,
+  originalTotalInterest: 320_000_000,
+  originalTotalPayment: 720_000_000,
+  interestSaved: 0,
+  interestSavedPercent: 0,
+  downPayment: 100_000_000,
+  provisionFee: 0,
+  appraisalFee: 0,
+  notaryFee: 0,
+  bphtb: 0,
+  ppnAmount: 0,
+  lifeInsurance: 0,
+  fireInsurance: 0,
+  totalUpfrontCost: 100_000_000,
+  financingMode: 'syariah',
+  syariahAkadType: 'murabahah',
+  totalMargin: 320_000_000,
+  totalSalePrice: 720_000_000,
+};
+
+// MMQ: 400 jt, ujrah 8% p.a., tenor 120 bulan — annuity-equivalent ≈ 4.854 jt/bln
+const MOCK_MMQ_SCHEDULE: AmortizationRow[] = Array.from({ length: 12 }, (_, i) => {
+  const month = i + 1;
+  const balance = 400_000_000 - i * 2_186_020;
+  const ujrah = Math.round(balance * 0.08 / 12);
+  const principal = 4_853_687 - ujrah;
+  return makeRow(month, balance, principal, ujrah, 0.08, 'fixed');
+});
+
+export const SUMMARY_MMQ: MortgageSummary = {
+  installmentGroups: [
+    { label: 'Bulan 1–120 (Ujrah 8.00%)', fromMonth: 1, toMonth: 120, installmentAmount: 4_853_687, annualRate: 0.08, type: 'fixed' },
+  ],
+  totalPrincipal: 400_000_000,
+  totalInterest: 182_442_440,
+  totalPayment: 582_442_440,
+  adminFee: 0,
+  effectiveAnnualRate: 0.08,
+  schedule: MOCK_MMQ_SCHEDULE,
+  effectiveTenorMonths: 120,
+  originalTenorMonths: 120,
+  monthsSaved: 0,
+  originalTotalInterest: 182_442_440,
+  originalTotalPayment: 582_442_440,
+  interestSaved: 0,
+  interestSavedPercent: 0,
+  downPayment: 100_000_000,
+  provisionFee: 0,
+  appraisalFee: 0,
+  notaryFee: 0,
+  bphtb: 0,
+  ppnAmount: 0,
+  lifeInsurance: 0,
+  fireInsurance: 0,
+  totalUpfrontCost: 100_000_000,
+  financingMode: 'syariah',
+  syariahAkadType: 'musyarakah_mutanaqishah',
+  totalUjrah: 182_442_440,
+};
+
 // ─── Scenario tabs mock ───────────────────────────────────────────────────────
 
 export const MOCK_SCENARIOS_1 = [
