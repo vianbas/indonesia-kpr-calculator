@@ -8,6 +8,7 @@ export default defineConfig(({ command }) => {
   const hasSentryToken = Boolean(process.env.SENTRY_AUTH_TOKEN);
 
   return {
+    base: process.env.VITE_BASE_PATH ?? '/',
     plugins: [
       react(),
       // Upload source maps to Sentry only during production builds when the
