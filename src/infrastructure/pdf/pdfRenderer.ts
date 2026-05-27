@@ -132,7 +132,7 @@ export function renderPdf(data: PdfExportData): jsPDF {
     compress: true,
   });
 
-  let y = renderDocumentHeader(doc, data.generatedAt);
+  let y = renderDocumentHeader(doc, data.generatedAt, data.isSyariah);
   y = renderLoanInfoSection(doc, y, data);
   y = renderInterestSchemeSection(doc, y, data);
   y = renderFinancialSummarySection(doc, y, data);
@@ -150,15 +150,18 @@ export function renderPdf(data: PdfExportData): jsPDF {
 
 // ─── Section A: document header ──────────────────────────────────────────────
 
-function renderDocumentHeader(doc: DocWithAutoTable, generatedAt: string): number {
-  // Dark blue banner
-  doc.setFillColor(...(C.blueDark as [number, number, number]));
+function renderDocumentHeader(doc: DocWithAutoTable, generatedAt: string, isSyariah?: boolean): number {
+  const fillColor: [number, number, number] = isSyariah ? [6, 95, 70] : (C.blueDark as [number, number, number]);
+  doc.setFillColor(...fillColor);
   doc.rect(0, 0, PAGE_W, 26, 'F');
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
   doc.setTextColor(...(C.white as [number, number, number]));
-  doc.text('SIMULASI KREDIT PEMILIKAN RUMAH (KPR)', M, 11);
+  const title = isSyariah
+    ? 'SIMULASI KPR SYARIAH / PEMBIAYAAN iB'
+    : 'SIMULASI KREDIT PEMILIKAN RUMAH (KPR)';
+  doc.text(title, M, 11);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
@@ -584,8 +587,10 @@ function renderAmortizationSection(doc: DocWithAutoTable, y: number, data: PdfEx
     7: { halign: 'right' as const, cellWidth: extraW },
   };
 
-  const head7 = [['Bln', 'Thn', 'Suku Bunga', 'Cicilan', 'Pokok', 'Bunga', 'Saldo Akhir']];
-  const head8 = [['Bln', 'Thn', 'Suku Bunga', 'Cicilan', 'Pokok', 'Bunga', 'Saldo Akhir', 'Ekstra']];
+  const interestHeader = data.interestColumnLabel ?? 'Bunga';
+  const rateHeader = data.isSyariah ? (data.akadTypeDisplay === 'Murabahah' ? 'Margin (p.a.)' : 'Ujrah (p.a.)') : 'Suku Bunga';
+  const head7 = [['Bln', 'Thn', rateHeader, 'Cicilan', 'Pokok', interestHeader, 'Saldo Akhir']];
+  const head8 = [['Bln', 'Thn', rateHeader, 'Cicilan', 'Pokok', interestHeader, 'Saldo Akhir', 'Ekstra']];
 
   autoTable(doc, {
     startY: y,

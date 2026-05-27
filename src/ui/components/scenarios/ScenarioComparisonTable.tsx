@@ -81,10 +81,50 @@ export function ScenarioComparisonTable({ scenarios }: Props) {
     return null;
   }
 
+  // ── Syariah-aware label derivation ─────────────────────────────────────────
+  const hasSyariah = scenarios.some((s) => s.summary.financingMode === 'syariah');
+  const allSyariah = scenarios.every((s) => s.summary.financingMode === 'syariah');
+  const allMurabahah = allSyariah && scenarios.every((s) => s.summary.syariahAkadType === 'murabahah');
+  const allMmq = allSyariah && scenarios.every((s) => s.summary.syariahAkadType === 'musyarakah_mutanaqishah');
+
+  const sectionLoanLabel = allSyariah
+    ? t('scenarios.sectionLoanInfoSyariah')
+    : hasSyariah
+      ? t('scenarios.sectionLoanInfoMixed')
+      : t('scenarios.sectionLoanInfo');
+
+  const loanAmountLabel = allSyariah
+    ? t('scenarios.rowLoanAmountSyariah')
+    : hasSyariah
+      ? t('scenarios.rowLoanAmountMixed')
+      : t('scenarios.rowLoanAmount');
+
+  const firstInstallmentLabel = allSyariah
+    ? t('scenarios.rowFirstInstallmentSyariah')
+    : t('scenarios.rowFirstInstallment');
+
+  const totalInterestLabel = allMurabahah
+    ? t('scenarios.rowTotalMargin')
+    : allMmq
+      ? t('scenarios.rowTotalUjrah')
+      : hasSyariah
+        ? t('scenarios.rowTotalInterestMixed')
+        : t('scenarios.rowTotalInterest');
+
+  const effectiveRateLabel = allSyariah
+    ? t('scenarios.rowEffectiveRateSyariah')
+    : t('scenarios.rowEffectiveRate');
+
+  const interestSavedLabel = allSyariah
+    ? t('scenarios.rowInterestSavedSyariah')
+    : t('scenarios.rowInterestSaved');
+
+  // ──────────────────────────────────────────────────────────────────────────
+
   const ROWS: RowDef[] = [
-    { label: t('scenarios.sectionLoanInfo'), isSection: true, getValue: () => '' },
+    { label: sectionLoanLabel, isSection: true, getValue: () => '' },
     {
-      label: t('scenarios.rowLoanAmount'),
+      label: loanAmountLabel,
       getValue: (s) => formatIDR(s.summary.totalPrincipal),
     },
     {
@@ -93,16 +133,23 @@ export function ScenarioComparisonTable({ scenarios }: Props) {
     },
     {
       label: t('scenarios.rowPaymentMethod'),
-      getValue: (s) => (s.form.paymentMethod === 'annuity' ? t('scenarios.paymentAnnuity') : t('scenarios.paymentFlat')),
+      getValue: (s) => {
+        if (s.summary.financingMode === 'syariah') {
+          return s.summary.syariahAkadType === 'murabahah'
+            ? t('scenarios.paymentMurabahah')
+            : t('scenarios.paymentMMQ');
+        }
+        return s.form.paymentMethod === 'annuity' ? t('scenarios.paymentAnnuity') : t('scenarios.paymentFlat');
+      },
     },
     { label: t('scenarios.sectionResults'), isSection: true, getValue: () => '' },
     {
-      label: t('scenarios.rowFirstInstallment'),
+      label: firstInstallmentLabel,
       getValue: (s) => formatIDR(s.summary.installmentGroups[0]?.installmentAmount ?? 0),
       getNumeric: (s) => s.summary.installmentGroups[0]?.installmentAmount ?? 0,
     },
     {
-      label: t('scenarios.rowTotalInterest'),
+      label: totalInterestLabel,
       getValue: (s) => formatIDR(s.summary.totalInterest),
       getNumeric: (s) => s.summary.totalInterest,
     },
@@ -112,7 +159,7 @@ export function ScenarioComparisonTable({ scenarios }: Props) {
       getNumeric: (s) => s.summary.totalPayment,
     },
     {
-      label: t('scenarios.rowEffectiveRate'),
+      label: effectiveRateLabel,
       getValue: (s) => formatPercent(s.summary.effectiveAnnualRate, 2, true),
       getNumeric: (s) => s.summary.effectiveAnnualRate,
     },
@@ -123,7 +170,7 @@ export function ScenarioComparisonTable({ scenarios }: Props) {
       lowerIsBetter: false,
     },
     {
-      label: t('scenarios.rowInterestSaved'),
+      label: interestSavedLabel,
       getValue: (s) =>
         s.summary.interestSaved > 0
           ? `${formatIDR(s.summary.interestSaved)} (${s.summary.interestSavedPercent.toFixed(1)}%)`
@@ -189,7 +236,10 @@ export function ScenarioComparisonTable({ scenarios }: Props) {
               {scenarios.map((s) => (
                 <th
                   key={s.id}
-                  className="text-right py-2 px-3 bg-gray-50 text-blue-800 font-semibold text-xs"
+                  className={[
+                    'text-right py-2 px-3 bg-gray-50 font-semibold text-xs',
+                    s.summary.financingMode === 'syariah' ? 'text-emerald-800' : 'text-blue-800',
+                  ].join(' ')}
                 >
                   {s.label}
                 </th>
@@ -203,7 +253,10 @@ export function ScenarioComparisonTable({ scenarios }: Props) {
                   <tr key={ri}>
                     <td
                       colSpan={scenarios.length + 1}
-                      className="py-1.5 px-3 bg-blue-600 text-white text-xs font-semibold uppercase tracking-wide"
+                      className={[
+                        'py-1.5 px-3 text-white text-xs font-semibold uppercase tracking-wide',
+                        allSyariah ? 'bg-emerald-600' : 'bg-blue-600',
+                      ].join(' ')}
                     >
                       {row.label}
                     </td>

@@ -66,7 +66,7 @@ const SpinnerIcon = () => (
 
 export function ExportButton({ form, summary, scenarios = [], affordability, refinancing }: Props) {
   const { t } = useTranslation();
-  const [status, setStatus] = useState<'idle' | 'loading' | 'sharing' | 'error'>('idle');
+  const [status, setStatus] = useState<'idle' | 'loading' | 'sharing' | 'downloaded' | 'error'>('idle');
 
   const isMulti = scenarios.length >= 2;
   const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
@@ -75,11 +75,14 @@ export function ExportButton({ form, summary, scenarios = [], affordability, ref
     setStatus('loading');
     try {
       const svc = await import('../../../infrastructure/pdf/exportService');
+      let blob: Blob;
+      let filename: string;
       if (isMulti) {
-        await svc.exportMultiScenarioPdf(scenarios, affordability, refinancing);
+        ({ blob, filename } = await svc.buildMultiPdfBlob(scenarios, affordability, refinancing));
       } else {
-        await svc.exportToPdf(form, summary, affordability, refinancing);
+        ({ blob, filename } = await svc.buildPdfBlob(form, summary, affordability, refinancing));
       }
+      svc.downloadBlob(blob, filename);
       setStatus('idle');
     } catch (err) {
       console.error('PDF export failed:', err);
@@ -103,26 +106,29 @@ export function ExportButton({ form, summary, scenarios = [], affordability, ref
       const file = new File([blob], filename, { type: 'application/pdf' });
 
       if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({
-          title: isMulti ? t('export.shareTitle') : t('export.shareTitleOne'),
-          files: [file],
-        });
+        try {
+          await navigator.share({
+            title: isMulti ? t('export.shareTitle') : t('export.shareTitleOne'),
+            files: [file],
+          });
+          setStatus('idle');
+        } catch (shareErr) {
+          if (shareErr instanceof DOMException && shareErr.name === 'AbortError') {
+            setStatus('idle');
+            return;
+          }
+          // navigator.share failed after blob was generated — fall back to download
+          svc.downloadBlob(blob, filename);
+          setStatus('downloaded');
+          setTimeout(() => setStatus('idle'), 4000);
+        }
       } else {
-        // Files not supported — fall back to URL download
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        a.click();
-        URL.revokeObjectURL(url);
+        // File sharing not supported on this browser — fall back to download
+        svc.downloadBlob(blob, filename);
+        setStatus('downloaded');
+        setTimeout(() => setStatus('idle'), 4000);
       }
-      setStatus('idle');
     } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError') {
-        // User dismissed the native share sheet — not an error
-        setStatus('idle');
-        return;
-      }
       console.error('PDF share failed:', err);
       setStatus('error');
     }
@@ -157,6 +163,11 @@ export function ExportButton({ form, summary, scenarios = [], affordability, ref
         </Button>
       </div>
 
+      {status === 'downloaded' && (
+        <p className="text-xs text-green-600">
+          {t('export.downloadedFallback')}
+        </p>
+      )}
       {status === 'error' && (
         <p className="text-xs text-red-600">
           {t('export.error')}{' '}

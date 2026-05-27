@@ -125,6 +125,12 @@ export interface PdfExportData {
   affordability?: PdfAffordabilitySection;
   /** Present when the user filled in refinancing data before exporting */
   refinancing?: PdfRefinancingSection;
+  /** Set when this is a Syariah (Islamic) financing scenario */
+  isSyariah?: boolean;
+  /** Akad type label, e.g. "Murabahah" or "Musyarakah Mutanaqishah (MMQ)" */
+  akadTypeDisplay?: string;
+  /** Column header override for the interest column in the amortization table */
+  interestColumnLabel?: string;
 }
 
 // ─── Multi-scenario types ─────────────────────────────────────────────────────
