@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { useScenarios } from '../../application/hooks/useScenarios';
 import { useUrlSync } from '../../hooks/useUrlSync';
 import { parseUrlInit } from '../../utils/urlState';
@@ -6,6 +6,8 @@ import { LoanInputForm } from '../components/form/LoanInputForm';
 import { SummaryCard } from '../components/results/SummaryCard';
 import { InstallmentGroups } from '../components/results/InstallmentGroups';
 import { AmortizationTable } from '../components/results/AmortizationTable';
+import { NextStepActions } from '../components/results/NextStepActions';
+import { ChevronIcon } from '../components/common/ChevronIcon';
 import { ExportButton } from '../components/export/ExportButton';
 import { ShareReportModal } from '../components/export/ShareReportModal';
 import { ScenarioTabs } from '../components/scenarios/ScenarioTabs';
@@ -73,7 +75,6 @@ function deriveAffordabilityInput(
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export function CalculatorPage() {
-  // Parse URL once at mount — returns null if no ?s= param or if data is invalid
   const urlInit = useMemo(() => parseUrlInit(), []);
 
   const { scenarios, activeCount, activeTab, setActiveTab, canAdd, addScenario, removeScenario, resetAll } =
@@ -87,18 +88,16 @@ export function CalculatorPage() {
         : {},
     );
 
-  // Sync state to URL after 500ms debounce whenever inputs change
   const { suppressNext } = useUrlSync({ scenarios, activeCount, activeTab });
 
   const active = scenarios.find((s) => s.id === activeTab) ?? scenarios[0];
 
-  // Memoized so chart useMemo deps are stable between renders that don't change scenario data
   const calculated = useMemo(
     () => scenarios.filter((s): s is CalculatedScenario => s.summary !== null),
     [scenarios],
   );
 
-  // ── Affordability state (global — shared across all scenarios) ─────────────
+  // ── Affordability state ───────────────────────────────────────────────────
   const [affordabilityForm, setAffordabilityForm] =
     useState<AffordabilityFormState>(DEFAULT_AFFORDABILITY);
 
@@ -118,7 +117,6 @@ export function CalculatorPage() {
     [calculated, affordabilityForm],
   );
 
-  // Only pass affordability to the PDF when the user has entered income
   const affordabilityExportData =
     affordabilityTotalIncome > 0
       ? {
@@ -127,7 +125,7 @@ export function CalculatorPage() {
         }
       : undefined;
 
-  // ── Refinancing state (global — applies to a specific loan situation) ──────
+  // ── Refinancing state ─────────────────────────────────────────────────────
   const [refinancingForm, setRefinancingForm] =
     useState<RefinancingFormState>(DEFAULT_REFINANCING);
 
@@ -180,10 +178,22 @@ export function CalculatorPage() {
       ? { form: refinancingForm, result: refinancingResult }
       : undefined;
 
+  // ── Section refs + scroll helpers ─────────────────────────────────────────
+  const affordabilityRef = useRef<HTMLDivElement>(null);
+  const refinancingRef = useRef<HTMLDivElement>(null);
+
+  function scrollToAffordability() {
+    affordabilityRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+  }
+
+  function scrollToRefinancing() {
+    handleRefinancingPrefill();
+    refinancingRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+  }
+
   // ──────────────────────────────────────────────────────────────────────────
 
   function handleReset() {
-    // Suppress the URL sync that would otherwise fire 500ms after the state reset
     suppressNext();
     resetAll();
     const url = new URL(window.location.href);
@@ -193,7 +203,6 @@ export function CalculatorPage() {
 
   return (
     <div className="space-y-5">
-      {/* Scenario tab bar — always visible (shows "+ Tambah Skenario" even with 1 tab) */}
       <ScenarioTabs
         scenarios={scenarios}
         activeTab={activeTab}
@@ -203,7 +212,6 @@ export function CalculatorPage() {
         onRemove={removeScenario}
       />
 
-      {/* Form + Results grid */}
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(400px,480px)_1fr] gap-6 items-start">
         {/* ── Left: active scenario form ─────────────────────────────────── */}
         <div>
@@ -226,34 +234,42 @@ export function CalculatorPage() {
             onReset={handleReset}
             affordability={affordabilityExportData}
             refinancing={refinancingExportData}
+            onScrollToAffordability={scrollToAffordability}
+            onScrollToRefinancing={scrollToRefinancing}
           />
         </div>
       </div>
 
-      {/* Comparison panel — shown when ≥ 2 scenarios have results */}
+      {/* ── Decision tools — immediately below results grid ─────────────────── */}
+
+      {/* Affordability — first tool after the main result */}
+      {calculated.length >= 1 && (
+        <div ref={affordabilityRef}>
+          <AffordabilityPanel
+            calculated={calculated}
+            form={affordabilityForm}
+            onChange={handleAffordabilityChange}
+            results={affordabilityResults}
+          />
+        </div>
+      )}
+
+      {/* Refinancing — right after affordability */}
+      {calculated.length >= 1 && (
+        <div ref={refinancingRef}>
+          <RefinancingPanel
+            form={refinancingForm}
+            onChange={handleRefinancingChange}
+            result={refinancingResult}
+            activeScenario={activeCalculated}
+            onPrefill={handleRefinancingPrefill}
+          />
+        </div>
+      )}
+
+      {/* Scenario comparison — advanced feature, at the bottom */}
       {activeCount > 1 && calculated.length >= 2 && (
         <ScenarioComparisonPanel scenarios={calculated} />
-      )}
-
-      {/* Affordability + stress test — shown whenever ≥ 1 scenario has results */}
-      {calculated.length >= 1 && (
-        <AffordabilityPanel
-          calculated={calculated}
-          form={affordabilityForm}
-          onChange={handleAffordabilityChange}
-          results={affordabilityResults}
-        />
-      )}
-
-      {/* Refinancing calculator — shown whenever ≥ 1 scenario has results */}
-      {calculated.length >= 1 && (
-        <RefinancingPanel
-          form={refinancingForm}
-          onChange={handleRefinancingChange}
-          result={refinancingResult}
-          activeScenario={activeCalculated}
-          onPrefill={handleRefinancingPrefill}
-        />
       )}
     </div>
   );
@@ -270,6 +286,8 @@ interface ResultsPanelProps {
   onReset: () => void;
   affordability: import('../../infrastructure/pdf/exportService').AffordabilityExportData | undefined;
   refinancing: import('../../infrastructure/pdf/exportService').RefinancingExportData | undefined;
+  onScrollToAffordability: () => void;
+  onScrollToRefinancing: () => void;
 }
 
 function ResultsPanel({
@@ -281,12 +299,24 @@ function ResultsPanel({
   onReset,
   affordability,
   refinancing,
+  onScrollToAffordability,
+  onScrollToRefinancing,
 }: ResultsPanelProps) {
   const { form, summary, errors, isCalcError } = scenario;
+
+  // Amortization table collapse state — collapsed by default so decision tools aren't buried
+  const [amortizationOpen, setAmortizationOpen] = useState(false);
+  const amortizationRef = useRef<HTMLDivElement>(null);
+
+  function scrollToAmortization() {
+    setAmortizationOpen(true);
+    amortizationRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+  }
 
   if (summary) {
     return (
       <>
+        {/* Action row */}
         <div className="flex justify-end gap-2">
           <button
             type="button"
@@ -311,14 +341,46 @@ function ResultsPanel({
             refinancing={refinancing}
           />
         </div>
+
         <SummaryCard summary={summary} />
+
+        {/* Next-step CTAs — immediately after the hero summary */}
+        <NextStepActions
+          onScrollToAffordability={onScrollToAffordability}
+          onScrollToRefinancing={onScrollToRefinancing}
+          onScrollToAmortization={scrollToAmortization}
+        />
+
         <EarlyRepaymentSummary summary={summary} />
         {summary.totalUpfrontCost > 0 && <KprFeesSummary summary={summary} />}
         {summary.installmentGroups.length > 1 && (
           <InstallmentGroups summary={summary} />
         )}
         <ChartSection calculated={calculated} />
-        <AmortizationTable schedule={summary.schedule} />
+
+        {/* Amortization table — collapsed by default to keep decision tools visible */}
+        <div ref={amortizationRef} className="rounded-xl border border-gray-200 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setAmortizationOpen((o) => !o)}
+            className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors"
+            aria-expanded={amortizationOpen}
+          >
+            <div className="text-left">
+              <p className="text-sm font-semibold text-gray-700">Tabel Amortisasi</p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Lihat rincian pembayaran bulanan sepanjang tenor.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0 ml-3">
+              <span className="text-xs text-blue-600 font-medium">
+                {amortizationOpen ? 'Sembunyikan' : 'Tampilkan'}
+              </span>
+              <ChevronIcon open={amortizationOpen} />
+            </div>
+          </button>
+          {amortizationOpen && <AmortizationTable schedule={summary.schedule} />}
+        </div>
       </>
     );
   }

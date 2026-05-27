@@ -28,6 +28,11 @@ async function waitForCalc() {
   });
 }
 
+/** Click the amortization collapse toggle to expand the table. */
+function expandAmortization() {
+  fireEvent.click(screen.getByRole('button', { name: /Tampilkan/i }));
+}
+
 // ─── Test suite ───────────────────────────────────────────────────────────────
 
 describe('CalculatorPage', () => {
@@ -75,12 +80,9 @@ describe('CalculatorPage', () => {
       render(<CalculatorPage />);
       await waitForCalc();
 
-      // Hero heading in SummaryCard (fixed+floating schedule → "Tetap Pertama")
       expect(screen.getByText('Cicilan Periode Tetap Pertama')).toBeInTheDocument();
-      // Metric labels unique to SummaryCard (not present in the form or table headers)
       expect(screen.getByText('Total Bunga')).toBeInTheDocument();
       expect(screen.getByText('Total Pembayaran')).toBeInTheDocument();
-      // "Saldo Akhir" also appears as an amortization table column header — use getAllBy
       expect(screen.getAllByText('Saldo Akhir').length).toBeGreaterThanOrEqual(1);
     });
 
@@ -99,56 +101,132 @@ describe('CalculatorPage', () => {
     it('shows installment-change breakdown for fixed + floating schedules', async () => {
       render(<CalculatorPage />);
       await waitForCalc();
-      // Default: 24-month fixed period then floating → "Perubahan Cicilan" section
       expect(screen.getByText('Perubahan Cicilan')).toBeInTheDocument();
     });
   });
 
-  // ─── Amortization table ────────────────────────────────────────────────────
+  // ─── Next-step actions (discoverability) ──────────────────────────────────
+
+  describe('NextStepActions', () => {
+    it('renders "Langkah Berikutnya" section after a successful calculation', async () => {
+      render(<CalculatorPage />);
+      await waitForCalc();
+      expect(screen.getByText('Langkah Berikutnya')).toBeInTheDocument();
+    });
+
+    it('renders "Cek Kemampuan Bayar" CTA', async () => {
+      render(<CalculatorPage />);
+      await waitForCalc();
+      expect(screen.getByRole('button', { name: /Cek Kemampuan Bayar/i })).toBeInTheDocument();
+    });
+
+    it('renders "Simulasi Refinancing" CTA', async () => {
+      render(<CalculatorPage />);
+      await waitForCalc();
+      expect(screen.getByRole('button', { name: /Simulasi Refinancing/i })).toBeInTheDocument();
+    });
+
+    it('renders "Lihat Detail Angsuran" CTA', async () => {
+      render(<CalculatorPage />);
+      await waitForCalc();
+      expect(screen.getByRole('button', { name: /Lihat Detail Angsuran/i })).toBeInTheDocument();
+    });
+
+    it('does not render NextStepActions before calculation completes', () => {
+      render(<CalculatorPage />);
+      // debounce not advanced — no summary yet
+      expect(screen.queryByText('Langkah Berikutnya')).not.toBeInTheDocument();
+    });
+
+    it('"Simulasi Refinancing" CTA does not throw when clicked', async () => {
+      render(<CalculatorPage />);
+      await waitForCalc();
+      expect(() =>
+        fireEvent.click(screen.getByRole('button', { name: /Simulasi Refinancing/i })),
+      ).not.toThrow();
+    });
+  });
+
+  // ─── Amortization table collapse ──────────────────────────────────────────
 
   describe('amortization table', () => {
-    it('renders the "Tabel Amortisasi" heading', async () => {
+    it('shows "Tabel Amortisasi" heading (in collapse toggle) after calculation', async () => {
       render(<CalculatorPage />);
       await waitForCalc();
       expect(screen.getByText('Tabel Amortisasi')).toBeInTheDocument();
     });
 
-    it('renders all seven column headers', async () => {
+    it('is collapsed by default — column headers are not visible', async () => {
       render(<CalculatorPage />);
       await waitForCalc();
-      // "Bln", "Thn", "Cicilan", "Pokok", "Bunga", "Saldo Akhir" are unique to AmortizationTable
-      const uniqueCols = ['Bln', 'Thn', 'Cicilan', 'Pokok', 'Bunga', 'Saldo Akhir'];
+      // Column headers live inside the table; should not be present when collapsed
+      expect(screen.queryByRole('columnheader', { name: 'Bln' })).not.toBeInTheDocument();
+    });
+
+    it('shows "Tampilkan" toggle button when collapsed', async () => {
+      render(<CalculatorPage />);
+      await waitForCalc();
+      expect(screen.getByRole('button', { name: /Tampilkan/i })).toBeInTheDocument();
+    });
+
+    it('expands and shows column headers when toggle is clicked', async () => {
+      render(<CalculatorPage />);
+      await waitForCalc();
+      expandAmortization();
+      const uniqueCols = ['Bln', 'Thn', 'Cicilan', 'Pokok', 'Bunga'];
       for (const col of uniqueCols) {
         expect(screen.getByRole('columnheader', { name: col })).toBeInTheDocument();
       }
-      // "Suku Bunga" also appears in InstallmentGroups — assert at least one instance
       expect(
         screen.getAllByRole('columnheader', { name: 'Suku Bunga' }).length,
       ).toBeGreaterThanOrEqual(1);
     });
 
-    it('renders the total footer row', async () => {
+    it('renders all seven column headers after expanding', async () => {
       render(<CalculatorPage />);
       await waitForCalc();
-      // Footer text: "Total (N bulan)"
+      expandAmortization();
+      const uniqueCols = ['Bln', 'Thn', 'Cicilan', 'Pokok', 'Bunga', 'Saldo Akhir'];
+      for (const col of uniqueCols) {
+        expect(screen.getByRole('columnheader', { name: col })).toBeInTheDocument();
+      }
+      expect(
+        screen.getAllByRole('columnheader', { name: 'Suku Bunga' }).length,
+      ).toBeGreaterThanOrEqual(1);
+    });
+
+    it('renders the total footer row after expanding', async () => {
+      render(<CalculatorPage />);
+      await waitForCalc();
+      expandAmortization();
       expect(screen.getByText(/^Total \(/)).toBeInTheDocument();
     });
 
-    it('renders individual data rows for a short schedule (≤24 months, SmallScheduleTable path)', async () => {
+    it('renders individual data rows for a short schedule after expanding (≤24 months, SmallScheduleTable path)', async () => {
       const { container } = render(<CalculatorPage />);
 
-      // Disable the fixed period so there is only a floating rate
       fireEvent.click(
         screen.getByRole('checkbox', { name: /suku bunga tetap/i }),
       );
-      // Reduce tenor to 1 year (12 rows < VIRTUALIZE_THRESHOLD of 24)
       const tenorYearsInput = container.querySelector('#tenor-years') as HTMLInputElement;
       fireEvent.change(tenorYearsInput, { target: { value: '1' } });
 
       await waitForCalc();
+      expandAmortization();
 
       // thead row + 12 tbody rows + tfoot row = 14 total
       expect(screen.getAllByRole('row').length).toBeGreaterThanOrEqual(13);
+    });
+
+    it('collapses again when toggle is clicked a second time', async () => {
+      render(<CalculatorPage />);
+      await waitForCalc();
+      // Expand
+      expandAmortization();
+      expect(screen.getByRole('columnheader', { name: 'Bln' })).toBeInTheDocument();
+      // Collapse again
+      fireEvent.click(screen.getByRole('button', { name: /Sembunyikan/i }));
+      expect(screen.queryByRole('columnheader', { name: 'Bln' })).not.toBeInTheDocument();
     });
   });
 
@@ -166,7 +244,6 @@ describe('CalculatorPage', () => {
 
     it('is absent before the first calculation completes', () => {
       render(<CalculatorPage />);
-      // Debounce not yet advanced → summary is still null → ExportButton not rendered
       expect(
         screen.queryByRole('button', { name: /Unduh simulasi KPR/i }),
       ).not.toBeInTheDocument();
@@ -185,6 +262,7 @@ describe('CalculatorPage', () => {
       });
       await waitForCalc();
 
+      // After recalculation, the collapse toggle heading is still visible
       expect(screen.getByText('Tabel Amortisasi')).toBeInTheDocument();
     });
 
@@ -201,11 +279,9 @@ describe('CalculatorPage', () => {
 
     it('down payment: shows inline error when DP equals 100% of property price', async () => {
       render(<CalculatorPage />);
-      // Default mode is percent; placeholder is "20"
       fireEvent.change(screen.getByPlaceholderText('20'), { target: { value: '100' } });
       await waitForCalc();
 
-      // Error appears both inline (next to DP input) and in ValidationErrorState panel
       expect(
         screen.getAllByText(/melebihi atau sama dengan harga properti/i).length,
       ).toBeGreaterThanOrEqual(1);
@@ -214,7 +290,6 @@ describe('CalculatorPage', () => {
     it('down payment: hint shows derived IDR amount as the user types a percent', () => {
       render(<CalculatorPage />);
       fireEvent.change(screen.getByPlaceholderText('20'), { target: { value: '25' } });
-      // 25% of 500M = 125M → formatted as "Rp 125.000.000"
       expect(screen.getByText(/125\.000\.000/)).toBeInTheDocument();
     });
   });
@@ -231,7 +306,6 @@ describe('CalculatorPage', () => {
     it('auto-creates a single tier starting at month 25 (after fixed period)', () => {
       render(<CalculatorPage />);
       fireEvent.click(screen.getByRole('button', { name: /Fixed \+ Floating Bertingkat/i }));
-      // fixedDurationMonths = "24" → floating starts at month 25
       expect(screen.getByText('25')).toBeInTheDocument();
     });
 
@@ -243,7 +317,6 @@ describe('CalculatorPage', () => {
 
     it('produces calculation results with the auto-created tiered setup', async () => {
       render(<CalculatorPage />);
-      // Reducer creates one tier covering months 25–120 at rate "11" (= floatingBaseRate)
       fireEvent.click(screen.getByRole('button', { name: /Fixed \+ Floating Bertingkat/i }));
       await waitForCalc();
 
