@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
 import { ScenarioTabs } from './ScenarioTabs';
 import { MOCK_SCENARIOS_1, MOCK_SCENARIOS_2, MOCK_SCENARIOS_3 } from '../../../stories/fixtures';
-import type { ScenarioId } from '../../../application/store/scenarioTypes';
+import type { ScenarioId, ScenarioState } from '../../../application/store/scenarioTypes';
 
 const meta: Meta<typeof ScenarioTabs> = {
   title: 'Scenarios/ScenarioTabs',
@@ -53,7 +53,7 @@ export const ThreeScenarios: Story = {
 
 function InteractiveDemo() {
   const [active, setActive] = useState<ScenarioId>(1);
-  const [scenarios, setScenarios] = useState(MOCK_SCENARIOS_2);
+  const [scenarios, setScenarios] = useState<ScenarioState[]>(MOCK_SCENARIOS_2);
   return (
     <ScenarioTabs
       scenarios={scenarios}

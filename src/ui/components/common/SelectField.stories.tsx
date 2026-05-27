@@ -2,7 +2,9 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
 import { SelectField } from './SelectField';
 
-const PAYMENT_OPTIONS = [
+type PaymentMethod = 'annuity' | 'flat';
+
+const PAYMENT_OPTIONS: Array<{ value: PaymentMethod; label: string }> = [
   { value: 'annuity', label: 'Anuitas — Cicilan tetap per bulan' },
   { value: 'flat', label: 'Flat — Pokok tetap per bulan' },
 ];
@@ -53,7 +55,7 @@ export const WithError: Story = {
 };
 
 function ControlledDemo() {
-  const [value, setValue] = useState<'annuity' | 'flat'>('annuity');
+  const [value, setValue] = useState<PaymentMethod>('annuity');
   const hints: Record<string, string> = {
     annuity: 'Cicilan bulanan tetap; komposisi pokok/bunga berubah tiap bulan',
     flat: 'Pokok tetap; bunga dihitung dari pokok awal (cicilan lebih tinggi di awal)',
@@ -62,7 +64,7 @@ function ControlledDemo() {
     <SelectField
       label="Metode Perhitungan"
       value={value}
-      onChange={setValue}
+      onChange={(v) => setValue(v)}
       options={PAYMENT_OPTIONS}
       hint={hints[value]}
     />
