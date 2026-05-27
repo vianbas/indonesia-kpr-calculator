@@ -342,7 +342,23 @@
     "shareTitle": "Perbandingan KPR",
     "shareTitleOne": "Simulasi KPR",
     "error": "Gagal membuat PDF.",
-    "retry": "Coba lagi"
+    "retry": "Coba lagi",
+    "downloadedFallback": "PDF diunduh (berbagi file tidak didukung browser ini)"
+  },
+  "shareModal": {
+    "openAria": "Buka dialog berbagi skenario",
+    "button": "Bagikan",
+    "title": "Bagikan Simulasi",
+    "subtitle": "Pilih penerima untuk menyesuaikan format pesan",
+    "closeAria": "Tutup",
+    "previewAria": "Pratinjau teks yang akan dibagikan",
+    "copyText": "Salin Teks",
+    "copiedText": "✓ Tersalin!",
+    "copyLink": "Salin Tautan",
+    "copiedLink": "✓ Tautan disalin!",
+    "presetPasangan": "Pasangan",
+    "presetAgen": "Agen Properti",
+    "presetBank": "Petugas Bank"
   },
   "syariah": {
     "modeSelector": "Mode Pembiayaan",

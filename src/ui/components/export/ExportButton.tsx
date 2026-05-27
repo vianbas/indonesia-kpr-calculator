@@ -66,7 +66,7 @@ const SpinnerIcon = () => (
 
 export function ExportButton({ form, summary, scenarios = [], affordability, refinancing }: Props) {
   const { t } = useTranslation();
-  const [status, setStatus] = useState<'idle' | 'loading' | 'sharing' | 'error'>('idle');
+  const [status, setStatus] = useState<'idle' | 'loading' | 'sharing' | 'downloaded' | 'error'>('idle');
 
   const isMulti = scenarios.length >= 2;
   const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
@@ -107,16 +107,18 @@ export function ExportButton({ form, summary, scenarios = [], affordability, ref
           title: isMulti ? t('export.shareTitle') : t('export.shareTitleOne'),
           files: [file],
         });
+        setStatus('idle');
       } else {
-        // Files not supported — fall back to URL download
+        // Files not supported — fall back to URL download with user feedback
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         a.download = filename;
         a.click();
         URL.revokeObjectURL(url);
+        setStatus('downloaded');
+        setTimeout(() => setStatus('idle'), 4000);
       }
-      setStatus('idle');
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') {
         // User dismissed the native share sheet — not an error
@@ -157,6 +159,11 @@ export function ExportButton({ form, summary, scenarios = [], affordability, ref
         </Button>
       </div>
 
+      {status === 'downloaded' && (
+        <p className="text-xs text-green-600">
+          {t('export.downloadedFallback')}
+        </p>
+      )}
       {status === 'error' && (
         <p className="text-xs text-red-600">
           {t('export.error')}{' '}

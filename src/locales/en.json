@@ -342,7 +342,23 @@
     "shareTitle": "KPR Comparison",
     "shareTitleOne": "KPR Simulation",
     "error": "Failed to create PDF.",
-    "retry": "Try again"
+    "retry": "Try again",
+    "downloadedFallback": "PDF downloaded (file sharing not supported on this browser)"
+  },
+  "shareModal": {
+    "openAria": "Open share dialog",
+    "button": "Share",
+    "title": "Share Simulation",
+    "subtitle": "Select recipient to customize message format",
+    "closeAria": "Close",
+    "previewAria": "Preview of text to be shared",
+    "copyText": "Copy Text",
+    "copiedText": "✓ Copied!",
+    "copyLink": "Copy Link",
+    "copiedLink": "✓ Link copied!",
+    "presetPasangan": "Partner",
+    "presetAgen": "Property Agent",
+    "presetBank": "Bank Officer"
   },
   "syariah": {
     "modeSelector": "Financing Mode",
