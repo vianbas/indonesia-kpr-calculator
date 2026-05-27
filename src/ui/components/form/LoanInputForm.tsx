@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { BasicInfoSection } from './BasicInfoSection';
 import { CalculationMethodSelector } from './CalculationMethodSelector';
 import { FixedRateSection } from './FixedRateSection';
@@ -29,6 +30,8 @@ const INLINE_FIELD_PREFIXES = [
 ] as const;
 
 export function LoanInputForm({ form, dispatch, errors, fieldErrors }: Props) {
+  const { t } = useTranslation();
+
   const globalErrors = errors.filter(
     (e) => !INLINE_FIELD_PREFIXES.some((prefix) => e.field.startsWith(prefix)),
   );
@@ -36,20 +39,15 @@ export function LoanInputForm({ form, dispatch, errors, fieldErrors }: Props) {
   return (
     <div className="space-y-4">
       <BasicInfoSection form={form} dispatch={dispatch} fieldErrors={fieldErrors} />
-
-      {/* Metode Perhitungan selector — drives which interest rate fields are shown */}
       <CalculationMethodSelector form={form} dispatch={dispatch} />
-
       <FixedRateSection form={form} dispatch={dispatch} fieldErrors={fieldErrors} />
       <FloatingRateSection form={form} dispatch={dispatch} fieldErrors={fieldErrors} />
-
       <EarlyRepaymentSection form={form} dispatch={dispatch} />
       <KprFeesSection form={form} dispatch={dispatch} />
 
-      {/* Cross-field errors not tied to a specific inline input */}
       {globalErrors.length > 0 && (
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 space-y-1">
-          <p className="text-sm font-semibold text-red-700">Perlu diperbaiki:</p>
+          <p className="text-sm font-semibold text-red-700">{t('form.globalErrors')}</p>
           <ul className="list-disc list-inside space-y-0.5">
             {globalErrors.map((err, i) => (
               <li key={i} className="text-sm text-red-600">

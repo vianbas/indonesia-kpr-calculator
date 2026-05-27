@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AffordabilityInputs } from './AffordabilityInputs';
 import { AffordabilityScenarioCard } from './AffordabilityScenarioCard';
 import { ChevronIcon } from '../common/ChevronIcon';
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export function AffordabilityPanel({ calculated, form, onChange, results }: Props) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(true);
 
   const totalIncome =
@@ -22,24 +24,21 @@ export function AffordabilityPanel({ calculated, form, onChange, results }: Prop
 
   return (
     <div className="rounded-xl border border-gray-200 overflow-hidden">
-      {/* Header — matches ScenarioComparisonPanel exactly */}
       <button
         onClick={() => setOpen((o) => !o)}
         className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-sm font-semibold text-gray-700"
         aria-expanded={open}
       >
-        <span>Analisis Kemampuan Bayar</span>
+        <span>{t('affordability.title')}</span>
         <ChevronIcon open={open} />
       </button>
 
       {open && (
         <div className="bg-white">
-          {/* Input section */}
           <div className="p-4 border-b border-gray-100">
             <AffordabilityInputs form={form} onChange={onChange} />
           </div>
 
-          {/* Results section */}
           <div className="p-4">
             {totalIncome > 0 ? (
               <div
@@ -52,7 +51,11 @@ export function AffordabilityPanel({ calculated, form, onChange, results }: Prop
                 {results.map(({ scenario, result }, i) => (
                   <AffordabilityScenarioCard
                     key={scenario.id}
-                    label={calculated.length > 1 ? `Skenario ${i + 1}` : 'Hasil Analisis'}
+                    label={
+                      calculated.length > 1
+                        ? t('affordability.scenarioLabel', { n: i + 1 })
+                        : t('affordability.analysisLabel')
+                    }
                     result={result}
                     maxDSR={maxDSR}
                   />
@@ -60,7 +63,7 @@ export function AffordabilityPanel({ calculated, form, onChange, results }: Prop
               </div>
             ) : (
               <p className="text-sm text-center text-gray-400 py-4">
-                Masukkan penghasilan bulanan untuk melihat analisis kemampuan bayar.
+                {t('affordability.promptIncome')}
               </p>
             )}
           </div>

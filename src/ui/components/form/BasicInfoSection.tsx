@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Card } from '../common/Card';
 import { InputField } from '../common/InputField';
 import { SelectField } from '../common/SelectField';
@@ -13,12 +14,14 @@ interface Props {
   fieldErrors: Record<string, string>;
 }
 
-const paymentMethodOptions: SelectOption<PaymentMethod>[] = [
-  { value: 'annuity', label: 'Anuitas — Cicilan tetap per bulan' },
-  { value: 'flat', label: 'Flat — Pokok tetap per bulan' },
-];
-
 export function BasicInfoSection({ form, dispatch, fieldErrors }: Props) {
+  const { t } = useTranslation();
+
+  const paymentMethodOptions: SelectOption<PaymentMethod>[] = [
+    { value: 'annuity', label: t('form.paymentMethodAnnuity') },
+    { value: 'flat', label: t('form.paymentMethodFlat') },
+  ];
+
   const propertyPrice = parseFloat(form.propertyPrice) || 0;
   const dpRaw = parseFloat(form.downPaymentValue) || 0;
   const downPayment =
@@ -27,18 +30,17 @@ export function BasicInfoSection({ form, dispatch, fieldErrors }: Props) {
   const tenorTotal =
     (parseInt(form.tenorYears) || 0) * 12 + (parseInt(form.tenorAdditionalMonths) || 0);
 
-  // Safe percentage — only shown when propertyPrice > 0 to avoid Infinity
   const dpPercentLabel =
     propertyPrice > 0
       ? ` (${((downPayment / propertyPrice) * 100).toFixed(1)}%)`
       : '';
 
   return (
-    <Card title="Informasi Kredit" accent="blue">
+    <Card title={t('form.basicInfo')} accent="blue">
       <div className="space-y-4">
         {/* Property price */}
         <InputField
-          label="Harga Properti"
+          label={t('form.propertyPrice')}
           value={form.propertyPrice}
           onChange={(v) => dispatch({ type: 'SET_PROPERTY_PRICE', value: v })}
           type="number"
@@ -52,7 +54,7 @@ export function BasicInfoSection({ form, dispatch, fieldErrors }: Props) {
         {/* Down payment row */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-700">Uang Muka</span>
+            <span className="text-sm font-medium text-gray-700">{t('form.downPayment')}</span>
             <div className="flex rounded-lg border border-gray-300 overflow-hidden text-xs font-medium">
               {(['percent', 'amount'] as DownPaymentMode[]).map((mode) => (
                 <Button
@@ -87,7 +89,10 @@ export function BasicInfoSection({ form, dispatch, fieldErrors }: Props) {
             error={fieldErrors['downPaymentValue']}
             hint={
               !fieldErrors['downPaymentValue'] && downPayment > 0
-                ? `Setara ${formatIDR(downPayment)}${form.downPaymentMode === 'amount' ? dpPercentLabel : ''}`
+                ? t('form.dpEquivalent', {
+                    amount: formatIDR(downPayment),
+                    pctLabel: form.downPaymentMode === 'amount' ? dpPercentLabel : '',
+                  })
                 : undefined
             }
           />
@@ -95,7 +100,7 @@ export function BasicInfoSection({ form, dispatch, fieldErrors }: Props) {
 
         {/* Derived loan amount — read-only */}
         <div className="rounded-lg bg-blue-50 border border-blue-100 px-4 py-3 flex items-center justify-between">
-          <span className="text-sm font-medium text-blue-800">Nilai Kredit (KPR)</span>
+          <span className="text-sm font-medium text-blue-800">{t('form.loanAmount')}</span>
           <span className="text-base font-bold text-blue-900">
             {principalAmount > 0 ? formatIDR(principalAmount) : '—'}
           </span>
@@ -103,7 +108,7 @@ export function BasicInfoSection({ form, dispatch, fieldErrors }: Props) {
 
         {/* Tenor */}
         <div className="space-y-1">
-          <label className="text-sm font-medium text-gray-700">Jangka Waktu (Tenor)</label>
+          <label className="text-sm font-medium text-gray-700">{t('form.tenor')}</label>
           <div className="grid grid-cols-2 gap-3">
             <InputField
               label=""
@@ -111,7 +116,7 @@ export function BasicInfoSection({ form, dispatch, fieldErrors }: Props) {
               value={form.tenorYears}
               onChange={(v) => dispatch({ type: 'SET_TENOR_YEARS', value: v })}
               type="number"
-              suffix="Tahun"
+              suffix={t('form.tenorYears')}
               placeholder="10"
               min="0"
               max="30"
@@ -122,33 +127,33 @@ export function BasicInfoSection({ form, dispatch, fieldErrors }: Props) {
               value={form.tenorAdditionalMonths}
               onChange={(v) => dispatch({ type: 'SET_TENOR_ADDITIONAL_MONTHS', value: v })}
               type="number"
-              suffix="Bulan"
+              suffix={t('form.tenorMonths')}
               placeholder="0"
               min="0"
               max="11"
             />
           </div>
           {tenorTotal > 0 && (
-            <p className="text-xs text-gray-500">Total: {tenorTotal} bulan</p>
+            <p className="text-xs text-gray-500">{t('form.tenorTotal', { count: tenorTotal })}</p>
           )}
         </div>
 
-        {/* Payment method — generic SelectField eliminates the type cast */}
+        {/* Payment method */}
         <SelectField<PaymentMethod>
-          label="Metode Perhitungan"
+          label={t('form.paymentMethod')}
           value={form.paymentMethod}
           onChange={(v) => dispatch({ type: 'SET_PAYMENT_METHOD', method: v })}
           options={paymentMethodOptions}
           hint={
             form.paymentMethod === 'annuity'
-              ? 'Cicilan bulanan tetap; komposisi pokok/bunga berubah tiap bulan'
-              : 'Pokok tetap; bunga dihitung dari pokok awal (cicilan lebih tinggi)'
+              ? t('form.paymentMethodAnnuityHint')
+              : t('form.paymentMethodFlatHint')
           }
         />
 
         {/* Start date */}
         <InputField
-          label="Tanggal Pencairan"
+          label={t('form.startDate')}
           value={form.startDate}
           onChange={(v) => dispatch({ type: 'SET_START_DATE', value: v })}
           type="date"
@@ -164,7 +169,7 @@ export function BasicInfoSection({ form, dispatch, fieldErrors }: Props) {
               onChange={(e) => dispatch({ type: 'SET_INCLUDE_ADMIN_FEE', value: e.target.checked })}
               className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
-            <span className="text-sm font-medium text-gray-700">Sertakan Biaya Administrasi</span>
+            <span className="text-sm font-medium text-gray-700">{t('form.includeAdminFee')}</span>
           </label>
           {form.includeAdminFee && (
             <InputField
@@ -177,7 +182,7 @@ export function BasicInfoSection({ form, dispatch, fieldErrors }: Props) {
               placeholder="0"
               min="0"
               step="100000"
-              hint="Biaya admin dibayar satu kali saat pencairan"
+              hint={t('form.adminFeeHint')}
             />
           )}
         </div>

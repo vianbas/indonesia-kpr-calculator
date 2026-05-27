@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Card } from '../common/Card';
 import { formatIDR, formatIDRCompact, formatPercent, formatTenor } from '../../../domain/utils/currency';
 import type { MortgageSummary } from '../../../domain';
@@ -36,6 +37,8 @@ function Metric({ label, value, sub, valueColor = 'text-gray-900', badge }: Metr
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function SummaryCard({ summary }: Props) {
+  const { t } = useTranslation();
+
   const {
     installmentGroups,
     totalPrincipal,
@@ -52,7 +55,6 @@ export function SummaryCard({ summary }: Props) {
   const firstGroup = installmentGroups[0];
   const hasMultipleRates = installmentGroups.length > 1;
 
-  // Interest-to-principal ratio for the sub-label
   const interestRatioPct =
     totalPrincipal > 0
       ? ((totalInterest / totalPrincipal) * 100).toFixed(1)
@@ -65,26 +67,27 @@ export function SummaryCard({ summary }: Props) {
         <div className="rounded-xl bg-gradient-to-br from-blue-600 to-blue-800 px-5 py-4 text-white shadow-sm">
           <p className="text-xs font-semibold text-blue-200 uppercase tracking-widest mb-1">
             {hasMultipleRates
-              ? `Cicilan Periode ${firstGroup?.type === 'fixed' ? 'Tetap' : 'Variabel'} Pertama`
-              : 'Cicilan per Bulan'}
+              ? firstGroup?.type === 'fixed'
+                ? t('results.firstInstallmentFixed')
+                : t('results.firstInstallmentFloat')
+              : t('results.monthlyInstallment')}
           </p>
           <p className="text-3xl font-extrabold tracking-tight">
             {firstGroup ? formatIDR(firstGroup.installmentAmount) : '—'}
           </p>
           {hasMultipleRates && installmentGroups[1] && (
             <p className="text-xs text-blue-200 mt-1.5">
-              Berubah mulai Bulan {installmentGroups[1].fromMonth} →{' '}
-              <strong className="text-white">
-                {formatIDR(installmentGroups[1].installmentAmount)}
-              </strong>
-              /bln
+              {t('results.installmentChangeFrom', {
+                month: installmentGroups[1].fromMonth,
+                amount: formatIDR(installmentGroups[1].installmentAmount),
+              })}
             </p>
           )}
           <p className="text-xs text-blue-300 mt-2">
-            {formatTenor(tenorMonths)} • {formatPercent(effectiveAnnualRate, 2, true)} efektif
+            {formatTenor(tenorMonths)} • {formatPercent(effectiveAnnualRate, 2, true)} {t('results.effective')}
             {monthsSaved > 0 && (
               <span className="ml-2 text-green-300 font-semibold">
-                ({monthsSaved} bln dihemat)
+                {t('results.monthsSaved', { count: monthsSaved })}
               </span>
             )}
           </p>
@@ -92,51 +95,47 @@ export function SummaryCard({ summary }: Props) {
 
         {/* ── Metric 1: Loan Amount ───────────────────────────────────────── */}
         <Metric
-          label="Nilai Kredit (KPR)"
+          label={t('results.loanAmount')}
           value={formatIDRCompact(totalPrincipal)}
           sub={formatIDR(totalPrincipal)}
         />
 
         {/* ── 2-column grid ──────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 gap-3">
-          {/* Metric 2: Total Interest */}
           <Metric
-            label="Total Bunga"
+            label={t('results.totalInterest')}
             value={formatIDRCompact(totalInterest)}
-            sub={`${interestRatioPct}% dari pokok`}
+            sub={t('results.interestRatio', { pct: interestRatioPct })}
             valueColor="text-orange-700"
           />
 
-          {/* Metric 3: Total Payment */}
           <Metric
-            label="Total Pembayaran"
+            label={t('results.totalPayment')}
             value={formatIDRCompact(totalPayment)}
             sub={
               adminFee > 0
-                ? `Termasuk biaya admin ${formatIDRCompact(adminFee)}`
-                : `Pokok + bunga`
+                ? t('results.includesAdmin', { amount: formatIDRCompact(adminFee) })
+                : t('results.principalPlusInterest')
             }
             valueColor="text-gray-900"
           />
 
-          {/* Metric 4: Final Remaining Balance */}
           <Metric
-            label="Saldo Akhir"
+            label={t('results.finalBalance')}
             value={finalBalance === 0 ? 'Rp 0' : formatIDRCompact(finalBalance)}
-            sub={finalBalance === 0 ? 'Kredit lunas' : 'Sisa saldo'}
+            sub={finalBalance === 0 ? t('results.paidOff') : t('results.remainingBalance')}
             valueColor={finalBalance === 0 ? 'text-green-700' : 'text-red-600'}
             badge={
               finalBalance === 0
-                ? { text: 'Lunas', color: 'bg-green-100 text-green-700' }
-                : { text: 'Cek data', color: 'bg-red-100 text-red-700' }
+                ? { text: t('results.paidOffBadge'), color: 'bg-green-100 text-green-700' }
+                : { text: t('results.checkDataBadge'), color: 'bg-red-100 text-red-700' }
             }
           />
 
-          {/* Metric 5: Effective Rate */}
           <Metric
-            label="Suku Bunga Efektif"
+            label={t('results.effectiveRate')}
             value={formatPercent(effectiveAnnualRate)}
-            sub="Rata-rata tertimbang p.a."
+            sub={t('results.weightedAvg')}
           />
         </div>
 
@@ -145,7 +144,7 @@ export function SummaryCard({ summary }: Props) {
           <div className="rounded-xl border border-gray-200 overflow-hidden">
             <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-200">
               <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                Perubahan Cicilan
+                {t('results.installmentChanges')}
               </p>
             </div>
             <div className="divide-y divide-gray-100">
@@ -158,9 +157,9 @@ export function SummaryCard({ summary }: Props) {
                       }`}
                     />
                     <span className="text-xs text-gray-600">
-                      Bln {group.fromMonth}–{group.toMonth}
+                      {t('results.month')} {group.fromMonth}–{group.toMonth}
                       <span className="ml-1.5 text-gray-400">
-                        ({group.type === 'fixed' ? 'Tetap' : 'Variabel'}{' '}
+                        ({group.type === 'fixed' ? t('results.periodFixed') : t('results.periodVariable')}{' '}
                         {formatPercent(group.annualRate)})
                       </span>
                     </span>

@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card } from '../common/Card';
 import { AmortizationBarChart } from './AmortizationBarChart';
 import { BalanceLineChart } from './BalanceLineChart';
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export function ChartSection({ calculated }: Props) {
+  const { t } = useTranslation();
   const [barIdx, setBarIdx] = useState(0);
 
   // Grouping decision made ONCE here — both charts receive the same value so
@@ -24,12 +26,12 @@ export function ChartSection({ calculated }: Props) {
   const barSchedule = calculated[safeBarIdx].summary.schedule;
 
   return (
-    <Card title="Visualisasi Simulasi">
+    <Card title={t('chart.title')}>
       <div className="space-y-6">
         {/* ── Bar chart ──────────────────────────────────────────────────── */}
         <div>
           {isMulti && (
-            <div className="flex gap-1.5 mb-4" role="group" aria-label="Pilih skenario">
+            <div className="flex gap-1.5 mb-4" role="group" aria-label={t('chart.scenarioAria')}>
               {calculated.map((s, i) => (
                 <button
                   key={s.id}

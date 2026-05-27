@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../common/Button';
 import type { MortgageFormState } from '../../../application/store/formTypes';
 import type { MortgageSummary } from '../../../domain/models/amortization.types';
@@ -64,6 +65,7 @@ const SpinnerIcon = () => (
 );
 
 export function ExportButton({ form, summary, scenarios = [], affordability, refinancing }: Props) {
+  const { t } = useTranslation();
   const [status, setStatus] = useState<'idle' | 'loading' | 'sharing' | 'error'>('idle');
 
   const isMulti = scenarios.length >= 2;
@@ -102,7 +104,7 @@ export function ExportButton({ form, summary, scenarios = [], affordability, ref
 
       if (navigator.canShare?.({ files: [file] })) {
         await navigator.share({
-          title: isMulti ? 'Perbandingan KPR' : 'Simulasi KPR',
+          title: isMulti ? t('export.shareTitle') : t('export.shareTitleOne'),
           files: [file],
         });
       } else {
@@ -138,13 +140,9 @@ export function ExportButton({ form, summary, scenarios = [], affordability, ref
             icon={status === 'sharing' ? <SpinnerIcon /> : <ShareIcon />}
             onClick={handleShare}
             disabled={isBusy}
-            aria-label={
-              isMulti
-                ? 'Bagikan PDF perbandingan skenario'
-                : 'Bagikan simulasi KPR sebagai PDF'
-            }
+            aria-label={isMulti ? t('export.shareAria') : t('export.shareAriaOne')}
           >
-            {status === 'sharing' ? 'Membuat PDF…' : 'Bagikan PDF'}
+            {status === 'sharing' ? t('export.creating') : t('export.share')}
           </Button>
         )}
         <Button
@@ -153,24 +151,20 @@ export function ExportButton({ form, summary, scenarios = [], affordability, ref
           icon={status === 'loading' ? <SpinnerIcon /> : <DownloadIcon />}
           onClick={handleExport}
           disabled={isBusy}
-          aria-label={
-            isMulti
-              ? 'Unduh perbandingan skenario sebagai PDF'
-              : 'Unduh simulasi KPR sebagai PDF'
-          }
+          aria-label={isMulti ? t('export.downloadAria') : t('export.downloadAriaOne')}
         >
-          {status === 'loading' ? 'Membuat PDF…' : isMulti ? 'Unduh PDF Perbandingan' : 'Unduh PDF'}
+          {status === 'loading' ? t('export.creating') : isMulti ? t('export.downloadMulti') : t('export.download')}
         </Button>
       </div>
 
       {status === 'error' && (
         <p className="text-xs text-red-600">
-          Gagal membuat PDF.{' '}
+          {t('export.error')}{' '}
           <button
             className="underline hover:text-red-800"
             onClick={() => setStatus('idle')}
           >
-            Coba lagi
+            {t('export.retry')}
           </button>
         </p>
       )}

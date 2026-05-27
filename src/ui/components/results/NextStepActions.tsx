@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 interface Props {
   onScrollToAffordability: () => void;
   onScrollToRefinancing: () => void;
@@ -5,28 +7,30 @@ interface Props {
 }
 
 export function NextStepActions({ onScrollToAffordability, onScrollToRefinancing, onScrollToAmortization }: Props) {
+  const { t } = useTranslation();
+
   return (
     <div className="rounded-xl border border-blue-100 bg-gradient-to-br from-blue-50 to-indigo-50 p-4">
       <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-3">
-        Langkah Berikutnya
+        {t('results.nextStep')}
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
         <ActionButton
           onClick={onScrollToAffordability}
-          title="Cek Kemampuan Bayar"
-          description="Lihat apakah cicilan aman terhadap penghasilan dan utang bulanan."
+          title={t('results.nextStepAffordTitle')}
+          description={t('results.nextStepAffordDesc')}
           color="blue"
         />
         <ActionButton
           onClick={onScrollToRefinancing}
-          title="Simulasi Refinancing"
-          description="Gunakan hasil skenario ini untuk mengecek potensi take-over atau refinancing."
+          title={t('results.nextStepRefiTitle')}
+          description={t('results.nextStepRefiDesc')}
           color="indigo"
         />
         <ActionButton
           onClick={onScrollToAmortization}
-          title="Lihat Detail Angsuran"
-          description="Buka tabel angsuran lengkap."
+          title={t('results.nextStepAmortTitle')}
+          description={t('results.nextStepAmortDesc')}
           color="gray"
         />
       </div>

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Card } from '../common/Card';
 import { formatIDR, formatIDRCompact } from '../../../domain/utils/currency';
 import type { MortgageSummary } from '../../../domain';
@@ -42,6 +43,8 @@ function LineItem({ label, amount, bold, accent }: LineItemProps) {
 }
 
 export function KprFeesSummary({ summary }: Props) {
+  const { t } = useTranslation();
+
   const {
     downPayment, adminFee, provisionFee, appraisalFee,
     notaryFee, bphtb, ppnAmount, lifeInsurance, fireInsurance,
@@ -61,7 +64,7 @@ export function KprFeesSummary({ summary }: Props) {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-              Dana Awal yang Dibutuhkan
+              {t('results.feesTitle')}
             </p>
             <p className="text-2xl font-bold text-orange-900 mt-0.5">
               {formatIDRCompact(totalUpfrontCost)}
@@ -73,48 +76,48 @@ export function KprFeesSummary({ summary }: Props) {
 
         {/* Itemized breakdown */}
         <div className="rounded-xl border border-orange-100 overflow-hidden divide-y divide-orange-100">
-          <LineItem label="Uang Muka (DP)" amount={downPayment} />
+          <LineItem label={t('results.feesDownPayment')} amount={downPayment} />
 
           {hasBankFees && (
             <>
-              {adminFee > 0 && <LineItem label="Biaya Administrasi" amount={adminFee} />}
-              {provisionFee > 0 && <LineItem label="Biaya Provisi (Bank)" amount={provisionFee} />}
-              {appraisalFee > 0 && <LineItem label="Biaya Appraisal" amount={appraisalFee} />}
+              {adminFee > 0 && <LineItem label={t('results.feesAdminFee')} amount={adminFee} />}
+              {provisionFee > 0 && <LineItem label={t('results.feesProvision')} amount={provisionFee} />}
+              {appraisalFee > 0 && <LineItem label={t('results.feesAppraisal')} amount={appraisalFee} />}
             </>
           )}
 
           {hasLegalFees && (
             <>
-              {notaryFee > 0 && <LineItem label="Biaya Notaris / PPAT" amount={notaryFee} />}
-              {bphtb > 0 && <LineItem label="BPHTB" amount={bphtb} />}
+              {notaryFee > 0 && <LineItem label={t('results.feesNotary')} amount={notaryFee} />}
+              {bphtb > 0 && <LineItem label={t('results.feesBphtb')} amount={bphtb} />}
             </>
           )}
 
           {hasTaxFees && (
-            <LineItem label="PPN (Pajak Pertambahan Nilai)" amount={ppnAmount} />
+            <LineItem label={t('results.feesPpn')} amount={ppnAmount} />
           )}
 
           {hasInsurance && (
             <>
               {lifeInsurance > 0 && (
-                <LineItem label="Asuransi Jiwa KPR (estimasi)" amount={lifeInsurance} />
+                <LineItem label={t('results.feesLifeInsurance')} amount={lifeInsurance} />
               )}
               {fireInsurance > 0 && (
-                <LineItem label="Asuransi Kebakaran (estimasi)" amount={fireInsurance} />
+                <LineItem label={t('results.feesFireInsurance')} amount={fireInsurance} />
               )}
             </>
           )}
 
           {!hasAnyFee && (
             <div className="px-4 py-2.5 text-sm text-gray-400 italic">
-              Tidak ada biaya tambahan
+              {t('results.feesNone')}
             </div>
           )}
-          <LineItem label="Total Dana Awal" amount={totalUpfrontCost} bold accent />
+          <LineItem label={t('results.feesTotal')} amount={totalUpfrontCost} bold accent />
         </div>
 
         <p className="text-xs text-gray-400 leading-relaxed">
-          Estimasi biaya. Nilai aktual dapat berbeda tergantung bank, notaris, dan kebijakan daerah.
+          {t('results.feesDisclaimer')}
         </p>
       </div>
     </Card>

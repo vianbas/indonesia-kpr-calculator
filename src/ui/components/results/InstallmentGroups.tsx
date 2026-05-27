@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Card } from '../common/Card';
 import { formatIDR, formatPercent } from '../../../domain/utils/currency';
 import type { MortgageSummary } from '../../../domain';
@@ -7,27 +8,28 @@ interface Props {
 }
 
 export function InstallmentGroups({ summary }: Props) {
+  const { t } = useTranslation();
   const { installmentGroups } = summary;
 
   if (installmentGroups.length === 0) return null;
 
   return (
-    <Card title="Rincian Periode Cicilan" subtitle="Cicilan berubah saat suku bunga berganti">
+    <Card title={t('results.installmentGroupsTitle')} subtitle={t('results.installmentGroupsSubtitle')}>
       <div className="overflow-x-auto -mx-1">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-200">
               <th className="text-left py-2 px-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Periode
+                {t('results.colPeriod')}
               </th>
               <th className="text-left py-2 px-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Jenis
+                {t('results.colType')}
               </th>
               <th className="text-right py-2 px-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Suku Bunga
+                {t('results.colRate')}
               </th>
               <th className="text-right py-2 px-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Cicilan / Bulan
+                {t('results.colInstallment')}
               </th>
             </tr>
           </thead>
@@ -38,9 +40,9 @@ export function InstallmentGroups({ summary }: Props) {
                 className={`border-b border-gray-100 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
               >
                 <td className="py-2.5 px-2 font-medium text-gray-800">
-                  Bulan {group.fromMonth}–{group.toMonth}
+                  {t('results.monthRange', { from: group.fromMonth, to: group.toMonth })}
                   <span className="ml-1 text-xs text-gray-400 font-normal">
-                    ({group.toMonth - group.fromMonth + 1} bln)
+                    {t('results.monthCount', { count: group.toMonth - group.fromMonth + 1 })}
                   </span>
                 </td>
                 <td className="py-2.5 px-2">
@@ -52,7 +54,7 @@ export function InstallmentGroups({ summary }: Props) {
                         : 'bg-indigo-100 text-indigo-700',
                     ].join(' ')}
                   >
-                    {group.type === 'fixed' ? 'Tetap' : 'Variabel'}
+                    {group.type === 'fixed' ? t('results.periodFixed') : t('results.periodVariable')}
                   </span>
                 </td>
                 <td className="py-2.5 px-2 text-right tabular-nums text-gray-700">
