@@ -86,8 +86,8 @@ function maxAffordableLoan(input: AffordabilityInput): number {
   const n = input.tenorMonths;
 
   if (input.paymentMethod === 'flat') {
-    // installment = L/n + L*r/12 → L = installment / (1/n + r/12)
-    const divisor = 1 / n + r / 12;
+    // installment = L/n + L*r → L = installment / (1/n + r)
+    const divisor = 1 / n + r;
     return divisor > 0 ? Math.round(maxInstallment / divisor) : 0;
   }
 
