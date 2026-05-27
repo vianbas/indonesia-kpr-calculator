@@ -1,7 +1,6 @@
 import { useState, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useScenarios } from '../../application/hooks/useScenarios';
-import { useUrlSync } from '../../hooks/useUrlSync';
 import { parseUrlInit } from '../../utils/urlState';
 import { LoanInputForm } from '../components/form/LoanInputForm';
 import { SummaryCard } from '../components/results/SummaryCard';
@@ -88,8 +87,6 @@ export function CalculatorPage() {
           }
         : {},
     );
-
-  const { suppressNext } = useUrlSync({ scenarios, activeCount, activeTab });
 
   const active = scenarios.find((s) => s.id === activeTab) ?? scenarios[0];
 
@@ -195,7 +192,6 @@ export function CalculatorPage() {
   // ──────────────────────────────────────────────────────────────────────────
 
   function handleReset() {
-    suppressNext();
     resetAll();
     const url = new URL(window.location.href);
     url.searchParams.delete('s');
