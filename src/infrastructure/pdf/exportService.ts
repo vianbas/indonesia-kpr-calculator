@@ -57,6 +57,17 @@ export function buildPdfExportData(
     ', ' +
     now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 
+  const isSyariah = summary.financingMode === 'syariah';
+  const akadType = summary.syariahAkadType;
+  const akadTypeDisplay = isSyariah
+    ? akadType === 'murabahah'
+      ? 'Murabahah'
+      : 'Musyarakah Mutanaqishah (MMQ)'
+    : undefined;
+  const interestColumnLabel = isSyariah
+    ? akadType === 'murabahah' ? 'Margin' : 'Ujrah'
+    : undefined;
+
   const scheduleRows = buildScheduleRows(summary);
   const hasExtraPayment = summary.schedule.some((r) => r.extraPayment > 0);
   return {
@@ -73,7 +84,26 @@ export function buildPdfExportData(
     refinancing: refinancing
       ? buildRefinancingSection(refinancing.form, refinancing.result)
       : undefined,
+    isSyariah: isSyariah || undefined,
+    akadTypeDisplay,
+    interestColumnLabel,
   };
+}
+
+/**
+ * Triggers a file download via a temporary anchor element.
+ * Uses a 100 ms timeout before revoking the object URL so the browser has time
+ * to initiate the download before the URL is invalidated.
+ */
+export function downloadBlob(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 100);
 }
 
 export async function exportToPdf(
@@ -82,19 +112,8 @@ export async function exportToPdf(
   affordability?: AffordabilityExportData,
   refinancing?: RefinancingExportData,
 ): Promise<void> {
-  return Sentry.startSpan({ name: 'kpr.pdf_export', op: 'pdf.export' }, async () => {
-    try {
-      const afData = affordability?.results[0]
-        ? { form: affordability.form, result: affordability.results[0] }
-        : undefined;
-      const data = buildPdfExportData(form, summary, afData, refinancing);
-      const doc = renderPdf(data);
-      doc.save(makeSingleFilename());
-    } catch (err) {
-      captureError(err, { feature: 'pdf_export', scenarioCount: 1 });
-      throw err;
-    }
-  });
+  const { blob, filename } = await buildPdfBlob(form, summary, affordability, refinancing);
+  downloadBlob(blob, filename);
 }
 
 export async function exportMultiScenarioPdf(
@@ -102,16 +121,8 @@ export async function exportMultiScenarioPdf(
   affordability?: AffordabilityExportData,
   refinancing?: RefinancingExportData,
 ): Promise<void> {
-  return Sentry.startSpan({ name: 'kpr.pdf_export_multi', op: 'pdf.export' }, async () => {
-    try {
-      const data = buildMultiScenarioExportData(scenarios, affordability, refinancing);
-      const doc = renderMultiScenarioPdf(data);
-      doc.save(makeMultiFilename());
-    } catch (err) {
-      captureError(err, { feature: 'pdf_export', scenarioCount: scenarios.length });
-      throw err;
-    }
-  });
+  const { blob, filename } = await buildMultiPdfBlob(scenarios, affordability, refinancing);
+  downloadBlob(blob, filename);
 }
 
 /** Returns a Blob + filename — used by the share path in ExportButton. */
@@ -302,17 +313,34 @@ function buildLoanInfo(form: MortgageFormState, summary: MortgageSummary): PdfLo
   const tenorMonths =
     (parseInt(form.tenorYears) || 0) * 12 + (parseInt(form.tenorAdditionalMonths) || 0);
 
-  const calculationMethodDisplay =
-    form.calculationMethod === 'fixed_only'
-      ? 'Fixed Only (Seluruh Tenor Tetap)'
-      : form.calculationMethod === 'fixed_single_floating'
-        ? 'Fixed + Floating Tunggal'
-        : 'Fixed + Floating Bertingkat';
+  const isSyariah = summary.financingMode === 'syariah';
+  const akadType = summary.syariahAkadType;
 
-  const paymentMethodDisplay =
-    form.paymentMethod === 'annuity'
-      ? 'Anuitas (Cicilan Tetap per Periode)'
-      : 'Flat Rate (Bunga Tetap pada Pokok Awal)';
+  let calculationMethodDisplay: string;
+  if (isSyariah) {
+    calculationMethodDisplay = akadType === 'murabahah'
+      ? 'Murabahah (Cicilan Tetap)'
+      : 'Musyarakah Mutanaqishah / MMQ';
+  } else {
+    calculationMethodDisplay =
+      form.calculationMethod === 'fixed_only'
+        ? 'Fixed Only (Seluruh Tenor Tetap)'
+        : form.calculationMethod === 'fixed_single_floating'
+          ? 'Fixed + Floating Tunggal'
+          : 'Fixed + Floating Bertingkat';
+  }
+
+  let paymentMethodDisplay: string;
+  if (isSyariah) {
+    paymentMethodDisplay = akadType === 'murabahah'
+      ? 'Murabahah (Angsuran Tetap)'
+      : 'MMQ (Ujrah Menurun)';
+  } else {
+    paymentMethodDisplay =
+      form.paymentMethod === 'annuity'
+        ? 'Anuitas (Cicilan Tetap per Periode)'
+        : 'Flat Rate (Bunga Tetap pada Pokok Awal)';
+  }
 
   const startDate = new Date(form.startDate);
   const startDateDisplay = isNaN(startDate.getTime())
@@ -335,19 +363,44 @@ function buildLoanInfo(form: MortgageFormState, summary: MortgageSummary): PdfLo
 }
 
 function buildInterestRows(summary: MortgageSummary): PdfInterestRow[] {
-  return summary.installmentGroups.map((g) => ({
-    periodDisplay: `Bulan ${g.fromMonth}–${g.toMonth}`,
-    typeDisplay: g.type === 'fixed' ? 'Tetap' : 'Variabel',
-    rateDisplay: formatPercent(g.annualRate, 2, true),
-    installmentDisplay: formatIDR(g.installmentAmount),
-  }));
+  const isSyariah = summary.financingMode === 'syariah';
+  const akadType = summary.syariahAkadType;
+  return summary.installmentGroups.map((g) => {
+    let typeDisplay: string;
+    if (isSyariah) {
+      typeDisplay = akadType === 'murabahah' ? 'Murabahah' : 'MMQ';
+    } else {
+      typeDisplay = g.type === 'fixed' ? 'Tetap' : 'Variabel';
+    }
+    return {
+      periodDisplay: `Bulan ${g.fromMonth}–${g.toMonth}`,
+      typeDisplay,
+      rateDisplay: formatPercent(g.annualRate, 2, true),
+      installmentDisplay: formatIDR(g.installmentAmount),
+    };
+  });
 }
 
 function buildFinancialRows(summary: MortgageSummary): PdfFinancialRow[] {
+  const isSyariah = summary.financingMode === 'syariah';
+  const akadType = summary.syariahAkadType;
+
+  const principalLabel = isSyariah ? 'Nilai Pembiayaan (Pokok)' : 'Nilai Kredit (Pokok)';
+  let interestLabel: string;
+  if (isSyariah) {
+    interestLabel = akadType === 'murabahah' ? 'Total Margin' : 'Total Ujrah';
+  } else {
+    interestLabel = 'Total Bunga';
+  }
+
   const rows: PdfFinancialRow[] = [
-    { label: 'Nilai Kredit (Pokok)', value: formatIDR(summary.totalPrincipal), hint: 'normal' },
-    { label: 'Total Bunga', value: formatIDR(summary.totalInterest), hint: 'interest' },
+    { label: principalLabel, value: formatIDR(summary.totalPrincipal), hint: 'normal' },
+    { label: interestLabel, value: formatIDR(summary.totalInterest), hint: 'interest' },
   ];
+
+  if (isSyariah && akadType === 'murabahah' && summary.totalSalePrice) {
+    rows.push({ label: 'Harga Jual Bank', value: formatIDR(summary.totalSalePrice), hint: 'normal' });
+  }
 
   if (summary.adminFee > 0) {
     rows.push({ label: 'Biaya Administrasi', value: formatIDR(summary.adminFee), hint: 'normal' });
@@ -394,14 +447,21 @@ function buildFinancialRows(summary: MortgageSummary): PdfFinancialRow[] {
 
 function buildScheduleRows(summary: MortgageSummary): PdfScheduleRow[] {
   const { schedule } = summary;
+  const isSyariah = summary.financingMode === 'syariah';
   const rows: PdfScheduleRow[] = [];
 
   for (let i = 0; i < schedule.length; i++) {
     const row = schedule[i];
     const prev = schedule[i - 1];
 
-    if (i > 0 && prev.annualRate !== row.annualRate) {
-      const typeLabel = row.interestType === 'fixed' ? 'Tetap' : 'Variabel';
+    if (i > 0 && prev && prev.annualRate !== row.annualRate) {
+      let typeLabel: string;
+      if (isSyariah) {
+        typeLabel = 'Ujrah';
+      } else {
+        typeLabel = row.interestType === 'fixed' ? 'Tetap' : 'Variabel';
+      }
+      const rateWord = isSyariah ? 'ujrah' : 'suku bunga';
       rows.push({
         month: '',
         year: '',
@@ -412,7 +472,7 @@ function buildScheduleRows(summary: MortgageSummary): PdfScheduleRow[] {
         balance: '',
         extraPayment: '',
         isRateChange: true,
-        rateChangeLabel: `Perubahan suku bunga mulai Bulan ${row.month} → ${formatPercent(row.annualRate, 2, true)} (${typeLabel})`,
+        rateChangeLabel: `Perubahan ${rateWord} mulai Bulan ${row.month} > ${formatPercent(row.annualRate, 2, true)} (${typeLabel})`,
       });
     }
 
@@ -422,7 +482,7 @@ function buildScheduleRows(summary: MortgageSummary): PdfScheduleRow[] {
       rate: formatPercent(row.annualRate),
       installment: formatIDR(row.installment),
       principal: formatIDR(row.principal),
-      interest: formatIDR(row.interest),
+      interest: formatIDR(row.interest ?? 0),
       balance: formatIDR(row.closingBalance),
       extraPayment: row.extraPayment > 0 ? formatIDR(row.extraPayment) : '',
       isRateChange: false,

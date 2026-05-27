@@ -17,6 +17,10 @@ import { CalculatorPage } from '../pages/CalculatorPage';
 // Stub the dynamically-imported PDF service (avoids pulling jsPDF into jsdom)
 vi.mock('../../infrastructure/pdf/exportService', () => ({
   exportToPdf: vi.fn().mockResolvedValue(undefined),
+  exportMultiScenarioPdf: vi.fn().mockResolvedValue(undefined),
+  buildPdfBlob: vi.fn().mockResolvedValue({ blob: new Blob(['pdf'], { type: 'application/pdf' }), filename: 'test.pdf' }),
+  buildMultiPdfBlob: vi.fn().mockResolvedValue({ blob: new Blob(['pdf'], { type: 'application/pdf' }), filename: 'test.pdf' }),
+  downloadBlob: vi.fn(),
 }));
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -160,7 +164,7 @@ describe('CalculatorPage', () => {
       render(<CalculatorPage />);
       await waitForCalc();
       // Column headers live inside the table; should not be present when collapsed
-      expect(screen.queryByRole('columnheader', { name: 'Bln' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('columnheader', { name: 'Bulan' })).not.toBeInTheDocument();
     });
 
     it('shows "Tampilkan" toggle button when collapsed', async () => {
@@ -173,7 +177,7 @@ describe('CalculatorPage', () => {
       render(<CalculatorPage />);
       await waitForCalc();
       expandAmortization();
-      const uniqueCols = ['Bln', 'Thn', 'Cicilan', 'Pokok', 'Bunga'];
+      const uniqueCols = ['Bulan', 'Tahun', 'Cicilan', 'Pokok', 'Bunga'];
       for (const col of uniqueCols) {
         expect(screen.getByRole('columnheader', { name: col })).toBeInTheDocument();
       }
@@ -186,7 +190,7 @@ describe('CalculatorPage', () => {
       render(<CalculatorPage />);
       await waitForCalc();
       expandAmortization();
-      const uniqueCols = ['Bln', 'Thn', 'Cicilan', 'Pokok', 'Bunga', 'Saldo Akhir'];
+      const uniqueCols = ['Bulan', 'Tahun', 'Cicilan', 'Pokok', 'Bunga', 'Saldo Akhir'];
       for (const col of uniqueCols) {
         expect(screen.getByRole('columnheader', { name: col })).toBeInTheDocument();
       }
@@ -223,10 +227,10 @@ describe('CalculatorPage', () => {
       await waitForCalc();
       // Expand
       expandAmortization();
-      expect(screen.getByRole('columnheader', { name: 'Bln' })).toBeInTheDocument();
+      expect(screen.getByRole('columnheader', { name: 'Bulan' })).toBeInTheDocument();
       // Collapse again
       fireEvent.click(screen.getByRole('button', { name: /Sembunyikan/i }));
-      expect(screen.queryByRole('columnheader', { name: 'Bln' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('columnheader', { name: 'Bulan' })).not.toBeInTheDocument();
     });
   });
 

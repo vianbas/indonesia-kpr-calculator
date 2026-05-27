@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../common/Button';
 import { encodeUrlState } from '../../../utils/urlState';
-import { formatShareText, PRESET_LABELS, type SharePreset } from '../../utils/shareText';
+import { formatShareText, type SharePreset } from '../../utils/shareText';
 import type { CalculatedScenario, ScenarioState, ScenarioId } from '../../../application/store/scenarioTypes';
 
 interface Props {
@@ -41,6 +42,7 @@ function buildShareUrl(allScenarios: ScenarioState[], activeCount: 1 | 2 | 3, ac
 }
 
 export function ShareReportModal({ calculated, allScenarios, activeCount, activeTab, disabled }: Props) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [preset, setPreset] = useState<SharePreset>('pasangan');
   const [copiedText, setCopiedText] = useState(false);
@@ -101,9 +103,9 @@ export function ShareReportModal({ calculated, allScenarios, activeCount, active
         icon={<ShareIcon />}
         onClick={() => setOpen(true)}
         disabled={disabled}
-        aria-label="Buka dialog berbagi skenario"
+        aria-label={t('shareModal.openAria')}
       >
-        Bagikan
+        {t('shareModal.button')}
       </Button>
 
       {open && (
@@ -126,16 +128,16 @@ export function ShareReportModal({ calculated, allScenarios, activeCount, active
             <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100">
               <div>
                 <h2 id="share-modal-title" className="text-base font-semibold text-gray-900">
-                  Bagikan Simulasi
+                  {t('shareModal.title')}
                 </h2>
                 <p className="text-xs text-gray-400 mt-0.5">
-                  Pilih penerima untuk menyesuaikan format pesan
+                  {t('shareModal.subtitle')}
                 </p>
               </div>
               <button
                 onClick={close}
                 className="rounded-full p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-                aria-label="Tutup"
+                aria-label={t('shareModal.closeAria')}
               >
                 <XIcon />
               </button>
@@ -154,7 +156,7 @@ export function ShareReportModal({ calculated, allScenarios, activeCount, active
                       : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:text-blue-600',
                   ].join(' ')}
                 >
-                  {PRESET_LABELS[p]}
+                  {t(`shareModal.preset${p.charAt(0).toUpperCase()}${p.slice(1)}`)}
                 </button>
               ))}
             </div>
@@ -165,7 +167,7 @@ export function ShareReportModal({ calculated, allScenarios, activeCount, active
                 readOnly
                 value={text}
                 className="w-full h-48 text-xs font-mono text-gray-700 bg-gray-50 border border-gray-200 rounded-xl p-3 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-                aria-label="Pratinjau teks yang akan dibagikan"
+                aria-label={t('shareModal.previewAria')}
               />
             </div>
 
@@ -179,10 +181,10 @@ export function ShareReportModal({ calculated, allScenarios, activeCount, active
                 WhatsApp
               </button>
               <Button variant="secondary" size="md" onClick={handleCopyText}>
-                {copiedText ? '✓ Tersalin!' : 'Salin Teks'}
+                {copiedText ? t('shareModal.copiedText') : t('shareModal.copyText')}
               </Button>
               <Button variant="secondary" size="md" onClick={handleCopyLink}>
-                {copiedLink ? '✓ Tautan disalin!' : 'Salin Tautan'}
+                {copiedLink ? t('shareModal.copiedLink') : t('shareModal.copyLink')}
               </Button>
             </div>
           </div>
