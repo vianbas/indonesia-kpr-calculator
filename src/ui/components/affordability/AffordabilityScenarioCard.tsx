@@ -80,8 +80,11 @@ export function AffordabilityScenarioCard({ label, result, maxDSR }: Props) {
         </div>
 
         <div>
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
             Stress Test Kenaikan Bunga
+          </p>
+          <p className="text-xs text-gray-400 mb-2">
+            Mulai periode variabel pertama · satu suku bunga untuk sisa tenor
           </p>
           <StressTestTable rows={result.stressTest} maxDSR={maxDSR} />
         </div>
