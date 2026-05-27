@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Card } from '../common/Card';
 import { Button } from '../common/Button';
 import type { MortgageFormState, FormAction, CalculationMethod } from '../../../application/store/formTypes';
@@ -7,32 +8,34 @@ interface Props {
   dispatch: React.Dispatch<FormAction>;
 }
 
-const OPTIONS: { method: CalculationMethod; label: string; description: string }[] = [
-  {
-    method: 'fixed_only',
-    label: 'Fixed Only',
-    description: 'Seluruh tenor menggunakan suku bunga tetap',
-  },
-  {
-    method: 'fixed_single_floating',
-    label: 'Fixed + Floating Tunggal',
-    description: 'Periode tetap, lalu satu suku bunga variabel',
-  },
-  {
-    method: 'fixed_tiered_floating',
-    label: 'Fixed + Floating Bertingkat',
-    description: 'Periode tetap, lalu suku bunga variabel berjenjang',
-  },
-];
-
 export function CalculationMethodSelector({ form, dispatch }: Props) {
+  const { t } = useTranslation();
+
+  const OPTIONS: { method: CalculationMethod; label: string; description: string }[] = [
+    {
+      method: 'fixed_only',
+      label: t('form.fixedOnly'),
+      description: t('form.fixedOnlyDesc'),
+    },
+    {
+      method: 'fixed_single_floating',
+      label: t('form.fixedSingleFloat'),
+      description: t('form.fixedSingleFloatDesc'),
+    },
+    {
+      method: 'fixed_tiered_floating',
+      label: t('form.fixedTieredFloat'),
+      description: t('form.fixedTieredFloatDesc'),
+    },
+  ];
+
   return (
-    <Card title="Metode Perhitungan" accent="none">
+    <Card title={t('form.calcMethod')} accent="none">
       <div className="space-y-2">
         <div
           className="flex flex-col gap-2 sm:flex-row"
           role="group"
-          aria-label="Pilih metode perhitungan"
+          aria-label={t('form.calcMethodSelectorAria')}
         >
           {OPTIONS.map(({ method, label }) => (
             <Button

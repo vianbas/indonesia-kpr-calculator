@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { RefinancingInputs } from './RefinancingInputs';
 import { RefinancingResultCard } from './RefinancingResultCard';
 import { ChevronIcon } from '../common/ChevronIcon';
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export function RefinancingPanel({ form, onChange, result, activeScenario, onPrefill }: Props) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(true);
 
   return (
@@ -24,7 +26,7 @@ export function RefinancingPanel({ form, onChange, result, activeScenario, onPre
         className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-sm font-semibold text-gray-700"
         aria-expanded={open}
       >
-        <span>Kalkulator Refinancing</span>
+        <span>{t('refinancing.title')}</span>
         <ChevronIcon open={open} />
       </button>
 
@@ -44,7 +46,7 @@ export function RefinancingPanel({ form, onChange, result, activeScenario, onPre
               <RefinancingResultCard result={result} />
             ) : (
               <p className="text-sm text-center text-gray-400 py-4">
-                Isi sisa pokok, suku bunga saat ini, dan penawaran baru untuk melihat analisis.
+                {t('refinancing.promptFill')}
               </p>
             )}
           </div>

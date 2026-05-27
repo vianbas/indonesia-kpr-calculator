@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Card } from '../common/Card';
 import type { MortgageFormState, FormAction, EarlyRepaymentMode } from '../../../application/store/formTypes';
 
@@ -5,13 +6,6 @@ interface Props {
   form: MortgageFormState;
   dispatch: React.Dispatch<FormAction>;
 }
-
-const MODE_OPTIONS: { value: EarlyRepaymentMode; label: string; desc: string }[] = [
-  { value: 'none',          label: 'Tidak ada',          desc: 'Jadwal angsuran standar' },
-  { value: 'extra_monthly', label: 'Tambahan per bulan', desc: 'Bayar ekstra setiap bulan' },
-  { value: 'lump_sum',      label: 'Pelunasan sekaligus', desc: 'Satu kali bayar ekstra' },
-  { value: 'both',          label: 'Keduanya',           desc: 'Ekstra bulanan + sekaligus' },
-];
 
 function isPositiveNumber(v: string): boolean {
   const n = parseFloat(v);
@@ -24,31 +18,39 @@ function isPositiveInt(v: string): boolean {
 }
 
 export function EarlyRepaymentSection({ form, dispatch }: Props) {
+  const { t } = useTranslation();
+
+  const MODE_OPTIONS: { value: EarlyRepaymentMode; label: string; desc: string }[] = [
+    { value: 'none',          label: t('form.erModeNone'),  desc: t('form.erModeNoneDesc') },
+    { value: 'extra_monthly', label: t('form.erModeExtra'), desc: t('form.erModeExtraDesc') },
+    { value: 'lump_sum',      label: t('form.erModeLump'),  desc: t('form.erModeLumpDesc') },
+    { value: 'both',          label: t('form.erModeBoth'),  desc: t('form.erModeBothDesc') },
+  ];
+
   const { earlyRepaymentMode } = form;
   const showExtra = earlyRepaymentMode === 'extra_monthly' || earlyRepaymentMode === 'both';
   const showLump  = earlyRepaymentMode === 'lump_sum'      || earlyRepaymentMode === 'both';
 
-  // Inline validation — only surface an error when the field has a value but it's invalid
   const extraAmountErr  = showExtra && form.extraMonthlyAmount !== '' && !isPositiveNumber(form.extraMonthlyAmount)
-    ? 'Masukkan jumlah lebih dari 0' : '';
+    ? t('form.erErrPositive') : '';
   const extraStartErr   = showExtra && form.extraMonthlyStartMonth !== '' && !isPositiveInt(form.extraMonthlyStartMonth)
-    ? 'Bulan mulai harus bilangan ≥ 1' : '';
+    ? t('form.erErrStartMonth') : '';
   const extraEndRaw = parseInt(form.extraMonthlyEndMonth);
   const extraStartRaw = parseInt(form.extraMonthlyStartMonth) || 1;
   const extraEndErr     = showExtra && form.extraMonthlyEndMonth !== ''
     ? !isPositiveInt(form.extraMonthlyEndMonth)
-      ? 'Bulan berakhir harus bilangan ≥ 1'
+      ? t('form.erErrEndMonth')
       : extraEndRaw < extraStartRaw
-      ? `Harus ≥ bulan mulai (${extraStartRaw})`
+      ? t('form.erErrEndBeforeStart', { start: extraStartRaw })
       : ''
     : '';
   const lumpAmountErr   = showLump  && form.lumpSumAmount !== ''      && !isPositiveNumber(form.lumpSumAmount)
-    ? 'Masukkan jumlah lebih dari 0' : '';
+    ? t('form.erErrPositive') : '';
   const lumpMonthErr    = showLump  && form.lumpSumMonth !== ''       && !isPositiveInt(form.lumpSumMonth)
-    ? 'Bulan harus bilangan ≥ 1' : '';
+    ? t('form.erErrLumpMonth') : '';
 
   return (
-    <Card title="Pelunasan Dipercepat" subtitle="Opsional — simulasikan pembayaran ekstra untuk mempercepat lunas">
+    <Card title={t('form.earlyRepayment')} subtitle={t('form.earlyRepaymentSubtitle')}>
       <div className="space-y-4">
 
         {/* Mode selector */}
@@ -77,12 +79,12 @@ export function EarlyRepaymentSection({ form, dispatch }: Props) {
         {showExtra && (
           <div className="rounded-lg border border-teal-200 bg-teal-50/40 p-4 space-y-3">
             <p className="text-xs font-semibold text-teal-800 uppercase tracking-wide">
-              Tambahan per Bulan
+              {t('form.extraMonthly')}
             </p>
 
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">
-                Jumlah Ekstra (Rp)
+                {t('form.extraMonthlyAmount')}
               </label>
               <input
                 type="text"
@@ -103,7 +105,7 @@ export function EarlyRepaymentSection({ form, dispatch }: Props) {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Mulai Bulan ke-
+                  {t('form.extraMonthlyStart')}
                 </label>
                 <input
                   type="number"
@@ -122,7 +124,8 @@ export function EarlyRepaymentSection({ form, dispatch }: Props) {
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Berakhir Bulan ke- <span className="text-gray-400">(kosong = sampai lunas)</span>
+                  {t('form.extraMonthlyEnd')}{' '}
+                  <span className="text-gray-400">{t('form.extraMonthlyEndOptional')}</span>
                 </label>
                 <input
                   type="number"
@@ -147,12 +150,12 @@ export function EarlyRepaymentSection({ form, dispatch }: Props) {
         {showLump && (
           <div className="rounded-lg border border-teal-200 bg-teal-50/40 p-4 space-y-3">
             <p className="text-xs font-semibold text-teal-800 uppercase tracking-wide">
-              Pelunasan Sekaligus
+              {t('form.lumpSum')}
             </p>
 
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">
-                Jumlah Bayar Ekstra (Rp)
+                {t('form.lumpSumAmount')}
               </label>
               <input
                 type="text"
@@ -172,7 +175,7 @@ export function EarlyRepaymentSection({ form, dispatch }: Props) {
 
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">
-                Di Bulan ke-
+                {t('form.lumpSumMonth')}
               </label>
               <input
                 type="number"
@@ -194,8 +197,7 @@ export function EarlyRepaymentSection({ form, dispatch }: Props) {
 
         {earlyRepaymentMode !== 'none' && (
           <p className="text-xs text-gray-400 leading-relaxed">
-            Pembayaran ekstra mengurangi saldo pokok dan memperpendek tenor. Cicilan bulanan
-            tidak berubah kecuali suku bunga berubah di batas periode.
+            {t('form.erDisclaimer')}
           </p>
         )}
       </div>

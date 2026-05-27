@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { InputField } from '../common/InputField';
 import { formatIDR } from '../../../domain/utils/currency';
 import type { AffordabilityFormState } from '../../../application/store/affordabilityTypes';
@@ -8,6 +9,8 @@ interface Props {
 }
 
 export function AffordabilityInputs({ form, onChange }: Props) {
+  const { t } = useTranslation();
+
   const income1 = parseFloat(form.monthlyIncome) || 0;
   const income2 = parseFloat(form.spouseIncome) || 0;
   const totalIncome = income1 + income2;
@@ -16,7 +19,7 @@ export function AffordabilityInputs({ form, onChange }: Props) {
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <InputField
-          label="Penghasilan Bulanan"
+          label={t('affordability.monthlyIncome')}
           value={form.monthlyIncome}
           onChange={(v) => onChange('monthlyIncome', v)}
           type="number"
@@ -24,10 +27,10 @@ export function AffordabilityInputs({ form, onChange }: Props) {
           placeholder="0"
           min="0"
           step="500000"
-          hint={income1 > 0 ? formatIDR(income1) : 'Penghasilan pokok per bulan'}
+          hint={income1 > 0 ? formatIDR(income1) : t('affordability.monthlyIncomeHint')}
         />
         <InputField
-          label="Penghasilan Pasangan"
+          label={t('affordability.spouseIncome')}
           value={form.spouseIncome}
           onChange={(v) => onChange('spouseIncome', v)}
           type="number"
@@ -35,13 +38,13 @@ export function AffordabilityInputs({ form, onChange }: Props) {
           placeholder="0"
           min="0"
           step="500000"
-          hint={income2 > 0 ? formatIDR(income2) : 'Opsional'}
+          hint={income2 > 0 ? formatIDR(income2) : t('affordability.spouseIncomeHint')}
         />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <InputField
-          label="Cicilan / Hutang Lain per Bulan"
+          label={t('affordability.existingDebt')}
           value={form.existingMonthlyDebt}
           onChange={(v) => onChange('existingMonthlyDebt', v)}
           type="number"
@@ -49,10 +52,10 @@ export function AffordabilityInputs({ form, onChange }: Props) {
           placeholder="0"
           min="0"
           step="100000"
-          hint="KTA, kartu kredit, cicilan kendaraan, dll."
+          hint={t('affordability.existingDebtHint')}
         />
         <InputField
-          label="Pengeluaran Hidup Bulanan"
+          label={t('affordability.livingExpense')}
           value={form.monthlyLivingExpense}
           onChange={(v) => onChange('monthlyLivingExpense', v)}
           type="number"
@@ -60,13 +63,13 @@ export function AffordabilityInputs({ form, onChange }: Props) {
           placeholder="0"
           min="0"
           step="500000"
-          hint="Makan, transportasi, kebutuhan rutin"
+          hint={t('affordability.livingExpenseHint')}
         />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <InputField
-          label="Minimum Surplus Bulanan"
+          label={t('affordability.minSurplus')}
           value={form.minMonthlySurplus}
           onChange={(v) => onChange('minMonthlySurplus', v)}
           type="number"
@@ -74,10 +77,10 @@ export function AffordabilityInputs({ form, onChange }: Props) {
           placeholder="0"
           min="0"
           step="500000"
-          hint="Cadangan minimum yang ingin dipertahankan"
+          hint={t('affordability.minSurplusHint')}
         />
         <InputField
-          label="Batas DSR"
+          label={t('affordability.maxDsr')}
           value={form.maxDSRPercent}
           onChange={(v) => onChange('maxDSRPercent', v)}
           type="number"
@@ -86,14 +89,14 @@ export function AffordabilityInputs({ form, onChange }: Props) {
           min="1"
           max="70"
           step="1"
-          hint="Rasio cicilan / penghasilan maks."
+          hint={t('affordability.maxDsrHint')}
         />
       </div>
 
       {totalIncome > 0 && (
         <div className="rounded-lg bg-indigo-50 border border-indigo-100 px-3 py-2 text-xs text-indigo-700">
-          Total penghasilan gabungan:{' '}
-          <strong>{formatIDR(totalIncome)}</strong>/bulan
+          {t('affordability.combinedIncomeLabel')}{' '}
+          <strong>{formatIDR(totalIncome)}</strong>{t('affordability.perMonth')}
         </div>
       )}
     </div>

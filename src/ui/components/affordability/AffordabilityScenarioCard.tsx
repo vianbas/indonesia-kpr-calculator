@@ -1,13 +1,8 @@
+import { useTranslation } from 'react-i18next';
 import { formatIDR, formatIDRCompact, formatPercent } from '../../../domain/utils/currency';
 import { Card } from '../common/Card';
 import { StressTestTable } from './StressTestTable';
 import type { AffordabilityResult, RiskBand } from '../../../domain/calculators/affordability';
-
-const bandConfig: Record<RiskBand, { label: string; badgeClass: string }> = {
-  safe: { label: 'Aman', badgeClass: 'bg-green-100 text-green-800' },
-  watch: { label: 'Waspada', badgeClass: 'bg-yellow-100 text-yellow-800' },
-  risky: { label: 'Berisiko', badgeClass: 'bg-red-100 text-red-800' },
-};
 
 interface MetricProps {
   label: string;
@@ -33,6 +28,14 @@ interface Props {
 }
 
 export function AffordabilityScenarioCard({ label, result, maxDSR }: Props) {
+  const { t } = useTranslation();
+
+  const bandConfig: Record<RiskBand, { label: string; badgeClass: string }> = {
+    safe:  { label: t('affordability.bandSafe'),  badgeClass: 'bg-green-100 text-green-800' },
+    watch: { label: t('affordability.bandWatch'), badgeClass: 'bg-yellow-100 text-yellow-800' },
+    risky: { label: t('affordability.bandRisky'), badgeClass: 'bg-red-100 text-red-800' },
+  };
+
   const band = bandConfig[result.riskBand];
 
   const dsrColor =
@@ -56,24 +59,24 @@ export function AffordabilityScenarioCard({ label, result, maxDSR }: Props) {
 
         <div className="grid grid-cols-2 gap-2">
           <Metric
-            label="DSR Tertinggi"
+            label={t('affordability.dsrHighest')}
             value={formatPercent(result.dsrAtHighest, 1)}
-            sub={`Batas: ${formatPercent(maxDSR, 0)}`}
+            sub={t('affordability.dsrLimit', { pct: formatPercent(maxDSR, 0) })}
             valueColor={dsrColor}
           />
           <Metric
-            label="Surplus Terendah"
+            label={t('affordability.surplusLowest')}
             value={formatIDRCompact(result.netSurplusAtHighest)}
             sub={formatIDR(result.netSurplusAtHighest)}
             valueColor={surplusColor}
           />
           <Metric
-            label="Maks. Kredit Terjangkau"
+            label={t('affordability.maxAffordableLoan')}
             value={formatIDRCompact(result.maxAffordableLoan)}
             sub={formatIDR(result.maxAffordableLoan)}
           />
           <Metric
-            label="Min. Penghasilan"
+            label={t('affordability.minRecommendedIncome')}
             value={formatIDRCompact(result.minRecommendedIncome)}
             sub={formatIDR(result.minRecommendedIncome)}
           />
@@ -81,10 +84,10 @@ export function AffordabilityScenarioCard({ label, result, maxDSR }: Props) {
 
         <div>
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-            Stress Test Kenaikan Bunga
+            {t('affordability.stressTestTitle')}
           </p>
           <p className="text-xs text-gray-400 mb-2">
-            Mulai periode variabel pertama · satu suku bunga untuk sisa tenor
+            {t('affordability.stressTestDesc')}
           </p>
           <StressTestTable rows={result.stressTest} maxDSR={maxDSR} />
         </div>

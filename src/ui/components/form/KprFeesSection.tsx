@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Card } from '../common/Card';
 import { InputField } from '../common/InputField';
 import { formatIDR } from '../../../domain/utils/currency';
@@ -22,6 +23,8 @@ function GroupLabel({ children }: { children: React.ReactNode }) {
 }
 
 export function KprFeesSection({ form, dispatch }: Props) {
+  const { t } = useTranslation();
+
   const propertyPrice = parse(form.propertyPrice);
   const dpRaw = parse(form.downPaymentValue);
   const downPayment =
@@ -31,7 +34,6 @@ export function KprFeesSection({ form, dispatch }: Props) {
     (parseInt(form.tenorYears) || 0) * 12 + (parseInt(form.tenorAdditionalMonths) || 0);
   const tenorYears = tenorMonths / 12;
 
-  // ── Live previews ─────────────────────────────────────────────────────────
   const provisionFee = Math.round((parse(form.provisionFeePercent) / 100) * loanAmount);
   const appraisalFee = parse(form.appraisalFeeAmount);
   const notaryFee = Math.round((parse(form.notaryFeePercent) / 100) * propertyPrice);
@@ -56,7 +58,7 @@ export function KprFeesSection({ form, dispatch }: Props) {
   const totalUpfront = downPayment + totalFees;
 
   return (
-    <Card title="Biaya Akad (Cash-to-Close)" accent="orange">
+    <Card title={t('form.fees')} accent="orange">
       <div className="space-y-5">
         {/* Master toggle */}
         <label className="flex items-center gap-2 cursor-pointer">
@@ -67,7 +69,7 @@ export function KprFeesSection({ form, dispatch }: Props) {
             className="w-4 h-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
           />
           <span className="text-sm font-medium text-gray-700">
-            Hitung biaya pengadaan KPR
+            {t('form.feesToggle')}
           </span>
         </label>
 
@@ -76,10 +78,10 @@ export function KprFeesSection({ form, dispatch }: Props) {
 
             {/* ── Group 1: Bank fees ────────────────────────────────────── */}
             <div>
-              <GroupLabel>Biaya Bank</GroupLabel>
+              <GroupLabel>{t('form.feesBankGroup')}</GroupLabel>
               <div className="space-y-3">
                 <InputField
-                  label="Biaya Provisi"
+                  label={t('form.feeProvision')}
                   value={form.provisionFeePercent}
                   onChange={(v) => dispatch({ type: 'SET_PROVISION_FEE_PERCENT', value: v })}
                   type="number"
@@ -90,11 +92,11 @@ export function KprFeesSection({ form, dispatch }: Props) {
                   hint={
                     loanAmount > 0 && provisionFee > 0
                       ? `≈ ${formatIDR(provisionFee)} dari nilai kredit`
-                      : '% dari nilai kredit'
+                      : t('form.feeProvisionHint')
                   }
                 />
                 <InputField
-                  label="Biaya Appraisal"
+                  label={t('form.feeAppraisal')}
                   value={form.appraisalFeeAmount}
                   onChange={(v) => dispatch({ type: 'SET_APPRAISAL_FEE_AMOUNT', value: v })}
                   type="number"
@@ -102,17 +104,17 @@ export function KprFeesSection({ form, dispatch }: Props) {
                   placeholder="0"
                   min="0"
                   step="500000"
-                  hint="Biaya penilaian properti, bayar sekali"
+                  hint={t('form.feeAppraisalHint')}
                 />
               </div>
             </div>
 
             {/* ── Group 2: Legal fees ───────────────────────────────────── */}
             <div>
-              <GroupLabel>Biaya Legal</GroupLabel>
+              <GroupLabel>{t('form.feesLegalGroup')}</GroupLabel>
               <div className="space-y-3">
                 <InputField
-                  label="Biaya Notaris / PPAT"
+                  label={t('form.feeNotary')}
                   value={form.notaryFeePercent}
                   onChange={(v) => dispatch({ type: 'SET_NOTARY_FEE_PERCENT', value: v })}
                   type="number"
@@ -123,11 +125,11 @@ export function KprFeesSection({ form, dispatch }: Props) {
                   hint={
                     propertyPrice > 0 && notaryFee > 0
                       ? `≈ ${formatIDR(notaryFee)} dari harga properti`
-                      : '% dari harga properti'
+                      : t('form.feeNotaryHint')
                   }
                 />
                 <InputField
-                  label="BPHTB"
+                  label={t('form.feeBphtb')}
                   value={form.bphtbPercent}
                   onChange={(v) => dispatch({ type: 'SET_BPHTB_PERCENT', value: v })}
                   type="number"
@@ -138,7 +140,7 @@ export function KprFeesSection({ form, dispatch }: Props) {
                   hint={
                     propertyPrice > 0 && bphtb > 0
                       ? `≈ ${formatIDR(bphtb)} dari harga properti`
-                      : '% dari harga properti (default 5%)'
+                      : t('form.feeBphtbHint')
                   }
                 />
               </div>
@@ -146,7 +148,7 @@ export function KprFeesSection({ form, dispatch }: Props) {
 
             {/* ── Group 3: PPN ──────────────────────────────────────────── */}
             <div>
-              <GroupLabel>Pajak Properti</GroupLabel>
+              <GroupLabel>{t('form.feesTaxGroup')}</GroupLabel>
               <div className="space-y-3">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -156,13 +158,13 @@ export function KprFeesSection({ form, dispatch }: Props) {
                     className="w-4 h-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
                   />
                   <span className="text-sm text-gray-700">
-                    Sertakan PPN (properti baru dari developer)
+                    {t('form.feePpnToggle')}
                   </span>
                 </label>
 
                 {form.ppnEnabled && (
                   <InputField
-                    label="PPN"
+                    label={t('form.feePpn')}
                     value={form.ppnPercent}
                     onChange={(v) => dispatch({ type: 'SET_PPN_PERCENT', value: v })}
                     type="number"
@@ -174,7 +176,7 @@ export function KprFeesSection({ form, dispatch }: Props) {
                     hint={
                       propertyPrice > 0 && ppnAmount > 0
                         ? `≈ ${formatIDR(ppnAmount)} dari harga properti`
-                        : '% dari harga properti (default 11%)'
+                        : t('form.feePpnHint')
                     }
                   />
                 )}
@@ -183,7 +185,7 @@ export function KprFeesSection({ form, dispatch }: Props) {
 
             {/* ── Group 4: Insurance ────────────────────────────────────── */}
             <div>
-              <GroupLabel>Asuransi KPR</GroupLabel>
+              <GroupLabel>{t('form.feesInsuranceGroup')}</GroupLabel>
               <div className="space-y-3">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -195,14 +197,14 @@ export function KprFeesSection({ form, dispatch }: Props) {
                     className="w-4 h-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
                   />
                   <span className="text-sm text-gray-700">
-                    Sertakan estimasi premi asuransi jiwa & kebakaran
+                    {t('form.feeInsuranceToggle')}
                   </span>
                 </label>
 
                 {form.insuranceEnabled && (
                   <div className="space-y-3">
                     <InputField
-                      label="Premi Asuransi Jiwa (per tahun)"
+                      label={t('form.feeLifeInsurance')}
                       value={form.lifeInsurancePremiumPercent}
                       onChange={(v) =>
                         dispatch({ type: 'SET_LIFE_INSURANCE_PREMIUM_PERCENT', value: v })
@@ -216,11 +218,11 @@ export function KprFeesSection({ form, dispatch }: Props) {
                       hint={
                         loanAmount > 0 && lifeInsurance > 0
                           ? `≈ ${formatIDR(lifeInsurance)} untuk ${tenorYears.toFixed(1)} thn`
-                          : '% dari nilai kredit per tahun'
+                          : t('form.feeLifeHint')
                       }
                     />
                     <InputField
-                      label="Premi Asuransi Kebakaran (per tahun)"
+                      label={t('form.feeFireInsurance')}
                       value={form.fireInsurancePremiumPercent}
                       onChange={(v) =>
                         dispatch({ type: 'SET_FIRE_INSURANCE_PREMIUM_PERCENT', value: v })
@@ -234,12 +236,11 @@ export function KprFeesSection({ form, dispatch }: Props) {
                       hint={
                         propertyPrice > 0 && fireInsurance > 0
                           ? `≈ ${formatIDR(fireInsurance)} untuk ${tenorYears.toFixed(1)} thn`
-                          : '% dari nilai properti per tahun'
+                          : t('form.feeFireHint')
                       }
                     />
                     <p className="text-xs text-gray-400 leading-relaxed">
-                      Estimasi premi dibayar di muka untuk seluruh tenor. Nilai aktual
-                      ditentukan oleh perusahaan asuransi bank.
+                      {t('form.feeInsuranceDisclaimer')}
                     </p>
                   </div>
                 )}
@@ -250,11 +251,11 @@ export function KprFeesSection({ form, dispatch }: Props) {
             {(loanAmount > 0 || propertyPrice > 0) && (
               <div className="rounded-lg border border-orange-100 bg-orange-50 divide-y divide-orange-100 text-xs">
                 <div className="flex items-center justify-between px-3 py-2 text-gray-500">
-                  <span>Total biaya tambahan</span>
+                  <span>{t('form.feeTotal')}</span>
                   <span className="font-semibold text-gray-700">{formatIDR(totalFees)}</span>
                 </div>
                 <div className="flex items-center justify-between px-3 py-2">
-                  <span className="font-semibold text-orange-800">Total dana awal (DP + Biaya)</span>
+                  <span className="font-semibold text-orange-800">{t('form.feeGrandTotal')}</span>
                   <span className="font-bold text-orange-900">{formatIDR(totalUpfront)}</span>
                 </div>
               </div>

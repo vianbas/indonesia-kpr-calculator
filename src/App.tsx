@@ -1,4 +1,5 @@
 import { ErrorBoundary } from '@sentry/react';
+import './i18n';
 import { AppLayout } from './ui/layouts/AppLayout';
 import { CalculatorPage } from './ui/pages/CalculatorPage';
 import { ErrorFallback } from './ui/components/common/ErrorFallback';

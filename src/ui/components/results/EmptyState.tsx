@@ -1,8 +1,17 @@
+import { useTranslation } from 'react-i18next';
 import type { ValidationError } from '../../../domain';
 
 // ─── Variant: form not yet complete ──────────────────────────────────────────
 
 export function FormIncompleteState() {
+  const { t } = useTranslation();
+
+  const steps = [
+    { step: '1', label: t('empty.step1') },
+    { step: '2', label: t('empty.step2') },
+    { step: '3', label: t('empty.step3') },
+  ];
+
   return (
     <div className="rounded-xl border-2 border-dashed border-gray-200 bg-white p-10 text-center">
       <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-50">
@@ -10,17 +19,12 @@ export function FormIncompleteState() {
           <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
         </svg>
       </div>
-      <h3 className="text-base font-semibold text-gray-700 mb-2">Simulasi KPR</h3>
+      <h3 className="text-base font-semibold text-gray-700 mb-2">{t('empty.title')}</h3>
       <p className="text-sm text-gray-500 max-w-xs mx-auto leading-relaxed">
-        Lengkapi formulir di sebelah kiri — nilai kredit, tenor, dan suku bunga —
-        untuk melihat estimasi cicilan dan tabel amortisasi.
+        {t('empty.description')}
       </p>
       <div className="mt-6 grid grid-cols-3 gap-3 max-w-xs mx-auto text-center">
-        {[
-          { step: '1', label: 'Isi data kredit' },
-          { step: '2', label: 'Atur suku bunga' },
-          { step: '3', label: 'Lihat simulasi' },
-        ].map(({ step, label }) => (
+        {steps.map(({ step, label }) => (
           <div key={step} className="flex flex-col items-center gap-1">
             <div className="h-7 w-7 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center">
               {step}
@@ -40,7 +44,8 @@ interface ValidationErrorStateProps {
 }
 
 export function ValidationErrorState({ errors }: ValidationErrorStateProps) {
-  // Show at most 5 errors to avoid overwhelming the user
+  const { t } = useTranslation();
+
   const visible = errors.slice(0, 5);
   const hidden = errors.length - visible.length;
 
@@ -52,7 +57,7 @@ export function ValidationErrorState({ errors }: ValidationErrorStateProps) {
         </svg>
       </div>
       <h3 className="text-sm font-semibold text-red-700 mb-3">
-        {errors.length === 1 ? '1 kesalahan ditemukan' : `${errors.length} kesalahan ditemukan`}
+        {t('empty.errorCount', { count: errors.length })}
       </h3>
       <ul className="text-left space-y-1.5 max-w-sm mx-auto">
         {visible.map((err, i) => (
@@ -63,7 +68,7 @@ export function ValidationErrorState({ errors }: ValidationErrorStateProps) {
         ))}
         {hidden > 0 && (
           <li className="text-xs text-red-500 text-center pt-1">
-            +{hidden} kesalahan lainnya — perbaiki formulir
+            {t('empty.moreErrors', { count: hidden })}
           </li>
         )}
       </ul>
@@ -74,6 +79,8 @@ export function ValidationErrorState({ errors }: ValidationErrorStateProps) {
 // ─── Variant: calculation failed unexpectedly ─────────────────────────────────
 
 export function CalculationErrorState() {
+  const { t } = useTranslation();
+
   return (
     <div className="rounded-xl border-2 border-dashed border-orange-200 bg-orange-50 p-10 text-center">
       <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-orange-100">
@@ -81,9 +88,9 @@ export function CalculationErrorState() {
           <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
         </svg>
       </div>
-      <h3 className="text-sm font-semibold text-orange-700 mb-1">Perhitungan gagal</h3>
+      <h3 className="text-sm font-semibold text-orange-700 mb-1">{t('empty.calcError_title')}</h3>
       <p className="text-xs text-orange-600">
-        Terjadi kesalahan saat memproses data. Coba ubah konfigurasi suku bunga.
+        {t('empty.calcError_desc')}
       </p>
     </div>
   );

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Card } from '../common/Card';
 import { InputField } from '../common/InputField';
 import { TierBuilder } from './TierBuilder';
@@ -10,7 +11,8 @@ interface Props {
 }
 
 export function FloatingRateSection({ form, dispatch, fieldErrors }: Props) {
-  // Fixed Only: no floating period — entire section is hidden
+  const { t } = useTranslation();
+
   if (form.calculationMethod === 'fixed_only') return null;
 
   const fixedEnd = form.hasFixedPeriod ? parseInt(form.fixedDurationMonths) || 0 : 0;
@@ -19,13 +21,11 @@ export function FloatingRateSection({ form, dispatch, fieldErrors }: Props) {
   const floatingStart = fixedEnd + 1;
   const hasFloatingPeriod = floatingStart <= tenorTotal;
 
-  // When entire loan is covered by fixed period, show informational placeholder
   if (!hasFloatingPeriod && form.hasFixedPeriod) {
     return (
-      <Card title="Suku Bunga Variabel" accent="indigo">
+      <Card title={t('form.floatingRate')} accent="indigo">
         <p className="text-sm text-gray-500 italic">
-          Tenor penuh dicakup oleh periode suku bunga tetap.
-          Periode variabel tidak diperlukan.
+          {t('form.floatingRateFull')}
         </p>
       </Card>
     );
@@ -34,9 +34,9 @@ export function FloatingRateSection({ form, dispatch, fieldErrors }: Props) {
   // ── Fixed + Floating Tunggal ────────────────────────────────────────────────
   if (form.calculationMethod === 'fixed_single_floating') {
     return (
-      <Card title="Suku Bunga Variabel" accent="indigo">
+      <Card title={t('form.floatingRate')} accent="indigo">
         <InputField
-          label="Suku Bunga Variabel"
+          label={t('form.floatingRateLabel')}
           value={form.floatingBaseRate}
           onChange={(v) => dispatch({ type: 'SET_FLOATING_BASE_RATE', value: v })}
           type="number"
@@ -48,8 +48,13 @@ export function FloatingRateSection({ form, dispatch, fieldErrors }: Props) {
           error={fieldErrors['floatingBaseRate']}
           hint={
             fixedEnd > 0
-              ? `Berlaku mulai Bulan ${floatingStart} (Thn ${Math.ceil(floatingStart / 12)}) hingga Bulan ${tenorTotal} (Thn ${Math.ceil(tenorTotal / 12)})`
-              : `Berlaku selama ${tenorTotal} bulan penuh`
+              ? t('form.floatingRateRangeHint', {
+                  start: floatingStart,
+                  yearStart: Math.ceil(floatingStart / 12),
+                  end: tenorTotal,
+                  yearEnd: Math.ceil(tenorTotal / 12),
+                })
+              : t('form.floatingRateFullHint', { count: tenorTotal })
           }
         />
       </Card>
@@ -58,15 +63,14 @@ export function FloatingRateSection({ form, dispatch, fieldErrors }: Props) {
 
   // ── Fixed + Floating Bertingkat ─────────────────────────────────────────────
   return (
-    <Card title="Suku Bunga Variabel (Berjenjang)" accent="indigo">
+    <Card title={t('form.floatingTiered')} accent="indigo">
       <div className="space-y-2">
         <p className="text-xs text-gray-600">
-          Atur suku bunga berbeda untuk setiap periode setelah masa tetap berakhir
+          {t('form.floatingTieredDesc')}
         </p>
         <TierBuilder form={form} dispatch={dispatch} fieldErrors={fieldErrors} />
       </div>
 
-      {/* Cross-field tier error */}
       {fieldErrors['floatingBaseRate'] && (
         <p className="text-xs text-red-600 mt-2">⚠ {fieldErrors['floatingBaseRate']}</p>
       )}

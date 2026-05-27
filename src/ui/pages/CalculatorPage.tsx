@@ -1,4 +1,5 @@
 import { useState, useRef, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useScenarios } from '../../application/hooks/useScenarios';
 import { useUrlSync } from '../../hooks/useUrlSync';
 import { parseUrlInit } from '../../utils/urlState';
@@ -302,6 +303,7 @@ function ResultsPanel({
   onScrollToAffordability,
   onScrollToRefinancing,
 }: ResultsPanelProps) {
+  const { t } = useTranslation();
   const { form, summary, errors, isCalcError } = scenario;
 
   // Amortization table collapse state — collapsed by default so decision tools aren't buried
@@ -322,9 +324,9 @@ function ResultsPanel({
             type="button"
             onClick={onReset}
             className="text-xs text-gray-400 hover:text-gray-600 underline underline-offset-2 transition-colors"
-            aria-label="Reset semua input ke nilai awal"
+            aria-label={t('results.resetAria')}
           >
-            Reset
+            {t('results.resetAll')}
           </button>
           <ShareReportModal
             calculated={calculated}
@@ -367,14 +369,14 @@ function ResultsPanel({
             aria-expanded={amortizationOpen}
           >
             <div className="text-left">
-              <p className="text-sm font-semibold text-gray-700">Tabel Amortisasi</p>
+              <p className="text-sm font-semibold text-gray-700">{t('results.amortizationTitle')}</p>
               <p className="text-xs text-gray-400 mt-0.5">
-                Lihat rincian pembayaran bulanan sepanjang tenor.
+                {t('results.amortizationDesc')}
               </p>
             </div>
             <div className="flex items-center gap-2 shrink-0 ml-3">
               <span className="text-xs text-blue-600 font-medium">
-                {amortizationOpen ? 'Sembunyikan' : 'Tampilkan'}
+                {amortizationOpen ? t('results.amortizationHide') : t('results.amortizationShow')}
               </span>
               <ChevronIcon open={amortizationOpen} />
             </div>
