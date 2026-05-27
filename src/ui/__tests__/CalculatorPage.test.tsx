@@ -30,7 +30,6 @@ async function waitForCalc() {
 
 /** Click the amortization collapse toggle to expand the table. */
 function expandAmortization() {
-  // The toggle button contains "Tabel Amortisasi" as visible text
   fireEvent.click(screen.getByRole('button', { name: /Tampilkan/i }));
 }
 

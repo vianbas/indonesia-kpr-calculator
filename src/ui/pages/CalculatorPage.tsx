@@ -7,6 +7,7 @@ import { SummaryCard } from '../components/results/SummaryCard';
 import { InstallmentGroups } from '../components/results/InstallmentGroups';
 import { AmortizationTable } from '../components/results/AmortizationTable';
 import { NextStepActions } from '../components/results/NextStepActions';
+import { ChevronIcon } from '../components/common/ChevronIcon';
 import { ExportButton } from '../components/export/ExportButton';
 import { ShareReportModal } from '../components/export/ShareReportModal';
 import { ScenarioTabs } from '../components/scenarios/ScenarioTabs';
@@ -69,26 +70,6 @@ function deriveAffordabilityInput(
     principalAmount: summary.totalPrincipal,
     tenorMonths: summary.originalTenorMonths,
   };
-}
-
-// ─── Chevron icon (shared by collapsible sections) ───────────────────────────
-
-function ChevronIcon({ open }: { open: boolean }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 20 20"
-      fill="currentColor"
-      className={['w-4 h-4 text-gray-500 transition-transform', open ? 'rotate-180' : ''].join(' ')}
-      aria-hidden="true"
-    >
-      <path
-        fillRule="evenodd"
-        d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z"
-        clipRule="evenodd"
-      />
-    </svg>
-  );
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
