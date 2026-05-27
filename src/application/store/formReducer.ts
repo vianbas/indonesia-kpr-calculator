@@ -60,6 +60,11 @@ export function createDefaultFormState(): MortgageFormState {
     extraMonthlyEndMonth: '',
     lumpSumAmount: '',
     lumpSumMonth: '',
+    financingMode: 'conventional',
+    syariahAkadType: 'murabahah',
+    syariahMarginPercent: '8',
+    syariahUjrahPercent: '8',
+    syariahBankSharePercent: '80',
   };
 }
 
@@ -208,6 +213,18 @@ export function formReducer(state: MortgageFormState, action: FormAction): Mortg
       return { ...state, lumpSumAmount: action.value };
     case 'SET_LUMP_SUM_MONTH':
       return { ...state, lumpSumMonth: action.value };
+
+    // ── Syariah mode ─────────────────────────────────────────────────────────
+    case 'SET_FINANCING_MODE':
+      return { ...state, financingMode: action.mode };
+    case 'SET_SYARIAH_AKAD_TYPE':
+      return { ...state, syariahAkadType: action.akadType };
+    case 'SET_SYARIAH_MARGIN_PERCENT':
+      return { ...state, syariahMarginPercent: action.value };
+    case 'SET_SYARIAH_UJRAH_PERCENT':
+      return { ...state, syariahUjrahPercent: action.value };
+    case 'SET_SYARIAH_BANK_SHARE_PERCENT':
+      return { ...state, syariahBankSharePercent: action.value };
 
     // ── Scenario management ───────────────────────────────────────────────────
     case 'RESET_TO_DEFAULT':

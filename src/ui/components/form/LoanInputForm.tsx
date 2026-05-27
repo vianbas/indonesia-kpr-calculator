@@ -5,6 +5,8 @@ import { FixedRateSection } from './FixedRateSection';
 import { FloatingRateSection } from './FloatingRateSection';
 import { EarlyRepaymentSection } from './EarlyRepaymentSection';
 import { KprFeesSection } from './KprFeesSection';
+import { FinancingModeSelector } from './FinancingModeSelector';
+import { SyariahRateSection } from './SyariahRateSection';
 import type { MortgageFormState, FormAction } from '../../../application/store/formTypes';
 import type { ValidationError } from '../../../domain';
 
@@ -36,13 +38,24 @@ export function LoanInputForm({ form, dispatch, errors, fieldErrors }: Props) {
     (e) => !INLINE_FIELD_PREFIXES.some((prefix) => e.field.startsWith(prefix)),
   );
 
+  const isSyariah = form.financingMode === 'syariah';
+
   return (
     <div className="space-y-4">
+      <FinancingModeSelector financingMode={form.financingMode} dispatch={dispatch} />
       <BasicInfoSection form={form} dispatch={dispatch} fieldErrors={fieldErrors} />
-      <CalculationMethodSelector form={form} dispatch={dispatch} />
-      <FixedRateSection form={form} dispatch={dispatch} fieldErrors={fieldErrors} />
-      <FloatingRateSection form={form} dispatch={dispatch} fieldErrors={fieldErrors} />
-      <EarlyRepaymentSection form={form} dispatch={dispatch} />
+
+      {isSyariah ? (
+        <SyariahRateSection form={form} dispatch={dispatch} />
+      ) : (
+        <>
+          <CalculationMethodSelector form={form} dispatch={dispatch} />
+          <FixedRateSection form={form} dispatch={dispatch} fieldErrors={fieldErrors} />
+          <FloatingRateSection form={form} dispatch={dispatch} fieldErrors={fieldErrors} />
+          <EarlyRepaymentSection form={form} dispatch={dispatch} />
+        </>
+      )}
+
       <KprFeesSection form={form} dispatch={dispatch} />
 
       {globalErrors.length > 0 && (

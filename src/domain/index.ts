@@ -1,6 +1,8 @@
 // Models
 export type {
   PaymentMethod,
+  FinancingMode,
+  SyariahAkadType,
   FixedPeriod,
   FloatingTier,
   MortgageInput,
@@ -22,6 +24,7 @@ export { validateMortgageInput } from './validators/mortgage.validator';
 // Calculators
 export { buildRateSchedule } from './calculators/rateSchedule';
 export { calculateAnnuityInstallment, calculateAnnuityInterest } from './calculators/annuity';
+export { calculateMurabahahSummary, calculateMmqSummary } from './calculators/syariah';
 export {
   calculateFlatMonthlyPrincipal,
   calculateFlatMonthlyInterest,

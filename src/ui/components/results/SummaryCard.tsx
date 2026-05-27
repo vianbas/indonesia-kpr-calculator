@@ -3,6 +3,11 @@ import { Card } from '../common/Card';
 import { formatIDR, formatIDRCompact, formatPercent, formatTenor } from '../../../domain/utils/currency';
 import type { MortgageSummary } from '../../../domain';
 
+const AKAD_LABEL: Record<string, string> = {
+  murabahah: 'Murabahah',
+  musyarakah_mutanaqishah: 'Musyarakah Mutanaqishah',
+};
+
 interface Props {
   summary: MortgageSummary;
 }
@@ -50,6 +55,9 @@ export function SummaryCard({ summary }: Props) {
     monthsSaved,
   } = summary;
 
+  const isSyariah = summary.financingMode === 'syariah';
+  const isMurabahah = summary.syariahAkadType === 'murabahah';
+
   const tenorMonths = effectiveTenorMonths;
   const finalBalance = summary.schedule[summary.schedule.length - 1]?.closingBalance ?? 0;
   const firstGroup = installmentGroups[0];
@@ -60,31 +68,57 @@ export function SummaryCard({ summary }: Props) {
       ? ((totalInterest / totalPrincipal) * 100).toFixed(1)
       : '0.0';
 
+  const heroLabel = isSyariah
+    ? isMurabahah
+      ? t('syariah.summaryMonthlyInstallment')
+      : t('results.firstInstallmentFixed')
+    : hasMultipleRates
+      ? firstGroup?.type === 'fixed'
+        ? t('results.firstInstallmentFixed')
+        : t('results.firstInstallmentFloat')
+      : t('results.monthlyInstallment');
+
+  const interestLabel = isSyariah
+    ? isMurabahah
+      ? t('syariah.summaryTotalMargin')
+      : t('syariah.summaryTotalUjrah')
+    : t('results.totalInterest');
+
+  const loanAmountLabel = isSyariah
+    ? t('syariah.summaryFinancingAmount')
+    : t('results.loanAmount');
+
   return (
     <Card accent="green">
       <div className="space-y-4">
+        {/* ── Syariah akad badge ──────────────────────────────────────────── */}
+        {isSyariah && summary.syariahAkadType && (
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+              {AKAD_LABEL[summary.syariahAkadType] ?? summary.syariahAkadType}
+            </span>
+            <span className="text-xs text-gray-400">{t('syariah.modeSelector')}</span>
+          </div>
+        )}
+
         {/* ── Hero: first-period installment ─────────────────────────────── */}
-        <div className="rounded-xl bg-gradient-to-br from-blue-600 to-blue-800 px-5 py-4 text-white shadow-sm">
-          <p className="text-xs font-semibold text-blue-200 uppercase tracking-widest mb-1">
-            {hasMultipleRates
-              ? firstGroup?.type === 'fixed'
-                ? t('results.firstInstallmentFixed')
-                : t('results.firstInstallmentFloat')
-              : t('results.monthlyInstallment')}
+        <div className={`rounded-xl px-5 py-4 text-white shadow-sm bg-gradient-to-br ${isSyariah ? 'from-emerald-600 to-emerald-800' : 'from-blue-600 to-blue-800'}`}>
+          <p className={`text-xs font-semibold uppercase tracking-widest mb-1 ${isSyariah ? 'text-emerald-200' : 'text-blue-200'}`}>
+            {heroLabel}
           </p>
           <p className="text-3xl font-extrabold tracking-tight">
             {firstGroup ? formatIDR(firstGroup.installmentAmount) : '—'}
           </p>
-          {hasMultipleRates && installmentGroups[1] && (
-            <p className="text-xs text-blue-200 mt-1.5">
+          {!isSyariah && hasMultipleRates && installmentGroups[1] && (
+            <p className={`text-xs mt-1.5 ${isSyariah ? 'text-emerald-200' : 'text-blue-200'}`}>
               {t('results.installmentChangeFrom', {
                 month: installmentGroups[1].fromMonth,
                 amount: formatIDR(installmentGroups[1].installmentAmount),
               })}
             </p>
           )}
-          <p className="text-xs text-blue-300 mt-2">
-            {formatTenor(tenorMonths)} • {formatPercent(effectiveAnnualRate, 2, true)} {t('results.effective')}
+          <p className={`text-xs mt-2 ${isSyariah ? 'text-emerald-300' : 'text-blue-300'}`}>
+            {formatTenor(tenorMonths)} • {formatPercent(effectiveAnnualRate, 2, true)} {isSyariah ? (isMurabahah ? 'margin' : 'ujrah') : t('results.effective')}
             {monthsSaved > 0 && (
               <span className="ml-2 text-green-300 font-semibold">
                 {t('results.monthsSaved', { count: monthsSaved })}
@@ -93,17 +127,27 @@ export function SummaryCard({ summary }: Props) {
           </p>
         </div>
 
-        {/* ── Metric 1: Loan Amount ───────────────────────────────────────── */}
+        {/* ── Metric 1: Loan / Financing Amount ──────────────────────────── */}
         <Metric
-          label={t('results.loanAmount')}
+          label={loanAmountLabel}
           value={formatIDRCompact(totalPrincipal)}
           sub={formatIDR(totalPrincipal)}
         />
 
+        {/* ── Murabahah: show harga jual bank ────────────────────────────── */}
+        {isSyariah && isMurabahah && summary.totalSalePrice !== undefined && (
+          <Metric
+            label={t('syariah.summaryTotalSalePrice')}
+            value={formatIDRCompact(summary.totalSalePrice)}
+            sub={formatIDR(summary.totalSalePrice)}
+            valueColor="text-emerald-700"
+          />
+        )}
+
         {/* ── 2-column grid ──────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 gap-3">
           <Metric
-            label={t('results.totalInterest')}
+            label={interestLabel}
             value={formatIDRCompact(totalInterest)}
             sub={t('results.interestRatio', { pct: interestRatioPct })}
             valueColor="text-orange-700"

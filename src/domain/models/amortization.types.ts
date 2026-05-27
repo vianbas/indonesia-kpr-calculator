@@ -1,6 +1,7 @@
 /**
  * Types for amortization schedule output and mortgage summary.
  */
+import type { FinancingMode, SyariahAkadType } from './mortgage.types';
 
 /** Internal rate lookup entry — one per month in the schedule */
 export interface RateEntry {
@@ -100,4 +101,14 @@ export interface MortgageSummary {
   fireInsurance: number;
   /** DP + adminFee + provisionFee + appraisalFee + notaryFee + bphtb + ppnAmount + lifeInsurance + fireInsurance */
   totalUpfrontCost: number;
+
+  // ── Syariah mode fields (undefined for conventional) ───────────────────────
+  financingMode?: FinancingMode;
+  syariahAkadType?: SyariahAkadType;
+  /** Murabahah: total profit margin = financingAmount × marginRate × years */
+  totalMargin?: number;
+  /** Murabahah: total selling price = financingAmount + totalMargin */
+  totalSalePrice?: number;
+  /** MMQ: total ujrah paid over the full tenor */
+  totalUjrah?: number;
 }

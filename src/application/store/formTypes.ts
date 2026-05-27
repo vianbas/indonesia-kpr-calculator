@@ -1,4 +1,4 @@
-import type { PaymentMethod } from '../../domain/models/mortgage.types';
+import type { PaymentMethod, FinancingMode, SyariahAkadType } from '../../domain/models/mortgage.types';
 
 export type EarlyRepaymentMode = 'none' | 'extra_monthly' | 'lump_sum' | 'both';
 
@@ -70,6 +70,16 @@ export interface MortgageFormState {
   /** Annual fire insurance premium as % of property value, e.g. "0.075" */
   fireInsurancePremiumPercent: string;
 
+  // ── Financing mode (Konvensional / Syariah) ────────────────────────────────
+  financingMode: FinancingMode;
+  syariahAkadType: SyariahAkadType;
+  /** Annual margin rate as percent string, e.g. "8" for 8% p.a. (Murabahah) */
+  syariahMarginPercent: string;
+  /** Annual ujrah/nisbah rate as percent string (MMQ) */
+  syariahUjrahPercent: string;
+  /** Bank's initial ownership share as percent string, e.g. "80" for 80% (MMQ) */
+  syariahBankSharePercent: string;
+
   // ── Early repayment (Pelunasan Dipercepat) ─────────────────────────────────
   earlyRepaymentMode: EarlyRepaymentMode;
   /** Extra IDR amount paid every month on top of the regular installment */
@@ -120,5 +130,10 @@ export type FormAction =
   | { type: 'SET_EXTRA_MONTHLY_END_MONTH'; value: string }
   | { type: 'SET_LUMP_SUM_AMOUNT'; value: string }
   | { type: 'SET_LUMP_SUM_MONTH'; value: string }
+  | { type: 'SET_FINANCING_MODE'; mode: FinancingMode }
+  | { type: 'SET_SYARIAH_AKAD_TYPE'; akadType: SyariahAkadType }
+  | { type: 'SET_SYARIAH_MARGIN_PERCENT'; value: string }
+  | { type: 'SET_SYARIAH_UJRAH_PERCENT'; value: string }
+  | { type: 'SET_SYARIAH_BANK_SHARE_PERCENT'; value: string }
   | { type: 'RESET_TO_DEFAULT' }
   | { type: 'LOAD_STATE'; state: MortgageFormState };

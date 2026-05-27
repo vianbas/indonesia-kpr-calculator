@@ -8,6 +8,10 @@ import {
   generateAmortizationSchedule,
   calculateMortgageSummary,
 } from '../../domain/calculators/amortization';
+import {
+  calculateMurabahahSummary,
+  calculateMmqSummary,
+} from '../../domain/calculators/syariah';
 import type { MortgageSummary, ValidationError } from '../../domain';
 import type { MortgageFormState, FormAction } from '../store/formTypes';
 
@@ -36,8 +40,36 @@ export function useMortgageCalculator(initialState?: MortgageFormState): Mortgag
   const [isCalcError, setIsCalcError] = useState(false);
 
   const recalculate = useCallback(() => {
-    const { input, conversionErrors } = formToMortgageInput(form);
+    const { input, conversionErrors, syariahParams } = formToMortgageInput(form);
 
+    // ── Syariah path ───────────────────────────────────────────────────────────
+    if (form.financingMode === 'syariah') {
+      if (!syariahParams) {
+        setSummary(null);
+        setErrors(conversionErrors);
+        setIsCalcError(false);
+        return;
+      }
+      try {
+        Sentry.startSpan({ name: 'kpr.calculation.syariah', op: 'calculate' }, () => {
+          const result =
+            syariahParams.akadType === 'murabahah'
+              ? calculateMurabahahSummary(syariahParams)
+              : calculateMmqSummary(syariahParams);
+          setSummary(result);
+          setErrors([]);
+          setIsCalcError(false);
+        });
+      } catch (err) {
+        captureError(err, { feature: 'calculation_syariah' });
+        console.error('[KPR] Syariah calculation error:', err);
+        setSummary(null);
+        setIsCalcError(true);
+      }
+      return;
+    }
+
+    // ── Conventional path (unchanged) ─────────────────────────────────────────
     if (input === null) {
       setSummary(null);
       setErrors(conversionErrors);

@@ -38,6 +38,13 @@ export function RefinancingInputs({ form, onChange, activeScenario, onPrefill }:
         </div>
       )}
 
+      {/* Syariah note */}
+      {activeScenario?.summary.financingMode === 'syariah' && (
+        <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+          {t('syariah.refinancingNote')}
+        </p>
+      )}
+
       {/* Current loan */}
       <div>
         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">

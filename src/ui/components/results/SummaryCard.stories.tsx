@@ -4,6 +4,8 @@ import {
   SUMMARY_FIXED_ONLY,
   SUMMARY_FIXED_FLOATING,
   SUMMARY_WITH_SAVINGS,
+  SUMMARY_MURABAHAH,
+  SUMMARY_MMQ,
 } from '../../../stories/fixtures';
 
 const meta: Meta<typeof SummaryCard> = {
@@ -32,4 +34,12 @@ export const FixedPlusFloating: Story = {
 
 export const WithEarlyRepaymentSavings: Story = {
   args: { summary: SUMMARY_WITH_SAVINGS },
+};
+
+export const SyariahMurabahah: Story = {
+  args: { summary: SUMMARY_MURABAHAH },
+};
+
+export const SyariahMmq: Story = {
+  args: { summary: SUMMARY_MMQ },
 };
