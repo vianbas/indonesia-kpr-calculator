@@ -59,6 +59,17 @@ export function buildPdfExportData(
 
   const scheduleRows = buildScheduleRows(summary);
   const hasExtraPayment = summary.schedule.some((r) => r.extraPayment > 0);
+  const isSyariah = summary.financingMode === 'syariah';
+  const akadType = summary.syariahAkadType;
+  const akadTypeDisplay = isSyariah
+    ? akadType === 'murabahah'
+      ? 'Murabahah'
+      : 'Musyarakah Mutanaqishah (MMQ)'
+    : undefined;
+  const interestColumnLabel = isSyariah
+    ? akadType === 'murabahah' ? 'Margin' : 'Ujrah'
+    : undefined;
+
   return {
     generatedAt,
     loanInfo: buildLoanInfo(form, summary),
@@ -67,6 +78,9 @@ export function buildPdfExportData(
     scheduleRows,
     totalRow: buildTotalRow(summary),
     hasExtraPayment,
+    isSyariah: isSyariah || undefined,
+    akadTypeDisplay,
+    interestColumnLabel,
     affordability: affordability
       ? buildAffordabilitySection(affordability.form, affordability.result)
       : undefined,
@@ -231,8 +245,8 @@ function buildComparisonRows(
     s.form.paymentMethod === 'annuity' ? 'Anuitas' : 'Flat Rate';
 
   const rows: PdfComparisonRow[] = [
-    { label: 'Info Kredit', cells: [], isSectionHeader: true },
-    infoRow('Nilai Kredit', principalDisplay),
+    { label: 'Info Kredit / Pembiayaan', cells: [], isSectionHeader: true },
+    infoRow('Nilai Kredit / Pembiayaan', principalDisplay),
     infoRow('Tenor', tenorDisplay),
     infoRow('Metode Bayar', methodDisplay),
     { label: 'Hasil Simulasi', cells: [], isSectionHeader: true },
@@ -242,7 +256,7 @@ function buildComparisonRows(
       (s) => s.summary.installmentGroups[0]?.installmentAmount ?? 0,
     ),
     outcomeRow(
-      'Total Bunga',
+      'Total Bunga / Margin',
       (s) => formatIDR(s.summary.totalInterest),
       (s) => s.summary.totalInterest,
     ),
@@ -302,17 +316,36 @@ function buildLoanInfo(form: MortgageFormState, summary: MortgageSummary): PdfLo
   const tenorMonths =
     (parseInt(form.tenorYears) || 0) * 12 + (parseInt(form.tenorAdditionalMonths) || 0);
 
-  const calculationMethodDisplay =
-    form.calculationMethod === 'fixed_only'
-      ? 'Fixed Only (Seluruh Tenor Tetap)'
-      : form.calculationMethod === 'fixed_single_floating'
-        ? 'Fixed + Floating Tunggal'
-        : 'Fixed + Floating Bertingkat';
+  const isSyariah = summary.financingMode === 'syariah';
+  const akadType = summary.syariahAkadType;
 
-  const paymentMethodDisplay =
-    form.paymentMethod === 'annuity'
-      ? 'Anuitas (Cicilan Tetap per Periode)'
-      : 'Flat Rate (Bunga Tetap pada Pokok Awal)';
+  let calculationMethodDisplay: string;
+  if (isSyariah) {
+    calculationMethodDisplay =
+      akadType === 'murabahah'
+        ? 'Murabahah (Cicilan Tetap)'
+        : 'Musyarakah Mutanaqishah / MMQ';
+  } else {
+    calculationMethodDisplay =
+      form.calculationMethod === 'fixed_only'
+        ? 'Fixed Only (Seluruh Tenor Tetap)'
+        : form.calculationMethod === 'fixed_single_floating'
+          ? 'Fixed + Floating Tunggal'
+          : 'Fixed + Floating Bertingkat';
+  }
+
+  let paymentMethodDisplay: string;
+  if (isSyariah) {
+    paymentMethodDisplay =
+      akadType === 'murabahah'
+        ? 'Cicilan Tetap (Angsuran Murabahah)'
+        : 'Anuitas (Angsuran MMQ)';
+  } else {
+    paymentMethodDisplay =
+      form.paymentMethod === 'annuity'
+        ? 'Anuitas (Cicilan Tetap per Periode)'
+        : 'Flat Rate (Bunga Tetap pada Pokok Awal)';
+  }
 
   const startDate = new Date(form.startDate);
   const startDateDisplay = isNaN(startDate.getTime())
@@ -335,27 +368,51 @@ function buildLoanInfo(form: MortgageFormState, summary: MortgageSummary): PdfLo
 }
 
 function buildInterestRows(summary: MortgageSummary): PdfInterestRow[] {
-  return summary.installmentGroups.map((g) => ({
-    periodDisplay: `Bulan ${g.fromMonth}–${g.toMonth}`,
-    typeDisplay: g.type === 'fixed' ? 'Tetap' : 'Variabel',
-    rateDisplay: formatPercent(g.annualRate, 2, true),
-    installmentDisplay: formatIDR(g.installmentAmount),
-  }));
+  const isSyariah = summary.financingMode === 'syariah';
+  const akadType = summary.syariahAkadType;
+  return summary.installmentGroups.map((g) => {
+    let typeDisplay: string;
+    if (isSyariah) {
+      typeDisplay = akadType === 'murabahah' ? 'Murabahah' : 'MMQ';
+    } else {
+      typeDisplay = g.type === 'fixed' ? 'Tetap' : 'Variabel';
+    }
+    return {
+      periodDisplay: `Bulan ${g.fromMonth}–${g.toMonth}`,
+      typeDisplay,
+      rateDisplay: formatPercent(g.annualRate, 2, true),
+      installmentDisplay: formatIDR(g.installmentAmount),
+    };
+  });
 }
 
 function buildFinancialRows(summary: MortgageSummary): PdfFinancialRow[] {
+  const isSyariah = summary.financingMode === 'syariah';
+  const akadType = summary.syariahAkadType;
+  const principalLabel = isSyariah ? 'Nilai Pembiayaan' : 'Nilai Kredit (Pokok)';
+  const interestLabel = isSyariah
+    ? akadType === 'murabahah' ? 'Total Margin' : 'Total Ujrah'
+    : 'Total Bunga';
+
   const rows: PdfFinancialRow[] = [
-    { label: 'Nilai Kredit (Pokok)', value: formatIDR(summary.totalPrincipal), hint: 'normal' },
-    { label: 'Total Bunga', value: formatIDR(summary.totalInterest), hint: 'interest' },
+    { label: principalLabel, value: formatIDR(summary.totalPrincipal), hint: 'normal' },
+    { label: interestLabel, value: formatIDR(summary.totalInterest), hint: 'interest' },
   ];
+
+  if (isSyariah && akadType === 'murabahah' && summary.totalSalePrice !== undefined) {
+    rows.push({ label: 'Harga Jual Bank', value: formatIDR(summary.totalSalePrice), hint: 'normal' });
+  }
 
   if (summary.adminFee > 0) {
     rows.push({ label: 'Biaya Administrasi', value: formatIDR(summary.adminFee), hint: 'normal' });
   }
 
   rows.push({ label: 'Total Pembayaran', value: formatIDR(summary.totalPayment), hint: 'paid' });
+  const rateLabel = isSyariah
+    ? akadType === 'murabahah' ? 'Margin Rate (p.a.)' : 'Ujrah Rate (p.a.)'
+    : 'Rata-rata Suku Bunga Efektif';
   rows.push({
-    label: 'Rata-rata Suku Bunga Efektif',
+    label: rateLabel,
     value: formatPercent(summary.effectiveAnnualRate, 2, true),
     hint: 'normal',
   });

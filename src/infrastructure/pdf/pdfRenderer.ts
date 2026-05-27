@@ -67,20 +67,24 @@ const FOOTER_Y = 289;
 
 // Colors (RGB tuples — match the web UI palette)
 const C: Record<string, Color> = {
-  blueDark:   [30,  64,  175],  // blue-800
-  blue:       [37,  99,  235],  // blue-600
-  blueMid:    [59,  130, 246],  // blue-500
-  blueLight:  [219, 234, 254],  // blue-100
-  blueBg:     [239, 246, 255],  // blue-50
-  indigoDark: [67,  56,  202],  // indigo-700
-  indigoBg:   [238, 242, 255],  // indigo-50
-  white:      [255, 255, 255],
-  black:      [17,  24,  39],   // gray-900
-  gray:       [107, 114, 128],  // gray-500
-  grayLight:  [243, 244, 246],  // gray-100
-  grayBg:     [249, 250, 251],  // gray-50
-  orange:     [194, 65,  12],   // orange-700
-  green:      [21,  128, 61],   // green-700
+  blueDark:     [30,  64,  175],  // blue-800
+  blue:         [37,  99,  235],  // blue-600
+  blueMid:      [59,  130, 246],  // blue-500
+  blueLight:    [219, 234, 254],  // blue-100
+  blueBg:       [239, 246, 255],  // blue-50
+  indigoDark:   [67,  56,  202],  // indigo-700
+  indigoBg:     [238, 242, 255],  // indigo-50
+  emeraldDark:  [6,   95,  70],   // emerald-800
+  emerald:      [5,   150, 105],  // emerald-600
+  emeraldLight: [167, 243, 208],  // emerald-200
+  emeraldBg:    [236, 253, 245],  // emerald-50
+  white:        [255, 255, 255],
+  black:        [17,  24,  39],   // gray-900
+  gray:         [107, 114, 128],  // gray-500
+  grayLight:    [243, 244, 246],  // gray-100
+  grayBg:       [249, 250, 251],  // gray-50
+  orange:       [194, 65,  12],   // orange-700
+  green:        [21,  128, 61],   // green-700
 };
 
 // ─── Public entry point ───────────────────────────────────────────────────────
@@ -106,7 +110,7 @@ export function renderMultiScenarioPdf(data: PdfMultiScenarioExportData): jsPDF 
   // ── Individual scenario sections ──────────────────────────────────────────
   for (const scenario of data.scenarios) {
     doc.addPage();
-    let sy = renderScenarioPageHeader(doc, scenario.label ?? '', scenario.generatedAt);
+    let sy = renderScenarioPageHeader(doc, scenario.label ?? '', scenario.generatedAt, scenario.isSyariah);
     sy = renderLoanInfoSection(doc, sy, scenario);
     sy = renderInterestSchemeSection(doc, sy, scenario);
     sy = renderFinancialSummarySection(doc, sy, scenario);
@@ -132,7 +136,7 @@ export function renderPdf(data: PdfExportData): jsPDF {
     compress: true,
   });
 
-  let y = renderDocumentHeader(doc, data.generatedAt);
+  let y = renderDocumentHeader(doc, data.generatedAt, data.isSyariah);
   y = renderLoanInfoSection(doc, y, data);
   y = renderInterestSchemeSection(doc, y, data);
   y = renderFinancialSummarySection(doc, y, data);
@@ -150,20 +154,27 @@ export function renderPdf(data: PdfExportData): jsPDF {
 
 // ─── Section A: document header ──────────────────────────────────────────────
 
-function renderDocumentHeader(doc: DocWithAutoTable, generatedAt: string): number {
-  // Dark blue banner
-  doc.setFillColor(...(C.blueDark as [number, number, number]));
+function renderDocumentHeader(doc: DocWithAutoTable, generatedAt: string, isSyariah?: boolean): number {
+  const bannerColor = isSyariah ? C.emeraldDark : C.blueDark;
+  doc.setFillColor(...(bannerColor as [number, number, number]));
   doc.rect(0, 0, PAGE_W, 26, 'F');
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
   doc.setTextColor(...(C.white as [number, number, number]));
-  doc.text('SIMULASI KREDIT PEMILIKAN RUMAH (KPR)', M, 11);
+  const title = isSyariah
+    ? 'SIMULASI KPR SYARIAH / PEMBIAYAAN iB'
+    : 'SIMULASI KREDIT PEMILIKAN RUMAH (KPR)';
+  doc.text(title, M, 11);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
-  doc.setTextColor(186, 210, 254); // blue-200
-  doc.text('Dokumen bersifat estimasi — bukan penawaran kredit resmi dari lembaga keuangan mana pun.', M, 17.5);
+  const subtitleColor = isSyariah ? C.emeraldLight : [186, 210, 254];
+  doc.setTextColor(...(subtitleColor as [number, number, number]));
+  const subtitle = isSyariah
+    ? 'Estimasi pembiayaan Syariah — bukan penawaran atau akad resmi dari bank/lembaga keuangan.'
+    : 'Dokumen bersifat estimasi — bukan penawaran kredit resmi dari lembaga keuangan mana pun.';
+  doc.text(subtitle, M, 17.5);
 
   doc.setFontSize(7);
   doc.text(`Dibuat: ${generatedAt}`, PAGE_W - M, 22.5, { align: 'right' });
@@ -174,21 +185,28 @@ function renderDocumentHeader(doc: DocWithAutoTable, generatedAt: string): numbe
 // ─── Section A: Loan info ─────────────────────────────────────────────────────
 
 function renderLoanInfoSection(doc: DocWithAutoTable, y: number, data: PdfExportData): number {
-  y = renderSectionTitle(doc, 'A.  INFORMASI KREDIT', y);
+  const sectionTitle = data.isSyariah ? 'A.  INFORMASI PEMBIAYAAN SYARIAH' : 'A.  INFORMASI KREDIT';
+  y = renderSectionTitle(doc, sectionTitle, y, data.isSyariah);
 
   const { loanInfo } = data;
+  const principalRowLabel = data.isSyariah ? 'Nilai Pembiayaan' : 'Nilai Kredit (KPR)';
+  const schemeRowLabel = data.isSyariah ? 'Jenis Akad' : 'Skema Bunga';
+
   const rows: [string, string][] = [
-    ['Harga Properti',       loanInfo.propertyPriceDisplay],
-    ['Uang Muka',            loanInfo.downPaymentDisplay],
-    ['Nilai Kredit (KPR)',   loanInfo.principalDisplay],
-    ['Jangka Waktu',         loanInfo.tenorDisplay],
-    ['Skema Bunga',          loanInfo.calculationMethodDisplay],
-    ['Metode Bayar',         loanInfo.paymentMethodDisplay],
-    ['Tanggal Pencairan',    loanInfo.startDateDisplay],
+    ['Harga Properti',    loanInfo.propertyPriceDisplay],
+    ['Uang Muka',         loanInfo.downPaymentDisplay],
+    [principalRowLabel,   loanInfo.principalDisplay],
+    ['Jangka Waktu',      loanInfo.tenorDisplay],
+    [schemeRowLabel,      loanInfo.calculationMethodDisplay],
+    ['Metode Bayar',      loanInfo.paymentMethodDisplay],
+    ['Tanggal Pencairan', loanInfo.startDateDisplay],
   ];
   if (loanInfo.adminFeeDisplay) {
     rows.push(['Biaya Administrasi', loanInfo.adminFeeDisplay]);
   }
+
+  const highlightFill = data.isSyariah ? C.emeraldBg : C.blueLight;
+  const highlightText = data.isSyariah ? C.emeraldDark : C.blueDark;
 
   autoTable(doc, {
     startY: y,
@@ -203,10 +221,10 @@ function renderLoanInfoSection(doc: DocWithAutoTable, y: number, data: PdfExport
       1: { textColor: C.black as Color },
     },
     didParseCell: (d: CellHookData) => {
-      // Highlight the principal row
+      // Highlight the principal/financing amount row (index 2)
       if (d.section === 'body' && d.row.index === 2) {
-        d.cell.styles.fillColor = C.blueLight as Color;
-        d.cell.styles.textColor = C.blueDark as Color;
+        d.cell.styles.fillColor = highlightFill as Color;
+        d.cell.styles.textColor = highlightText as Color;
         d.cell.styles.fontStyle = 'bold';
       }
     },
@@ -219,16 +237,24 @@ function renderLoanInfoSection(doc: DocWithAutoTable, y: number, data: PdfExport
 
 function renderInterestSchemeSection(doc: DocWithAutoTable, y: number, data: PdfExportData): number {
   y = ensureSpace(doc, y, 50);
-  y = renderSectionTitle(doc, 'B.  SKEMA SUKU BUNGA', y);
+  const sectionTitle = data.isSyariah ? 'B.  JADWAL ANGSURAN SYARIAH' : 'B.  SKEMA SUKU BUNGA';
+  y = renderSectionTitle(doc, sectionTitle, y, data.isSyariah);
+
+  const rateColHeader = data.isSyariah
+    ? (data.interestColumnLabel ? `${data.interestColumnLabel} (p.a.)` : 'Margin/Ujrah (p.a.)')
+    : 'Suku Bunga (p.a.)';
+  const installmentColHeader = data.isSyariah ? 'Angsuran / Bulan' : 'Cicilan / Bulan';
+
+  const headFill = data.isSyariah ? C.emerald : C.blue;
 
   autoTable(doc, {
     startY: y,
     margin: { left: M, right: M },
     tableWidth: CONTENT_W,
-    head: [['Periode', 'Jenis', 'Suku Bunga (p.a.)', 'Cicilan / Bulan']],
+    head: [['Periode', 'Jenis', rateColHeader, installmentColHeader]],
     body: data.interestRows.map((r) => [r.periodDisplay, r.typeDisplay, r.rateDisplay, r.installmentDisplay]),
     styles: { fontSize: 8.5, cellPadding: { top: 2.8, bottom: 2.8, left: 3, right: 3 } },
-    headStyles: { fillColor: C.blue as Color, textColor: C.white as Color, fontStyle: 'bold', halign: 'center', fontSize: 8 },
+    headStyles: { fillColor: headFill as Color, textColor: C.white as Color, fontStyle: 'bold', halign: 'center', fontSize: 8 },
     alternateRowStyles: { fillColor: C.grayBg as Color },
     columnStyles: {
       0: { cellWidth: 38 },
@@ -240,7 +266,11 @@ function renderInterestSchemeSection(doc: DocWithAutoTable, y: number, data: Pdf
       if (d.section !== 'body') return;
       const typeVal = data.interestRows[d.row.index]?.typeDisplay;
       if (d.column.index === 1) {
-        d.cell.styles.textColor = typeVal === 'Tetap' ? (C.blueDark as Color) : (C.indigoDark as Color);
+        if (data.isSyariah) {
+          d.cell.styles.textColor = C.emeraldDark as Color;
+        } else {
+          d.cell.styles.textColor = typeVal === 'Tetap' ? (C.blueDark as Color) : (C.indigoDark as Color);
+        }
         d.cell.styles.fontStyle = 'bold';
       }
     },
@@ -253,7 +283,7 @@ function renderInterestSchemeSection(doc: DocWithAutoTable, y: number, data: Pdf
 
 function renderFinancialSummarySection(doc: DocWithAutoTable, y: number, data: PdfExportData): number {
   y = ensureSpace(doc, y, 60);
-  y = renderSectionTitle(doc, 'C.  RINGKASAN PEMBAYARAN', y);
+  y = renderSectionTitle(doc, 'C.  RINGKASAN PEMBAYARAN', y, data.isSyariah);
 
   autoTable(doc, {
     startY: y,
@@ -275,7 +305,22 @@ function renderFinancialSummarySection(doc: DocWithAutoTable, y: number, data: P
     },
   });
 
-  return getLastTableY(doc, y) + 7;
+  let tableY = getLastTableY(doc, y);
+
+  if (data.isSyariah) {
+    tableY += 3;
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(7);
+    doc.setTextColor(...(C.gray as [number, number, number]));
+    doc.text(
+      'Simulasi ini bersifat estimasi dan tidak menggantikan penawaran resmi, akad, atau konfirmasi dari bank.',
+      M,
+      tableY + 4,
+    );
+    tableY += 7;
+  }
+
+  return tableY + 7;
 }
 
 // ─── Section D: Affordability analysis ───────────────────────────────────────
@@ -537,7 +582,7 @@ function renderRefinancingSection(
 function renderAmortizationSection(doc: DocWithAutoTable, y: number, data: PdfExportData): void {
   y = ensureSpace(doc, y, 45);
   const amortLetter = data.refinancing ? 'F' : 'E';
-  y = renderSectionTitle(doc, `${amortLetter}.  JADWAL ANGSURAN (AMORTISASI)`, y);
+  y = renderSectionTitle(doc, `${amortLetter}.  JADWAL ANGSURAN (AMORTISASI)`, y, data.isSyariah);
 
   const { hasExtraPayment } = data;
   const numCols = hasExtraPayment ? 8 : 7;
@@ -584,8 +629,9 @@ function renderAmortizationSection(doc: DocWithAutoTable, y: number, data: PdfEx
     7: { halign: 'right' as const, cellWidth: extraW },
   };
 
-  const head7 = [['Bln', 'Thn', 'Suku Bunga', 'Cicilan', 'Pokok', 'Bunga', 'Saldo Akhir']];
-  const head8 = [['Bln', 'Thn', 'Suku Bunga', 'Cicilan', 'Pokok', 'Bunga', 'Saldo Akhir', 'Ekstra']];
+  const interestColLabel = data.interestColumnLabel ?? 'Bunga';
+  const head7 = [['Bln', 'Thn', 'Suku Bunga', 'Cicilan', 'Pokok', interestColLabel, 'Saldo Akhir']];
+  const head8 = [['Bln', 'Thn', 'Suku Bunga', 'Cicilan', 'Pokok', interestColLabel, 'Saldo Akhir', 'Ekstra']];
 
   autoTable(doc, {
     startY: y,
@@ -602,15 +648,15 @@ function renderAmortizationSection(doc: DocWithAutoTable, y: number, data: PdfEx
       overflow: 'linebreak',
     },
     headStyles: {
-      fillColor: C.blue as Color,
+      fillColor: (data.isSyariah ? C.emerald : C.blue) as Color,
       textColor: C.white as Color,
       fontStyle: 'bold',
       halign: 'center',
       fontSize: 7.5,
     },
     footStyles: {
-      fillColor: C.blueLight as Color,
-      textColor: C.blueDark as Color,
+      fillColor: (data.isSyariah ? C.emeraldBg : C.blueLight) as Color,
+      textColor: (data.isSyariah ? C.emeraldDark : C.blueDark) as Color,
       fontStyle: 'bold',
       fontSize: 7.5,
     },
@@ -646,23 +692,26 @@ function renderScenarioPageHeader(
   doc: DocWithAutoTable,
   label: string,
   generatedAt: string,
+  isSyariah?: boolean,
 ): number {
-  doc.setFillColor(...(C.blueDark as [number, number, number]));
+  const bannerColor = isSyariah ? C.emeraldDark : C.blueDark;
+  doc.setFillColor(...(bannerColor as [number, number, number]));
   doc.rect(0, 0, PAGE_W, 26, 'F');
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   doc.setTextColor(...(C.white as [number, number, number]));
-  doc.text(`SIMULASI KPR — ${label.toUpperCase()}`, M, 11);
+  const prefix = isSyariah ? 'SIMULASI KPR SYARIAH' : 'SIMULASI KPR';
+  doc.text(`${prefix} — ${label.toUpperCase()}`, M, 11);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
-  doc.setTextColor(186, 210, 254); // blue-200
-  doc.text(
-    'Dokumen bersifat estimasi — bukan penawaran kredit resmi dari lembaga keuangan mana pun.',
-    M,
-    17.5,
-  );
+  const subtitleColor = isSyariah ? C.emeraldLight : [186, 210, 254];
+  doc.setTextColor(...(subtitleColor as [number, number, number]));
+  const subtitle = isSyariah
+    ? 'Estimasi pembiayaan Syariah — bukan penawaran atau akad resmi dari bank/lembaga keuangan.'
+    : 'Dokumen bersifat estimasi — bukan penawaran kredit resmi dari lembaga keuangan mana pun.';
+  doc.text(subtitle, M, 17.5);
 
   doc.setFontSize(7);
   doc.text(`Dibuat: ${generatedAt}`, PAGE_W - M, 22.5, { align: 'right' });
@@ -790,9 +839,10 @@ function renderPageNumbers(doc: DocWithAutoTable): void {
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
 
-function renderSectionTitle(doc: DocWithAutoTable, title: string, y: number): number {
+function renderSectionTitle(doc: DocWithAutoTable, title: string, y: number, isSyariah?: boolean): number {
   const titleH = 7;
-  doc.setFillColor(...(C.blueDark as [number, number, number]));
+  const fillColor = isSyariah ? C.emeraldDark : C.blueDark;
+  doc.setFillColor(...(fillColor as [number, number, number]));
   doc.roundedRect(M, y, CONTENT_W, titleH, 1.2, 1.2, 'F');
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8.5);
