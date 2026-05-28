@@ -97,9 +97,10 @@ async function handleCreate(
     return err(400, 'INVALID_PAYLOAD', 'payload must be a non-empty string within size limit', h);
   }
 
+  const xff = request.headers.get('X-Forwarded-For');
   const clientIp =
     request.headers.get('CF-Connecting-IP') ??
-    (request.headers.get('X-Forwarded-For') ?? '').split(',')[0].trim() ||
+    (xff ? xff.split(',')[0].trim() : null) ??
     'unknown';
   const ipHash = await hashIp(clientIp, env.IP_HASH_SECRET ?? 'dev-secret');
 
