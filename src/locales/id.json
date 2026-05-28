@@ -386,7 +386,9 @@
     "copiedLink": "✓ Tautan disalin!",
     "presetPasangan": "Pasangan",
     "presetAgen": "Agen Properti",
-    "presetBank": "Petugas Bank"
+    "presetBank": "Petugas Bank",
+    "shortLinkReady": "Tautan singkat siap — ketuk Salin Tautan untuk berbagi",
+    "shortLinkFallback": "Menggunakan URL panjang (tautan singkat tidak tersedia)"
   },
   "syariah": {
     "modeSelector": "Mode Pembiayaan",

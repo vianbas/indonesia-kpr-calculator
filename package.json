@@ -14,7 +14,11 @@
     "test:unit": "vitest run src/domain src/application",
     "test:coverage": "vitest run --coverage",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "worker:dev": "cd workers/share-api && npx wrangler dev",
+    "worker:deploy": "cd workers/share-api && npx wrangler deploy",
+    "worker:migrate:local": "cd workers/share-api && npx wrangler d1 migrations apply kpr-shares --local",
+    "worker:migrate:prod": "cd workers/share-api && npx wrangler d1 migrations apply kpr-shares --remote"
   },
   "dependencies": {
     "@sentry/react": "^10.53.1",

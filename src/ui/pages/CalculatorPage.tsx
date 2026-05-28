@@ -32,6 +32,7 @@ import type { AffordabilityFormState } from '../../application/store/affordabili
 import type { AffordabilityInput } from '../../domain/calculators/affordability';
 import type { RefinancingFormState } from '../../application/store/refinancingTypes';
 import type { ScenarioState, CalculatedScenario } from '../../application/store/scenarioTypes';
+import type { UrlState } from '../../utils/urlState';
 
 // ─── Affordability helpers ────────────────────────────────────────────────────
 
@@ -76,12 +77,19 @@ function deriveAffordabilityInput(
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export function CalculatorPage() {
+interface CalculatorPageProps {
+  initialUrlState?: UrlState | null;
+}
+
+export function CalculatorPage({ initialUrlState }: CalculatorPageProps = {}) {
   const [showOnboarding, setShowOnboarding] = useState(() => {
     try { return localStorage.getItem('kpr_onboarding_seen') !== '1'; } catch { return false; }
   });
 
-  const urlInit = useMemo(() => parseUrlInit(), []);
+  // Capture URL init once at mount; initialUrlState takes precedence over ?s= param.
+  const [urlInit] = useState<UrlState | null>(
+    () => (initialUrlState !== undefined ? initialUrlState : parseUrlInit()),
+  );
 
   const { scenarios, activeCount, activeTab, setActiveTab, canAdd, addScenario, removeScenario, resetAll } =
     useScenarios(

@@ -1,0 +1,15 @@
+name = "kpr-share-api"
+main = "src/index.ts"
+compatibility_date = "2024-12-18"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "kpr-shares"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+
+[vars]
+CORS_ORIGIN          = "https://your-app.pages.dev"
+MAX_PAYLOAD_BYTES    = "10240"
+RATE_LIMIT_PER_MINUTE = "10"
+SHARE_EXPIRY_DAYS    = "90"
+# IP_HASH_SECRET and TURNSTILE_SECRET must be set as Worker Secrets (wrangler secret put ...)

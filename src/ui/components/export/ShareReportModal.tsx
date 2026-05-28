@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../common/Button';
 import { encodeUrlState } from '../../../utils/urlState';
+import { createShortLink } from '../../../utils/shortLinkApi';
 import { formatShareText, type SharePreset } from '../../utils/shareText';
 import type { CalculatedScenario, ScenarioState, ScenarioId } from '../../../application/store/scenarioTypes';
 
@@ -33,25 +34,46 @@ const XIcon = () => (
   </svg>
 );
 
-function buildShareUrl(allScenarios: ScenarioState[], activeCount: 1 | 2 | 3, activeTab: ScenarioId): string {
-  const forms = allScenarios.slice(0, activeCount).map((s) => s.form);
-  const encoded = encodeUrlState({ forms, activeCount, activeTab });
-  const url = new URL(window.location.href);
-  url.searchParams.set('s', encoded);
-  return url.toString();
-}
-
 export function ShareReportModal({ calculated, allScenarios, activeCount, activeTab, disabled }: Props) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [preset, setPreset] = useState<SharePreset>('pasangan');
   const [copiedText, setCopiedText] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [shortUrl, setShortUrl] = useState<string | null>(null);
+  const [shortLinkFailed, setShortLinkFailed] = useState(false);
 
-  const shareUrl = buildShareUrl(allScenarios, activeCount, activeTab);
-  const text = formatShareText(preset, calculated, shareUrl);
+  const payload = useMemo(
+    () => encodeUrlState({ forms: allScenarios.slice(0, activeCount).map((s) => s.form), activeCount, activeTab }),
+    [allScenarios, activeCount, activeTab],
+  );
+
+  const longUrl = useMemo(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('s', payload);
+    return url.toString();
+  }, [payload]);
+
+  const displayUrl = shortUrl ?? longUrl;
+  const text = formatShareText(preset, calculated, displayUrl);
 
   const close = useCallback(() => setOpen(false), []);
+
+  // Try to create a short link when the modal opens (or payload changes while open)
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    setShortUrl(null);
+    setShortLinkFailed(false);
+
+    createShortLink(payload).then((result) => {
+      if (cancelled) return;
+      if (result) setShortUrl(result.url);
+      else setShortLinkFailed(true);
+    });
+
+    return () => { cancelled = true; };
+  }, [open, payload]);
 
   useEffect(() => {
     if (!open) return;
@@ -80,9 +102,9 @@ export function ShareReportModal({ calculated, allScenarios, activeCount, active
   }
 
   async function handleCopyLink() {
-    history.replaceState(null, '', shareUrl);
+    if (!shortUrl) history.replaceState(null, '', longUrl);
     try {
-      await navigator.clipboard.writeText(shareUrl);
+      await navigator.clipboard.writeText(displayUrl);
     } catch {
       // Clipboard API may be unavailable in insecure contexts
     }
@@ -91,7 +113,7 @@ export function ShareReportModal({ calculated, allScenarios, activeCount, active
   }
 
   function handleWhatsApp() {
-    history.replaceState(null, '', shareUrl);
+    if (!shortUrl) history.replaceState(null, '', longUrl);
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
   }
 
@@ -131,7 +153,11 @@ export function ShareReportModal({ calculated, allScenarios, activeCount, active
                   {t('shareModal.title')}
                 </h2>
                 <p className="text-xs text-gray-400 mt-0.5">
-                  {t('shareModal.subtitle')}
+                  {shortUrl
+                    ? t('shareModal.shortLinkReady')
+                    : shortLinkFailed
+                      ? t('shareModal.shortLinkFallback')
+                      : t('shareModal.subtitle')}
                 </p>
               </div>
               <button
