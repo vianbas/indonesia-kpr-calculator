@@ -278,7 +278,9 @@ export function CalculatorPage() {
       )}
 
       {/* FAQ — always visible at the very bottom */}
-      <FaqSection />
+      <div id="faq">
+        <FaqSection />
+      </div>
     </div>
     </>
   );

@@ -7,7 +7,8 @@
     "addScenario": "+ Tambah Skenario",
     "addScenarioAria": "Tambah skenario baru",
     "removeScenarioAria": "Hapus {{label}}",
-    "scenariosAria": "Skenario perbandingan"
+    "scenariosAria": "Skenario perbandingan",
+    "faqLink": "Bantuan"
   },
   "empty": {
     "title": "Simulasi KPR",
