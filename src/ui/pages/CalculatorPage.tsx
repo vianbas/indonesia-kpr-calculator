@@ -1,5 +1,6 @@
 import { useState, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { OnboardingOverlay } from '../components/onboarding/OnboardingOverlay';
 import { useScenarios } from '../../application/hooks/useScenarios';
 import { parseUrlInit } from '../../utils/urlState';
 import { LoanInputForm } from '../components/form/LoanInputForm';
@@ -75,6 +76,10 @@ function deriveAffordabilityInput(
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export function CalculatorPage() {
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    try { return localStorage.getItem('kpr_onboarding_seen') !== '1'; } catch { return false; }
+  });
+
   const urlInit = useMemo(() => parseUrlInit(), []);
 
   const { scenarios, activeCount, activeTab, setActiveTab, canAdd, addScenario, removeScenario, resetAll } =
@@ -199,7 +204,9 @@ export function CalculatorPage() {
   }
 
   return (
-    <div className="space-y-5">
+    <>
+      {showOnboarding && <OnboardingOverlay onDismiss={() => setShowOnboarding(false)} />}
+      <div className="space-y-5">
       <ScenarioTabs
         scenarios={scenarios}
         activeTab={activeTab}
@@ -269,6 +276,7 @@ export function CalculatorPage() {
         <ScenarioComparisonPanel scenarios={calculated} />
       )}
     </div>
+    </>
   );
 }
 
