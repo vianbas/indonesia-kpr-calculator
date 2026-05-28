@@ -355,7 +355,10 @@
     "shareTitleOne": "KPR Simulation",
     "error": "Failed to create PDF.",
     "retry": "Try again",
-    "downloadedFallback": "PDF downloaded (file sharing not supported on this browser)"
+    "downloadedFallback": "PDF downloaded (file sharing not supported on this browser)",
+    "downloadCsv": "Download CSV",
+    "downloadCsvAria": "Download amortization schedule as CSV",
+    "csvError": "Failed to generate CSV."
   },
   "shareModal": {
     "openAria": "Open share dialog",

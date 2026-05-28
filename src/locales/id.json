@@ -355,7 +355,10 @@
     "shareTitleOne": "Simulasi KPR",
     "error": "Gagal membuat PDF.",
     "retry": "Coba lagi",
-    "downloadedFallback": "PDF diunduh (berbagi file tidak didukung browser ini)"
+    "downloadedFallback": "PDF diunduh (berbagi file tidak didukung browser ini)",
+    "downloadCsv": "Unduh CSV",
+    "downloadCsvAria": "Unduh tabel angsuran sebagai CSV",
+    "csvError": "Gagal membuat CSV."
   },
   "shareModal": {
     "openAria": "Buka dialog berbagi skenario",
