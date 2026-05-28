@@ -363,7 +363,7 @@
   },
   "shareModal": {
     "openAria": "Open share dialog",
-    "button": "Share",
+    "button": "Share Text",
     "title": "Share Simulation",
     "subtitle": "Select recipient to customize message format",
     "closeAria": "Close",
