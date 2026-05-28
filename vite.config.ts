@@ -41,6 +41,12 @@ export default defineConfig(({ command }) => {
             if (id.includes('node_modules/react-dom') || id.includes('node_modules/react/')) {
               return 'vendor-react';
             }
+            if (id.includes('node_modules/i18next') || id.includes('node_modules/react-i18next')) {
+              return 'vendor-i18n';
+            }
+            if (id.includes('/src/domain/')) {
+              return 'domain-engine';
+            }
           },
         },
       },
