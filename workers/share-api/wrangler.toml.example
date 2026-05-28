@@ -9,6 +9,7 @@ database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
 
 [vars]
 CORS_ORIGIN          = "https://your-app.pages.dev"
+APP_ORIGIN           = "https://your-app.pages.dev"
 MAX_PAYLOAD_BYTES    = "10240"
 RATE_LIMIT_PER_MINUTE = "10"
 SHARE_EXPIRY_DAYS    = "90"

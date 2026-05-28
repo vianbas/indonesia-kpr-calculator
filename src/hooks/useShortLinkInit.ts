@@ -11,9 +11,19 @@ export interface ShortLinkInit {
 
 const SHORT_PATH_RE = /^\/s\/([^/]+)$/;
 
+function resolveShortId(): string | null {
+  // Strip the Vite base path (e.g. /indonesia-kpr-calculator/) before matching
+  // so the hook works both on GitHub Pages (with a sub-path) and on bare domains.
+  const base = (import.meta.env.BASE_URL as string | undefined) ?? '/';
+  const normalizedBase = base.endsWith('/') ? base.slice(0, -1) : base;
+  const relativePath = window.location.pathname.startsWith(normalizedBase)
+    ? window.location.pathname.slice(normalizedBase.length) || '/'
+    : window.location.pathname;
+  return SHORT_PATH_RE.exec(relativePath)?.[1] ?? null;
+}
+
 export function useShortLinkInit(): ShortLinkInit {
-  const match = SHORT_PATH_RE.exec(window.location.pathname);
-  const shortId = match?.[1] ?? null;
+  const shortId = resolveShortId();
 
   const [state, setState] = useState<ShortLinkInit>({
     urlState: null,

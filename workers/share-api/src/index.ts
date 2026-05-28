@@ -3,6 +3,7 @@ import { generateId, hashIp, errBody } from './utils';
 export interface Env {
   DB: D1Database;
   CORS_ORIGIN: string;
+  APP_ORIGIN: string;
   IP_HASH_SECRET: string;
   TURNSTILE_SECRET?: string;
   MAX_PAYLOAD_BYTES?: string;
@@ -140,7 +141,8 @@ async function handleCreate(
     .bind(id, payload, now, ipHash, expiresAt)
     .run();
 
-  return ok({ id, url: `${requestUrl.origin}/s/${id}` }, h);
+  const appOrigin = env.APP_ORIGIN ?? requestUrl.origin;
+  return ok({ id, url: `${appOrigin}/s/${id}` }, h);
 }
 
 async function handleGet(id: string, env: Env, h: Record<string, string>): Promise<Response> {
