@@ -1,4 +1,6 @@
 /// <reference types="vitest" />
+import { copyFileSync, existsSync } from 'fs'
+import { resolve } from 'path'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { sentryVitePlugin } from '@sentry/vite-plugin'
@@ -11,6 +13,17 @@ export default defineConfig(({ command }) => {
     base: process.env.VITE_BASE_PATH ?? '/',
     plugins: [
       react(),
+      // GitHub Pages serves 404.html for any unmatched path — copy index.html
+      // so the SPA handles /s/:id short-link routes instead of showing a 404.
+      {
+        name: 'spa-404',
+        closeBundle() {
+          if (!isBuild) return;
+          const src = resolve(__dirname, 'dist/index.html');
+          const dst = resolve(__dirname, 'dist/404.html');
+          if (existsSync(src)) copyFileSync(src, dst);
+        },
+      },
       // Upload source maps to Sentry only during production builds when the
       // auth token is present. Never runs during `npm run dev`.
       ...(isBuild && hasSentryToken
