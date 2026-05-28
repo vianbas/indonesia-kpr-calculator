@@ -23,6 +23,12 @@ export function AppLayout({ children }: AppLayoutProps) {
               {t('app.subtitle')}
             </p>
           </div>
+          <a
+            href="#faq"
+            className="text-blue-200 hover:text-white text-xs font-medium transition-colors shrink-0"
+          >
+            {t('nav.faqLink')}
+          </a>
           <LanguageToggle />
         </div>
       </header>

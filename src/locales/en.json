@@ -7,7 +7,8 @@
     "addScenario": "+ Add Scenario",
     "addScenarioAria": "Add new scenario",
     "removeScenarioAria": "Remove {{label}}",
-    "scenariosAria": "Comparison scenarios"
+    "scenariosAria": "Comparison scenarios",
+    "faqLink": "Help"
   },
   "empty": {
     "title": "KPR Simulation",
