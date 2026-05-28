@@ -10,6 +10,7 @@ const AKAD_LABEL: Record<string, string> = {
 
 interface Props {
   summary: MortgageSummary;
+  onScrollToAmortization?: () => void;
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -41,7 +42,7 @@ function Metric({ label, value, sub, valueColor = 'text-gray-900', badge }: Metr
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export function SummaryCard({ summary }: Props) {
+export function SummaryCard({ summary, onScrollToAmortization }: Props) {
   const { t } = useTranslation();
 
   const {
@@ -215,6 +216,23 @@ export function SummaryCard({ summary }: Props) {
               ))}
             </div>
           </div>
+        )}
+        {/* ── Jump-to-schedule shortcut ───────────────────────────────────── */}
+        {onScrollToAmortization && (
+          <button
+            type="button"
+            onClick={onScrollToAmortization}
+            className={`w-full flex items-center justify-center gap-1.5 rounded-lg border py-2.5 text-sm font-semibold transition-colors ${
+              isSyariah
+                ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100'
+            }`}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4" aria-hidden="true">
+              <path fillRule="evenodd" d="M2 4.75A.75.75 0 0 1 2.75 4h14.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 4.75ZM2 10a.75.75 0 0 1 .75-.75h14.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 10Zm0 5.25a.75.75 0 0 1 .75-.75h14.5a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1-.75-.75Z" clipRule="evenodd" />
+            </svg>
+            {t('results.nextStepAmortTitle')}
+          </button>
         )}
       </div>
     </Card>

@@ -133,7 +133,8 @@ describe('CalculatorPage', () => {
     it('renders "Lihat Detail Angsuran" CTA', async () => {
       render(<CalculatorPage />);
       await waitForCalc();
-      expect(screen.getByRole('button', { name: /Lihat Detail Angsuran/i })).toBeInTheDocument();
+      // Appears in both SummaryCard shortcut and NextStepActions
+      expect(screen.getAllByRole('button', { name: /Lihat Detail Angsuran/i }).length).toBeGreaterThanOrEqual(1);
     });
 
     it('does not render NextStepActions before calculation completes', () => {
