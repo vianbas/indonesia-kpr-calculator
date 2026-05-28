@@ -438,5 +438,24 @@
     "scenarioRowTotalMargin": "Total Margin",
     "scenarioRowTotalUjrah": "Total Ujrah",
     "scenarioRowSalePrice": "Bank Sale Price"
+  },
+  "faq": {
+    "title": "Frequently Asked Questions",
+    "annuityQ": "What is the annuity method?",
+    "annuityA": "Annuity is a payment scheme where the monthly installment stays constant throughout the loan. The interest component decreases each month while the principal portion increases — the total installment never changes.",
+    "flatQ": "What is the flat rate method?",
+    "flatA": "The flat method calculates interest on the original principal every month. Installments stay equal, but the effective rate is higher than the nominal rate. Commonly used for vehicle loans.",
+    "fixedFloatingQ": "What is the difference between fixed and floating rates?",
+    "fixedFloatingA": "Fixed: the rate stays constant for a set period (usually 1–5 years), giving installment certainty. Floating: the rate follows market benchmarks and can rise or fall once the fixed period ends.",
+    "downPaymentQ": "What is the minimum down payment for KPR in Indonesia?",
+    "downPaymentA": "Generally 15–20% of the property price for a first home, per OJK/BI regulations. Non-residential properties or second homes may require a higher down payment.",
+    "bphtbQ": "What is BPHTB?",
+    "bphtbA": "BPHTB (Land and Building Acquisition Duty) is a tax paid by the buyer when acquiring property, generally 5% of the transaction value minus the non-taxable threshold (NPOPTKP).",
+    "earlyRepaymentQ": "How does early repayment work?",
+    "earlyRepaymentA": "Extra payments beyond the regular installment directly reduce the outstanding principal, lowering total interest paid and potentially shortening the loan term — while the monthly installment stays the same.",
+    "syariahQ": "What is the difference between Murabahah and MMQ?",
+    "syariahA": "Murabahah: the bank buys the property then sells it at cost-plus-margin; installments are fixed for the full tenor. MMQ: joint ownership where the bank's share decreases monthly, so installments can decrease over time.",
+    "accuracyQ": "How accurate are the calculations?",
+    "accuracyA": "Results are simulation estimates. Actual figures may differ depending on each bank's policies, notary fees, local taxes, and the interest rate at the time the loan agreement is signed."
   }
 }

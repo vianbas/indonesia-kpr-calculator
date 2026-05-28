@@ -438,5 +438,24 @@
     "scenarioRowTotalMargin": "Total Margin",
     "scenarioRowTotalUjrah": "Total Ujrah",
     "scenarioRowSalePrice": "Harga Jual Bank"
+  },
+  "faq": {
+    "title": "Pertanyaan Umum (FAQ)",
+    "annuityQ": "Apa itu metode anuitas?",
+    "annuityA": "Anuitas adalah skema cicilan di mana jumlah angsuran tetap setiap bulan sepanjang masa kredit. Komponen bunga menurun tiap bulan sementara porsi pokok meningkat — total cicilan selalu sama.",
+    "flatQ": "Apa itu metode flat?",
+    "flatA": "Metode flat menghitung bunga dari nilai pokok awal setiap bulan. Cicilan bulanan tetap sama, namun efektif bunga flat lebih tinggi dibanding nominal. Umum dipakai untuk kredit kendaraan.",
+    "fixedFloatingQ": "Apa beda suku bunga fixed dan floating?",
+    "fixedFloatingA": "Fixed: suku bunga tidak berubah selama periode tertentu (biasanya 1–5 tahun pertama), memberi kepastian cicilan. Floating: suku bunga mengikuti acuan pasar dan bisa naik atau turun setelah masa fixed berakhir.",
+    "downPaymentQ": "Berapa uang muka minimum KPR di Indonesia?",
+    "downPaymentA": "Umumnya 15–20% dari harga properti untuk rumah pertama, sesuai regulasi OJK/BI. Properti non-hunian atau pembelian rumah kedua dan seterusnya mensyaratkan DP lebih tinggi.",
+    "bphtbQ": "Apa itu BPHTB?",
+    "bphtbA": "BPHTB (Bea Perolehan Hak atas Tanah dan Bangunan) adalah pajak yang dibayar pembeli saat memperoleh properti, umumnya 5% dari harga transaksi setelah dikurangi NPOPTKP (nilai tidak kena pajak).",
+    "earlyRepaymentQ": "Bagaimana pelunasan dipercepat bekerja?",
+    "earlyRepaymentA": "Pembayaran ekstra di luar cicilan rutin langsung mengurangi saldo pokok. Hasilnya: total bunga yang dibayar berkurang dan tenor bisa lebih singkat, meski cicilan bulanan tetap sama.",
+    "syariahQ": "Apa beda Murabahah dan Musyarakah Mutanaqishah (MMQ)?",
+    "syariahA": "Murabahah: bank membeli properti lalu menjualnya ke nasabah dengan harga + margin, angsuran tetap sepanjang tenor. MMQ: kepemilikan bersama; porsi bank berkurang tiap bulan, angsuran bisa turun seiring waktu.",
+    "accuracyQ": "Seberapa akurat hasil kalkulasi ini?",
+    "accuracyA": "Hasil ini adalah estimasi simulasi. Angka aktual dapat berbeda tergantung kebijakan bank masing-masing, biaya notaris, pajak daerah, dan kondisi suku bunga pada saat akad kredit ditandatangani."
   }
 }
