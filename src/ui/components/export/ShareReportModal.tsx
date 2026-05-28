@@ -15,9 +15,9 @@ interface Props {
 
 const PRESETS: SharePreset[] = ['pasangan', 'agen', 'bank'];
 
-const ShareIcon = () => (
+const ChatIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4" aria-hidden="true">
-    <path d="M13 4.5a2.5 2.5 0 1 1 .702 1.737L6.97 9.604a2.518 2.518 0 0 1 0 .792l6.733 3.367a2.5 2.5 0 1 1-.671 1.341l-6.733-3.367a2.5 2.5 0 1 1 0-3.474l6.733-3.367A2.5 2.5 0 0 1 13 4.5Z" />
+    <path fillRule="evenodd" d="M3.43 2.524A41.29 41.29 0 0 1 10 2c2.236 0 4.43.18 6.57.524 1.437.231 2.43 1.49 2.43 2.902v5.148c0 1.413-.993 2.67-2.43 2.902a41.202 41.202 0 0 1-5.183.501.75.75 0 0 0-.498.228l-3.579 3.58A.75.75 0 0 1 6 17.25v-3.443a41.033 41.033 0 0 1-2.57-.807C1.993 12.67 1 11.412 1 10V5.426c0-1.413.993-2.67 2.43-2.902Z" clipRule="evenodd" />
   </svg>
 );
 
@@ -100,7 +100,7 @@ export function ShareReportModal({ calculated, allScenarios, activeCount, active
       <Button
         variant="secondary"
         size="md"
-        icon={<ShareIcon />}
+        icon={<ChatIcon />}
         onClick={() => setOpen(true)}
         disabled={disabled}
         aria-label={t('shareModal.openAria')}

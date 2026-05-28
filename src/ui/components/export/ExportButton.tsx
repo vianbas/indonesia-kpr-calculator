@@ -162,7 +162,8 @@ export function ExportButton({ form, summary, scenarios = [], affordability, ref
         {canShare && (
           <Button
             variant="secondary"
-            size="md"
+            size="sm"
+            className="sm:text-sm sm:px-4 sm:py-2 sm:gap-1.5"
             icon={status === 'sharing' ? <SpinnerIcon /> : <ShareIcon />}
             onClick={handleShare}
             disabled={isBusy}
@@ -174,7 +175,8 @@ export function ExportButton({ form, summary, scenarios = [], affordability, ref
         {!isMulti && (
           <Button
             variant="secondary"
-            size="md"
+            size="sm"
+            className="sm:text-sm sm:px-4 sm:py-2 sm:gap-1.5"
             icon={csvStatus === 'loading' ? <SpinnerIcon /> : <CsvIcon />}
             onClick={handleCsvExport}
             disabled={isBusy || csvStatus === 'loading'}
@@ -185,7 +187,8 @@ export function ExportButton({ form, summary, scenarios = [], affordability, ref
         )}
         <Button
           variant="primary"
-          size="md"
+          size="sm"
+          className="sm:text-sm sm:px-4 sm:py-2 sm:gap-1.5"
           icon={status === 'loading' ? <SpinnerIcon /> : <DownloadIcon />}
           onClick={handleExport}
           disabled={isBusy}
