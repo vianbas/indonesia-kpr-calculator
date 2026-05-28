@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
+import LZString from 'lz-string';
 import { encodeUrlState, decodeUrlState } from '../urlState';
 import type { UrlState } from '../urlState';
 
@@ -55,71 +56,104 @@ function makeUrlState(overrides: Partial<UrlState> = {}): UrlState {
   };
 }
 
-// ─── Old URL compatibility ─────────────────────────────────────────────────────
+// ─── Compression + default-stripping ─────────────────────────────────────────
 
-describe('decodeUrlState — backward compatibility: old URLs without PPN/insurance fields', () => {
-  // Build a payload that looks like a URL saved before Phase 19 (cash-to-close absent)
-  const { ppnEnabled, ppnPercent, insuranceEnabled, lifeInsurancePremiumPercent, fireInsurancePremiumPercent, ...oldForm } =
-    minimalForm();
-  void ppnEnabled; void ppnPercent; void insuranceEnabled;
-  void lifeInsurancePremiumPercent; void fireInsurancePremiumPercent;
-  const b64 = btoa(JSON.stringify({ v: 1, forms: [oldForm], activeCount: 1, activeTab: 1 }));
-  const result = decodeUrlState(b64);
-
-  it('decodes successfully when PPN/insurance fields are absent', () => {
-    expect(result).not.toBeNull();
+describe('encodeUrlState — v2 compression', () => {
+  it('produces a shorter string than the old btoa approach', () => {
+    const state = makeUrlState();
+    const v2 = encodeUrlState(state);
+    const v1 = btoa(JSON.stringify({ v: 1, ...state }));
+    expect(v2.length).toBeLessThan(v1.length);
   });
 
-  it('defaults ppnEnabled to false', () => {
-    expect(result!.forms[0].ppnEnabled).toBe(false);
+  it('strips default-valued fields from the wire payload', () => {
+    const state = makeUrlState();
+    const compressed = encodeUrlState(state);
+    const json = LZString.decompressFromEncodedURIComponent(compressed)!;
+    const payload = JSON.parse(json);
+    // Fields that equal their defaults should be absent
+    expect(payload.forms[0]).not.toHaveProperty('downPaymentMode');
+    expect(payload.forms[0]).not.toHaveProperty('tenorAdditionalMonths');
+    expect(payload.forms[0]).not.toHaveProperty('paymentMethod');
+    expect(payload.forms[0]).not.toHaveProperty('calculationMethod');
+    expect(payload.forms[0]).not.toHaveProperty('earlyRepaymentMode');
+    expect(payload.forms[0]).not.toHaveProperty('includeKprFees');
+    expect(payload.forms[0]).not.toHaveProperty('financingMode');
+    expect(payload.forms[0]).not.toHaveProperty('tiers');
   });
 
-  it('defaults ppnPercent to "11"', () => {
-    expect(result!.forms[0].ppnPercent).toBe('11');
+  it('keeps non-default field values in the wire payload', () => {
+    const state = makeUrlState();
+    state.forms[0].paymentMethod = 'flat';
+    state.forms[0].earlyRepaymentMode = 'lump_sum';
+    const json = LZString.decompressFromEncodedURIComponent(encodeUrlState(state))!;
+    const payload = JSON.parse(json);
+    expect(payload.forms[0].paymentMethod).toBe('flat');
+    expect(payload.forms[0].earlyRepaymentMode).toBe('lump_sum');
   });
 
-  it('defaults insuranceEnabled to false', () => {
-    expect(result!.forms[0].insuranceEnabled).toBe(false);
+  it('always includes the 6 user-specific fields even when they match default values', () => {
+    const state = makeUrlState();
+    const json = LZString.decompressFromEncodedURIComponent(encodeUrlState(state))!;
+    const payload = JSON.parse(json);
+    expect(payload.forms[0]).toHaveProperty('propertyPrice');
+    expect(payload.forms[0]).toHaveProperty('downPaymentValue');
+    expect(payload.forms[0]).toHaveProperty('tenorYears');
+    expect(payload.forms[0]).toHaveProperty('startDate');
+    expect(payload.forms[0]).toHaveProperty('fixedRate');
+    expect(payload.forms[0]).toHaveProperty('floatingBaseRate');
   });
 
-  it('defaults lifeInsurancePremiumPercent to "0"', () => {
-    expect(result!.forms[0].lifeInsurancePremiumPercent).toBe('0');
-  });
-
-  it('defaults fireInsurancePremiumPercent to "0"', () => {
-    expect(result!.forms[0].fireInsurancePremiumPercent).toBe('0');
+  it('encodes version as 2', () => {
+    const json = LZString.decompressFromEncodedURIComponent(encodeUrlState(makeUrlState()))!;
+    expect(JSON.parse(json).v).toBe(2);
   });
 });
 
-// ─── New URL round-trip ────────────────────────────────────────────────────────
+// ─── Round-trip (encode → decode) ────────────────────────────────────────────
 
-describe('encodeUrlState / decodeUrlState — round-trip with PPN and insurance fields', () => {
-  it('PPN enabled state survives encode → decode', () => {
+describe('encodeUrlState / decodeUrlState — round-trip', () => {
+  it('all-default form survives encode → decode with correct values', () => {
     const state = makeUrlState();
-    state.forms[0].ppnEnabled = true;
-    state.forms[0].ppnPercent = '11';
     const decoded = decodeUrlState(encodeUrlState(state));
     expect(decoded).not.toBeNull();
-    expect(decoded!.forms[0].ppnEnabled).toBe(true);
-    expect(decoded!.forms[0].ppnPercent).toBe('11');
+    expect(decoded!.forms[0]).toMatchObject(minimalForm());
   });
 
-  it('insurance enabled state survives encode → decode', () => {
+  it('non-default values survive encode → decode', () => {
     const state = makeUrlState();
-    state.forms[0].insuranceEnabled = true;
-    state.forms[0].lifeInsurancePremiumPercent = '0.5';
-    state.forms[0].fireInsurancePremiumPercent = '0.15';
+    state.forms[0].paymentMethod = 'flat';
+    state.forms[0].earlyRepaymentMode = 'extra_monthly';
+    state.forms[0].extraMonthlyAmount = '500000';
+    state.forms[0].includeKprFees = true;
+    state.forms[0].provisionFeePercent = '1.5';
+    state.forms[0].financingMode = 'syariah';
+    state.forms[0].syariahAkadType = 'musyarakah_mutanaqishah';
+    state.forms[0].syariahUjrahPercent = '7.75';
     const decoded = decodeUrlState(encodeUrlState(state));
     expect(decoded).not.toBeNull();
-    expect(decoded!.forms[0].insuranceEnabled).toBe(true);
-    expect(decoded!.forms[0].lifeInsurancePremiumPercent).toBe('0.5');
-    expect(decoded!.forms[0].fireInsurancePremiumPercent).toBe('0.15');
+    const f = decoded!.forms[0];
+    expect(f.paymentMethod).toBe('flat');
+    expect(f.earlyRepaymentMode).toBe('extra_monthly');
+    expect(f.extraMonthlyAmount).toBe('500000');
+    expect(f.includeKprFees).toBe(true);
+    expect(f.provisionFeePercent).toBe('1.5');
+    expect(f.financingMode).toBe('syariah');
+    expect(f.syariahAkadType).toBe('musyarakah_mutanaqishah');
+    expect(f.syariahUjrahPercent).toBe('7.75');
+  });
+
+  it('non-empty tiers survive encode → decode', () => {
+    const state = makeUrlState();
+    state.forms[0].tiers = [{ id: 'tier1', toMonth: '60', rate: '9.5' }];
+    const decoded = decodeUrlState(encodeUrlState(state));
+    expect(decoded!.forms[0].tiers).toHaveLength(1);
+    expect(decoded!.forms[0].tiers[0].rate).toBe('9.5');
   });
 
   it('activeCount, activeTab, and multiple forms survive encode → decode', () => {
-    const form1 = minimalForm();
     const form2 = { ...minimalForm(), propertyPrice: '600000000', ppnEnabled: true };
-    const state: UrlState = { forms: [form1, form2], activeCount: 2, activeTab: 2 };
+    const state: UrlState = { forms: [minimalForm(), form2], activeCount: 2, activeTab: 2 };
     const decoded = decodeUrlState(encodeUrlState(state));
     expect(decoded).not.toBeNull();
     expect(decoded!.activeCount).toBe(2);
@@ -129,60 +163,63 @@ describe('encodeUrlState / decodeUrlState — round-trip with PPN and insurance 
     expect(decoded!.forms[1].ppnEnabled).toBe(true);
   });
 
-  it('returns null for a corrupt base64 string', () => {
-    expect(decodeUrlState('not-valid-base64!!!')).toBeNull();
+  it('returns null for a corrupt string', () => {
+    expect(decodeUrlState('not-valid!!!')).toBeNull();
   });
 
-  it('returns null when the payload version is not 1', () => {
-    const raw = { v: 2, forms: [minimalForm()], activeCount: 1, activeTab: 1 };
-    expect(decodeUrlState(btoa(JSON.stringify(raw)))).toBeNull();
+  it('returns null when the payload version is not 1 or 2', () => {
+    const raw = { v: 3, forms: [minimalForm()], activeCount: 1, activeTab: 1 };
+    const s = LZString.compressToEncodedURIComponent(JSON.stringify(raw));
+    expect(decodeUrlState(s)).toBeNull();
   });
 
   it('returns null when activeCount does not match forms length', () => {
-    const raw = { v: 1, forms: [minimalForm()], activeCount: 2, activeTab: 1 };
-    expect(decodeUrlState(btoa(JSON.stringify(raw)))).toBeNull();
+    const raw = { v: 2, forms: [minimalForm()], activeCount: 2, activeTab: 1 };
+    const s = LZString.compressToEncodedURIComponent(JSON.stringify(raw));
+    expect(decodeUrlState(s)).toBeNull();
   });
 });
 
-// ─── Syariah backward-compat ──────────────────────────────────────────────────
+// ─── Backward compatibility: legacy v1 base64 URLs ───────────────────────────
 
-describe('decodeUrlState — backward compatibility: old v1.0.0 URLs without Syariah fields', () => {
-  // Simulate a URL saved before Syariah was added — no financingMode etc.
-  const {
-    financingMode, syariahAkadType, syariahMarginPercent,
-    syariahUjrahPercent, syariahBankSharePercent,
-    ...oldForm
-  } = minimalForm();
-  void financingMode; void syariahAkadType; void syariahMarginPercent;
-  void syariahUjrahPercent; void syariahBankSharePercent;
-
-  const b64 = btoa(JSON.stringify({ v: 1, forms: [oldForm], activeCount: 1, activeTab: 1 }));
-  const result = decodeUrlState(b64);
-
-  it('decodes successfully when Syariah fields are absent', () => {
+describe('decodeUrlState — backward compatibility: legacy base64 (v1) URLs', () => {
+  it('decodes a fully-populated v1 base64 URL', () => {
+    const b64 = btoa(JSON.stringify({ v: 1, forms: [minimalForm()], activeCount: 1, activeTab: 1 }));
+    const result = decodeUrlState(b64);
     expect(result).not.toBeNull();
+    expect(result!.forms[0].propertyPrice).toBe('500000000');
   });
 
-  it('defaults financingMode to conventional', () => {
+  it('still fills defaults for v1 URLs missing PPN/insurance fields', () => {
+    const { ppnEnabled, ppnPercent, insuranceEnabled, lifeInsurancePremiumPercent, fireInsurancePremiumPercent, ...oldForm } =
+      minimalForm();
+    void ppnEnabled; void ppnPercent; void insuranceEnabled;
+    void lifeInsurancePremiumPercent; void fireInsurancePremiumPercent;
+    const b64 = btoa(JSON.stringify({ v: 1, forms: [oldForm], activeCount: 1, activeTab: 1 }));
+    const result = decodeUrlState(b64);
+    expect(result).not.toBeNull();
+    expect(result!.forms[0].ppnEnabled).toBe(false);
+    expect(result!.forms[0].ppnPercent).toBe('11');
+    expect(result!.forms[0].insuranceEnabled).toBe(false);
+    expect(result!.forms[0].lifeInsurancePremiumPercent).toBe('0');
+    expect(result!.forms[0].fireInsurancePremiumPercent).toBe('0');
+  });
+
+  it('still fills defaults for v1 URLs missing Syariah fields', () => {
+    const { financingMode, syariahAkadType, syariahMarginPercent, syariahUjrahPercent, syariahBankSharePercent, ...oldForm } =
+      minimalForm();
+    void financingMode; void syariahAkadType; void syariahMarginPercent;
+    void syariahUjrahPercent; void syariahBankSharePercent;
+    const b64 = btoa(JSON.stringify({ v: 1, forms: [oldForm], activeCount: 1, activeTab: 1 }));
+    const result = decodeUrlState(b64);
+    expect(result).not.toBeNull();
     expect(result!.forms[0].financingMode).toBe('conventional');
-  });
-
-  it('defaults syariahAkadType to murabahah', () => {
     expect(result!.forms[0].syariahAkadType).toBe('murabahah');
-  });
-
-  it('defaults syariahMarginPercent to "8"', () => {
     expect(result!.forms[0].syariahMarginPercent).toBe('8');
   });
-
-  it('defaults syariahUjrahPercent to "8"', () => {
-    expect(result!.forms[0].syariahUjrahPercent).toBe('8');
-  });
-
-  it('defaults syariahBankSharePercent to "80"', () => {
-    expect(result!.forms[0].syariahBankSharePercent).toBe('80');
-  });
 });
+
+// ─── Syariah round-trip ───────────────────────────────────────────────────────
 
 describe('encodeUrlState / decodeUrlState — Syariah round-trip', () => {
   it('Syariah Murabahah state survives encode → decode', () => {
@@ -212,11 +249,12 @@ describe('encodeUrlState / decodeUrlState — Syariah round-trip', () => {
 
   it('rejects an invalid financingMode value', () => {
     const raw = {
-      v: 1,
+      v: 2,
       forms: [{ ...minimalForm(), financingMode: 'islamic' }],
       activeCount: 1,
       activeTab: 1,
     };
-    expect(decodeUrlState(btoa(JSON.stringify(raw)))).toBeNull();
+    const s = LZString.compressToEncodedURIComponent(JSON.stringify(raw));
+    expect(decodeUrlState(s)).toBeNull();
   });
 });
