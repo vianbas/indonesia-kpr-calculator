@@ -49,6 +49,7 @@
     "fixedTieredFloat": "Fixed + Tiered Floating",
     "fixedTieredFloatDesc": "Fixed period, then tiered variable rates",
     "fixedRate": "Fixed Interest Rate",
+    "flatRateTitle": "Flat Interest Rate",
     "fixedRateLabel": "Fixed Rate",
     "fixedRateFullHint": "Applies for {{count}} full months (entire tenor)",
     "fixedRateActive": "Active — fixed rate period",

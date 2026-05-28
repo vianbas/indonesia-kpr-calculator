@@ -11,6 +11,8 @@ interface Props {
 
 export function FixedRateSection({ form, dispatch, fieldErrors }: Props) {
   const { t } = useTranslation();
+  const isFlat = form.paymentMethod === 'flat';
+  const cardTitle = isFlat ? t('form.flatRateTitle') : t('form.fixedRate');
 
   const tenorTotal =
     (parseInt(form.tenorYears) || 0) * 12 + (parseInt(form.tenorAdditionalMonths) || 0);
@@ -19,7 +21,7 @@ export function FixedRateSection({ form, dispatch, fieldErrors }: Props) {
   // ── Fixed Only: full tenor is fixed — only show the rate field ──────────────
   if (form.calculationMethod === 'fixed_only') {
     return (
-      <Card title={t('form.fixedRate')} accent="blue">
+      <Card title={cardTitle} accent="blue">
         <InputField
           label={t('form.fixedRateLabel')}
           value={form.fixedRate}
