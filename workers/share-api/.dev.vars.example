@@ -1,0 +1,4 @@
+# Copy to .dev.vars (never commit .dev.vars — it's in .gitignore)
+IP_HASH_SECRET=change-me-locally
+# Uncomment to enable Turnstile in local dev (use a test site key + secret from Cloudflare dashboard)
+# TURNSTILE_SECRET=your-test-turnstile-secret

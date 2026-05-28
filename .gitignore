@@ -13,6 +13,8 @@ dist-ssr
 coverage
 storybook-static
 *.local
+workers/share-api/.dev.vars
+workers/share-api/wrangler.toml
 
 # CodeGraph semantic index (generated locally, not committed)
 .codegraph/

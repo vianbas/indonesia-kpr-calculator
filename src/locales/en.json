@@ -386,7 +386,9 @@
     "copiedLink": "✓ Link copied!",
     "presetPasangan": "Partner",
     "presetAgen": "Property Agent",
-    "presetBank": "Bank Officer"
+    "presetBank": "Bank Officer",
+    "shortLinkReady": "Short link ready — tap Copy Link to share",
+    "shortLinkFallback": "Using long URL (short link unavailable)"
   },
   "syariah": {
     "modeSelector": "Financing Mode",
