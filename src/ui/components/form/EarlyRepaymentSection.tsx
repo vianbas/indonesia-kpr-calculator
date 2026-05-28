@@ -50,7 +50,7 @@ export function EarlyRepaymentSection({ form, dispatch }: Props) {
     ? t('form.erErrLumpMonth') : '';
 
   return (
-    <Card title={t('form.earlyRepayment')} subtitle={t('form.earlyRepaymentSubtitle')}>
+    <Card title={t('form.earlyRepayment')} subtitle={t('form.earlyRepaymentSubtitle')} tooltip={t('form.tooltipEarlyRepayment')}>
       <div className="space-y-4">
 
         {/* Mode selector */}

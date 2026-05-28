@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Button } from '../common/Button';
+import { Tooltip } from '../common/Tooltip';
 import type { SyariahAkadType } from '../../../domain/models/mortgage.types';
 import type { FormAction } from '../../../application/store/formTypes';
 
@@ -18,7 +19,10 @@ export function SyariahAkadSelector({ akadType, dispatch }: Props) {
 
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium text-gray-700">{t('syariah.akadSelector')}</label>
+      <label className="text-sm font-medium text-gray-700 flex items-center">
+        {t('syariah.akadSelector')}
+        <Tooltip text={t('form.tooltipSyariahAkad')} />
+      </label>
       <div className="grid grid-cols-2 gap-2">
         {akads.map(({ value, label, desc }) => (
           <Button

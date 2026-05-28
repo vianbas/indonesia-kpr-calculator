@@ -1,8 +1,10 @@
 import type { ReactNode } from 'react';
+import { Tooltip } from './Tooltip';
 
 interface CardProps {
   title?: string;
   subtitle?: string;
+  tooltip?: string;
   children: ReactNode;
   className?: string;
   /** Renders a colored left border accent: 'blue' | 'indigo' | 'green' | 'orange' */
@@ -17,7 +19,7 @@ const accentClasses = {
   none: '',
 };
 
-export function Card({ title, subtitle, children, className = '', accent = 'none' }: CardProps) {
+export function Card({ title, subtitle, tooltip, children, className = '', accent = 'none' }: CardProps) {
   return (
     <div
       className={[
@@ -30,7 +32,12 @@ export function Card({ title, subtitle, children, className = '', accent = 'none
     >
       {(title || subtitle) && (
         <div className="px-5 pt-5 pb-3">
-          {title && <h2 className="text-sm font-semibold text-gray-800 tracking-wide uppercase">{title}</h2>}
+          {title && (
+            <div className="flex items-center gap-1">
+              <h2 className="text-sm font-semibold text-gray-800 tracking-wide uppercase">{title}</h2>
+              {tooltip && <Tooltip text={tooltip} />}
+            </div>
+          )}
           {subtitle && <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>}
         </div>
       )}

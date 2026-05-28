@@ -1,5 +1,6 @@
 import { useId } from 'react';
 import type { InputHTMLAttributes } from 'react';
+import { Tooltip } from './Tooltip';
 
 interface InputFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
   label: string;
@@ -9,6 +10,7 @@ interface InputFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'o
   hint?: string;
   prefix?: string;
   suffix?: string;
+  tooltip?: string;
 }
 
 export function InputField({
@@ -19,6 +21,7 @@ export function InputField({
   hint,
   prefix,
   suffix,
+  tooltip,
   id,
   className: _className,
   ...rest
@@ -30,8 +33,9 @@ export function InputField({
   return (
     <div className="flex flex-col gap-1">
       {label && (
-        <label htmlFor={inputId} className="text-sm font-medium text-gray-700">
+        <label htmlFor={inputId} className="text-sm font-medium text-gray-700 flex items-center">
           {label}
+          {tooltip && <Tooltip text={tooltip} />}
         </label>
       )}
 

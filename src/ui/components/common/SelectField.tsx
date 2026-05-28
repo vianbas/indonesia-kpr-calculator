@@ -1,5 +1,6 @@
 import { useId } from 'react';
 import type { SelectHTMLAttributes } from 'react';
+import { Tooltip } from './Tooltip';
 
 export interface SelectOption<T extends string = string> {
   value: T;
@@ -14,6 +15,7 @@ interface SelectFieldProps<T extends string = string>
   options: SelectOption<T>[];
   error?: string;
   hint?: string;
+  tooltip?: string;
 }
 
 export function SelectField<T extends string = string>({
@@ -23,6 +25,7 @@ export function SelectField<T extends string = string>({
   options,
   error,
   hint,
+  tooltip,
   id,
   ...rest
 }: SelectFieldProps<T>) {
@@ -31,8 +34,9 @@ export function SelectField<T extends string = string>({
 
   return (
     <div className="flex flex-col gap-1">
-      <label htmlFor={selectId} className="text-sm font-medium text-gray-700">
+      <label htmlFor={selectId} className="text-sm font-medium text-gray-700 flex items-center">
         {label}
+        {tooltip && <Tooltip text={tooltip} />}
       </label>
       <select
         id={selectId}

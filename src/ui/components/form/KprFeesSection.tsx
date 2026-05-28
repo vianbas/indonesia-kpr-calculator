@@ -82,6 +82,7 @@ export function KprFeesSection({ form, dispatch }: Props) {
               <div className="space-y-3">
                 <InputField
                   label={t('form.feeProvision')}
+                  tooltip={t('form.tooltipProvisionFee')}
                   value={form.provisionFeePercent}
                   onChange={(v) => dispatch({ type: 'SET_PROVISION_FEE_PERCENT', value: v })}
                   type="number"
@@ -130,6 +131,7 @@ export function KprFeesSection({ form, dispatch }: Props) {
                 />
                 <InputField
                   label={t('form.feeBphtb')}
+                  tooltip={t('form.tooltipBphtb')}
                   value={form.bphtbPercent}
                   onChange={(v) => dispatch({ type: 'SET_BPHTB_PERCENT', value: v })}
                   type="number"
@@ -205,6 +207,7 @@ export function KprFeesSection({ form, dispatch }: Props) {
                   <div className="space-y-3">
                     <InputField
                       label={t('form.feeLifeInsurance')}
+                      tooltip={t('form.tooltipInsurance')}
                       value={form.lifeInsurancePremiumPercent}
                       onChange={(v) =>
                         dispatch({ type: 'SET_LIFE_INSURANCE_PREMIUM_PERCENT', value: v })

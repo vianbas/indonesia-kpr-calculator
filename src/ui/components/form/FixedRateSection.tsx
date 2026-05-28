@@ -24,6 +24,7 @@ export function FixedRateSection({ form, dispatch, fieldErrors }: Props) {
       <Card title={cardTitle} accent="blue">
         <InputField
           label={t('form.fixedRateLabel')}
+          tooltip={t('form.tooltipFixedRate')}
           value={form.fixedRate}
           onChange={(v) => dispatch({ type: 'SET_FIXED_RATE', value: v })}
           type="number"
@@ -67,6 +68,7 @@ export function FixedRateSection({ form, dispatch, fieldErrors }: Props) {
             <div className="grid grid-cols-2 gap-4">
               <InputField
                 label={t('form.fixedRateLabel')}
+                tooltip={t('form.tooltipFixedRate')}
                 value={form.fixedRate}
                 onChange={(v) => dispatch({ type: 'SET_FIXED_RATE', value: v })}
                 type="number"
@@ -79,6 +81,7 @@ export function FixedRateSection({ form, dispatch, fieldErrors }: Props) {
               />
               <InputField
                 label={t('form.fixedDuration')}
+                tooltip={t('form.tooltipFixedDuration')}
                 value={form.fixedDurationMonths}
                 onChange={(v) => dispatch({ type: 'SET_FIXED_DURATION_MONTHS', value: v })}
                 type="number"
