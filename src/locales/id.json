@@ -49,6 +49,7 @@
     "fixedTieredFloat": "Fixed + Floating Bertingkat",
     "fixedTieredFloatDesc": "Periode tetap, lalu suku bunga variabel berjenjang",
     "fixedRate": "Suku Bunga Tetap (Fixed)",
+    "flatRateTitle": "Suku Bunga Flat",
     "fixedRateLabel": "Suku Bunga Tetap",
     "fixedRateFullHint": "Berlaku selama {{count}} bulan penuh (tenor keseluruhan)",
     "fixedRateActive": "Aktif — periode suku bunga tetap",

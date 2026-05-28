@@ -39,6 +39,7 @@ export function LoanInputForm({ form, dispatch, errors, fieldErrors }: Props) {
   );
 
   const isSyariah = form.financingMode === 'syariah';
+  const isFlat = form.paymentMethod === 'flat';
 
   return (
     <div className="space-y-4">
@@ -49,9 +50,9 @@ export function LoanInputForm({ form, dispatch, errors, fieldErrors }: Props) {
         <SyariahRateSection form={form} dispatch={dispatch} />
       ) : (
         <>
-          <CalculationMethodSelector form={form} dispatch={dispatch} />
+          {!isFlat && <CalculationMethodSelector form={form} dispatch={dispatch} />}
           <FixedRateSection form={form} dispatch={dispatch} fieldErrors={fieldErrors} />
-          <FloatingRateSection form={form} dispatch={dispatch} fieldErrors={fieldErrors} />
+          {!isFlat && <FloatingRateSection form={form} dispatch={dispatch} fieldErrors={fieldErrors} />}
           <EarlyRepaymentSection form={form} dispatch={dispatch} />
         </>
       )}

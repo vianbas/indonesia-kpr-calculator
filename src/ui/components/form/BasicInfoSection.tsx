@@ -142,7 +142,10 @@ export function BasicInfoSection({ form, dispatch, fieldErrors }: Props) {
         <SelectField<PaymentMethod>
           label={t('form.paymentMethod')}
           value={form.paymentMethod}
-          onChange={(v) => dispatch({ type: 'SET_PAYMENT_METHOD', method: v })}
+          onChange={(v) => {
+            dispatch({ type: 'SET_PAYMENT_METHOD', method: v });
+            if (v === 'flat') dispatch({ type: 'SET_CALCULATION_METHOD', method: 'fixed_only' });
+          }}
           options={paymentMethodOptions}
           hint={
             form.paymentMethod === 'annuity'
