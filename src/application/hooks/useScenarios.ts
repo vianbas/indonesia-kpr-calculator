@@ -7,6 +7,7 @@ import {
   generateAmortizationSchedule,
   calculateMortgageSummary,
 } from '../../domain/calculators/amortization';
+import { saveDraft, loadDraft, clearDraft } from '../../utils/draftStorage';
 import type { MortgageSummary, ValidationError } from '../../domain';
 import type { MortgageFormState } from '../store/formTypes';
 import type { ScenarioId, ScenarioState } from '../store/scenarioTypes';
@@ -88,24 +89,36 @@ export interface UseScenariosResult {
 }
 
 export function useScenarios(options: UseScenariosOptions = {}): UseScenariosResult {
-  const { initialForms, initialActiveCount, initialActiveTab } = options;
+  const { initialForms } = options;
 
-  const [activeCount, setActiveCount] = useState<1 | 2 | 3>(initialActiveCount ?? 1);
-  const [activeTab, setActiveTab] = useState<ScenarioId>(initialActiveTab ?? 1);
+  // Resolve initial state once at mount: URL/prop → localStorage draft → defaults
+  const [init] = useState<UseScenariosOptions>(() => {
+    if (initialForms) return options;
+    const draft = loadDraft();
+    if (draft) return {
+      initialForms: draft.forms,
+      initialActiveCount: draft.activeCount,
+      initialActiveTab: draft.activeTab,
+    };
+    return options;
+  });
 
-  // Scenario 1 — delegates to the existing hook, optionally pre-filled from URL
-  const calc1 = useMortgageCalculator(initialForms?.[0]);
+  const [activeCount, setActiveCount] = useState<1 | 2 | 3>(init.initialActiveCount ?? 1);
+  const [activeTab, setActiveTab] = useState<ScenarioId>(init.initialActiveTab ?? 1);
+
+  // Scenario 1 — delegates to the existing hook, optionally pre-filled from URL / draft
+  const calc1 = useMortgageCalculator(init.initialForms?.[0]);
 
   // Scenarios 2 and 3 — always mounted (rules of hooks: no conditional hook calls)
   const [form2, dispatch2] = useReducer(
     formReducer,
     undefined,
-    () => initialForms?.[1] ?? createDefaultFormState(),
+    () => init.initialForms?.[1] ?? createDefaultFormState(),
   );
   const [form3, dispatch3] = useReducer(
     formReducer,
     undefined,
-    () => initialForms?.[2] ?? createDefaultFormState(),
+    () => init.initialForms?.[2] ?? createDefaultFormState(),
   );
 
   const [r2, setR2] = useState<CalcResult>(emptyResult);
@@ -179,6 +192,7 @@ export function useScenarios(options: UseScenariosOptions = {}): UseScenariosRes
   } = calc1;
 
   const resetAll = useCallback(() => {
+    clearDraft();
     dispatch1({ type: 'RESET_TO_DEFAULT' });
     dispatch2({ type: 'RESET_TO_DEFAULT' });
     dispatch3({ type: 'RESET_TO_DEFAULT' });
@@ -187,6 +201,18 @@ export function useScenarios(options: UseScenariosOptions = {}): UseScenariosRes
     setActiveCount(1);
     setActiveTab(1);
   }, [dispatch1, dispatch2, dispatch3]);
+
+  // Debounced draft save — persists all active forms so the user never loses work
+  useEffect(() => {
+    const t = setTimeout(() => {
+      saveDraft({
+        forms: [form1, form2, form3].slice(0, activeCount),
+        activeCount,
+        activeTab,
+      });
+    }, 1000);
+    return () => clearTimeout(t);
+  }, [form1, form2, form3, activeCount, activeTab]);
 
   const scenarios = useMemo((): ScenarioState[] => {
     const s1: ScenarioState = {
