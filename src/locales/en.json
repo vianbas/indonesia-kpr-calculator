@@ -438,5 +438,18 @@
     "scenarioRowTotalMargin": "Total Margin",
     "scenarioRowTotalUjrah": "Total Ujrah",
     "scenarioRowSalePrice": "Bank Sale Price"
+  },
+  "onboarding": {
+    "ariaLabel": "KPR calculator onboarding guide",
+    "skip": "Skip",
+    "next": "Next",
+    "start": "Get Started",
+    "goToStep": "Go to step {{n}}",
+    "step1Title": "Accurate KPR Simulation",
+    "step1Desc": "Calculate mortgage installments with fixed, floating, or combined interest — including Islamic financing.",
+    "step2Title": "Enter Loan Details",
+    "step2Desc": "Enter property price, down payment, tenor, and interest rates. Supports annuity and flat methods.",
+    "step3Title": "Full Analysis",
+    "step3Desc": "Get an amortization table, installment chart, early repayment simulation, and a complete KPR fee breakdown."
   }
 }

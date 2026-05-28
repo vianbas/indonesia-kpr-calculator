@@ -438,5 +438,18 @@
     "scenarioRowTotalMargin": "Total Margin",
     "scenarioRowTotalUjrah": "Total Ujrah",
     "scenarioRowSalePrice": "Harga Jual Bank"
+  },
+  "onboarding": {
+    "ariaLabel": "Panduan penggunaan kalkulator KPR",
+    "skip": "Lewati",
+    "next": "Lanjut",
+    "start": "Mulai",
+    "goToStep": "Ke langkah {{n}}",
+    "step1Title": "Simulasi KPR Akurat",
+    "step1Desc": "Hitung estimasi cicilan KPR dengan skema bunga fixed, floating, atau kombinasi keduanya — termasuk syariah.",
+    "step2Title": "Isi Data Kredit",
+    "step2Desc": "Masukkan harga properti, uang muka, tenor, dan suku bunga. Dukungan metode anuitas dan flat.",
+    "step3Title": "Analisis Lengkap",
+    "step3Desc": "Dapatkan tabel amortisasi, grafik cicilan, simulasi pelunasan dipercepat, dan rincian biaya KPR lengkap."
   }
 }
