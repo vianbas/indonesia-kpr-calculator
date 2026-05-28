@@ -340,7 +340,7 @@ function ResultsPanel({
           />
         </div>
 
-        <SummaryCard summary={summary} />
+        <SummaryCard summary={summary} onScrollToAmortization={scrollToAmortization} />
 
         {/* Next-step CTAs — immediately after the hero summary */}
         <NextStepActions
