@@ -126,7 +126,18 @@
     "tierEndLabel": "(end)",
     "tierYearLabel": "Yr {{n}}",
     "tierRangeHint": "Yr {{year}} · {{months}} mo",
-    "tierRate": "Rate"
+    "tierRate": "Rate",
+    "tooltipDownPayment": "The minimum down payment in Indonesia is generally 15–20% of the property price per OJK regulations. A larger down payment means lower monthly installments and less total interest paid.",
+    "tooltipPaymentMethod": "Annuity: fixed monthly payment throughout the loan, with the principal/interest ratio shifting each month. Flat: fixed principal each month, interest calculated on the original balance — higher early payments that decrease over time.",
+    "tooltipAdminFee": "A one-time fee paid at loan disbursement. The amount varies by bank, typically Rp 500K – Rp 5M.",
+    "tooltipFixedRate": "A fixed interest rate means your installment won't change during this period even if market rates rise. It gives certainty for financial planning.",
+    "tooltipFixedDuration": "The fixed-rate period is usually 1–5 years. After it ends, the rate switches to the bank's floating (variable) rate.",
+    "tooltipFloatingRate": "The variable rate follows a benchmark (usually BI Rate + spread) and can go up or down. It's typically higher than the fixed rate because it carries market risk.",
+    "tooltipEarlyRepayment": "Extra payments reduce the principal faster, lowering total interest and potentially shortening your tenor. Check whether your bank charges an early repayment penalty first.",
+    "tooltipProvisionFee": "A one-time bank processing fee, typically 1% of the loan amount, paid at disbursement.",
+    "tooltipBphtb": "BPHTB (Property Acquisition Tax) is a purchase tax on property, generally 5% of the property value minus the tax-free threshold. Paid by the buyer.",
+    "tooltipInsurance": "Life insurance covers the remaining loan if the borrower passes away. Fire insurance protects the property asset. Both are typically mandatory for KPR.",
+    "tooltipSyariahAkad": "Murabahah: the bank buys the property and sells it to you at cost + agreed margin — fixed installments for the full tenor. MMQ (Musyarakah Mutanaqishah): shared ownership where the bank's share decreases over time as you pay — structured around ujrah (rental fee) instead of interest."
   },
   "results": {
     "firstInstallmentFixed": "First Fixed-Period Installment",

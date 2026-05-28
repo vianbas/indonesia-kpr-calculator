@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { Tooltip } from '../common/Tooltip';
 import { Card } from '../common/Card';
 import { InputField } from '../common/InputField';
 import { SelectField } from '../common/SelectField';
@@ -54,7 +55,10 @@ export function BasicInfoSection({ form, dispatch, fieldErrors }: Props) {
         {/* Down payment row */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-700">{t('form.downPayment')}</span>
+            <span className="text-sm font-medium text-gray-700 flex items-center">
+              {t('form.downPayment')}
+              <Tooltip text={t('form.tooltipDownPayment')} />
+            </span>
             <div className="flex rounded-lg border border-gray-300 overflow-hidden text-xs font-medium">
               {(['percent', 'amount'] as DownPaymentMode[]).map((mode) => (
                 <Button
@@ -141,6 +145,7 @@ export function BasicInfoSection({ form, dispatch, fieldErrors }: Props) {
         {/* Payment method */}
         <SelectField<PaymentMethod>
           label={t('form.paymentMethod')}
+          tooltip={t('form.tooltipPaymentMethod')}
           value={form.paymentMethod}
           onChange={(v) => {
             dispatch({ type: 'SET_PAYMENT_METHOD', method: v });
@@ -172,7 +177,10 @@ export function BasicInfoSection({ form, dispatch, fieldErrors }: Props) {
               onChange={(e) => dispatch({ type: 'SET_INCLUDE_ADMIN_FEE', value: e.target.checked })}
               className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
-            <span className="text-sm font-medium text-gray-700">{t('form.includeAdminFee')}</span>
+            <span className="text-sm font-medium text-gray-700 flex items-center">
+              {t('form.includeAdminFee')}
+              <Tooltip text={t('form.tooltipAdminFee')} />
+            </span>
           </label>
           {form.includeAdminFee && (
             <InputField

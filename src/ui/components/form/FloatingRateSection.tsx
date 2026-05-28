@@ -37,6 +37,7 @@ export function FloatingRateSection({ form, dispatch, fieldErrors }: Props) {
       <Card title={t('form.floatingRate')} accent="indigo">
         <InputField
           label={t('form.floatingRateLabel')}
+          tooltip={t('form.tooltipFloatingRate')}
           value={form.floatingBaseRate}
           onChange={(v) => dispatch({ type: 'SET_FLOATING_BASE_RATE', value: v })}
           type="number"

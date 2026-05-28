@@ -126,7 +126,18 @@
     "tierEndLabel": "(akhir)",
     "tierYearLabel": "Thn {{n}}",
     "tierRangeHint": "Thn {{year}} · {{months}} bln",
-    "tierRate": "Suku Bunga"
+    "tierRate": "Suku Bunga",
+    "tooltipDownPayment": "Uang muka minimum KPR di Indonesia umumnya 15–20% dari harga properti sesuai aturan OJK. Semakin besar DP, semakin kecil cicilan dan total bunga yang Anda bayar.",
+    "tooltipPaymentMethod": "Anuitas: cicilan tetap setiap bulan, komposisi pokok vs bunga berubah. Flat: pokok tetap setiap bulan, bunga dihitung dari pokok awal — cicilan lebih besar di awal tapi turun seiring waktu.",
+    "tooltipAdminFee": "Biaya administrasi adalah biaya satu kali yang dibayar saat pencairan KPR. Besarannya berbeda tiap bank, biasanya Rp 500 ribu – Rp 5 juta.",
+    "tooltipFixedRate": "Suku bunga tetap berarti angsuran Anda tidak berubah selama periode ini meski BI Rate atau suku bunga pasar naik. Memberikan kepastian perencanaan keuangan.",
+    "tooltipFixedDuration": "Masa fixed rate biasanya 1–5 tahun. Setelah periode ini berakhir, suku bunga akan berubah mengikuti suku bunga variabel (floating) bank.",
+    "tooltipFloatingRate": "Suku bunga variabel mengikuti acuan bank (biasanya BI Rate + spread). Bisa naik atau turun. Umumnya lebih tinggi dari suku bunga tetap karena mengandung risiko perubahan.",
+    "tooltipEarlyRepayment": "Pelunasan dipercepat mengurangi saldo pokok lebih cepat sehingga total bunga yang dibayar lebih kecil dan tenor bisa diperpendek. Cek dulu apakah bank Anda mengenakan penalti pelunasan awal.",
+    "tooltipProvisionFee": "Biaya provisi adalah komisi bank atas pemrosesan KPR, biasanya 1% dari nilai kredit. Dibayar sekali saat pencairan.",
+    "tooltipBphtb": "BPHTB (Bea Perolehan Hak atas Tanah dan Bangunan) adalah pajak pembelian properti, umumnya 5% dari nilai properti dikurangi NPOPTKP. Wajib dibayar pembeli.",
+    "tooltipInsurance": "Asuransi jiwa melindungi keluarga jika debitur meninggal dunia — sisa hutang dilunasi asuransi. Asuransi kebakaran melindungi aset properti dari risiko kebakaran. Keduanya wajib untuk KPR.",
+    "tooltipSyariahAkad": "Murabahah: bank membeli properti lalu menjualnya ke Anda dengan harga + margin (profit) yang disepakati di awal — angsuran tetap seluruh tenor. MMQ (Musyarakah Mutanaqishah): kepemilikan bersama yang porsi bank terus berkurang seiring pembayaran — mirip cicilan konvensional tapi berbasis ujrah (sewa)."
   },
   "results": {
     "firstInstallmentFixed": "Cicilan Periode Tetap Pertama",
