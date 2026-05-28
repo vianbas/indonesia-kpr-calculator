@@ -18,6 +18,7 @@ import { EarlyRepaymentSummary } from '../components/results/EarlyRepaymentSumma
 import { KprFeesSummary } from '../components/results/KprFeesSummary';
 import { AffordabilityPanel } from '../components/affordability/AffordabilityPanel';
 import { RefinancingPanel } from '../components/refinancing/RefinancingPanel';
+import { FaqSection } from '../components/help/FaqSection';
 import {
   FormIncompleteState,
   ValidationErrorState,
@@ -275,6 +276,9 @@ export function CalculatorPage() {
       {activeCount > 1 && calculated.length >= 2 && (
         <ScenarioComparisonPanel scenarios={calculated} />
       )}
+
+      {/* FAQ — always visible at the very bottom */}
+      <FaqSection />
     </div>
     </>
   );
