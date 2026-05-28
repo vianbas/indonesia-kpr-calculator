@@ -158,7 +158,7 @@ export function ExportButton({ form, summary, scenarios = [], affordability, ref
 
   return (
     <div className="flex flex-col items-end gap-1.5">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap justify-end gap-x-2 gap-y-2">
         {canShare && (
           <Button
             variant="secondary"

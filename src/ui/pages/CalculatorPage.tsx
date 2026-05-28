@@ -315,7 +315,7 @@ function ResultsPanel({
     return (
       <>
         {/* Action row */}
-        <div className="flex justify-end gap-2">
+        <div className="flex flex-wrap justify-end gap-x-2 gap-y-2">
           <button
             type="button"
             onClick={onReset}
