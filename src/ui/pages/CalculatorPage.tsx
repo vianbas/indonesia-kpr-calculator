@@ -282,7 +282,11 @@ export function CalculatorPage({ initialUrlState }: CalculatorPageProps = {}) {
 
       {/* Scenario comparison — advanced feature, at the bottom */}
       {activeCount > 1 && calculated.length >= 2 && (
-        <ScenarioComparisonPanel scenarios={calculated} />
+        <ScenarioComparisonPanel
+          scenarios={calculated}
+          affordability={affordabilityExportData}
+          refinancing={refinancingExportData}
+        />
       )}
 
       {/* FAQ — always visible at the very bottom */}
