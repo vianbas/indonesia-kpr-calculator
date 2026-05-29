@@ -138,7 +138,10 @@
     "tooltipProvisionFee": "Biaya provisi adalah komisi bank atas pemrosesan KPR, biasanya 1% dari nilai kredit. Dibayar sekali saat pencairan.",
     "tooltipBphtb": "BPHTB (Bea Perolehan Hak atas Tanah dan Bangunan) adalah pajak pembelian properti, umumnya 5% dari nilai properti dikurangi NPOPTKP. Wajib dibayar pembeli.",
     "tooltipInsurance": "Asuransi jiwa melindungi keluarga jika debitur meninggal dunia — sisa hutang dilunasi asuransi. Asuransi kebakaran melindungi aset properti dari risiko kebakaran. Keduanya wajib untuk KPR.",
-    "tooltipSyariahAkad": "Murabahah: bank membeli properti lalu menjualnya ke Anda dengan harga + margin (profit) yang disepakati di awal — angsuran tetap seluruh tenor. MMQ (Musyarakah Mutanaqishah): kepemilikan bersama yang porsi bank terus berkurang seiring pembayaran — mirip cicilan konvensional tapi berbasis ujrah (sewa)."
+    "tooltipSyariahAkad": "Murabahah: bank membeli properti lalu menjualnya ke Anda dengan harga + margin (profit) yang disepakati di awal — angsuran tetap seluruh tenor. MMQ (Musyarakah Mutanaqishah): kepemilikan bersama yang porsi bank terus berkurang seiring pembayaran — mirip cicilan konvensional tapi berbasis ujrah (sewa).",
+    "bankRatePickerLabel": "Isi cepat dari bunga bank:",
+    "bankRatePickerPlaceholder": "Pilih promo suku bunga bank…",
+    "bankRatePickerNote": "Suku bunga referensi per {{date}}. Konfirmasi suku bunga aktual langsung ke bank sebelum mengajukan."
   },
   "results": {
     "firstInstallmentFixed": "Cicilan Periode Tetap Pertama",
