@@ -91,7 +91,7 @@ export function CalculatorPage({ initialUrlState }: CalculatorPageProps = {}) {
     () => (initialUrlState !== undefined ? initialUrlState : parseUrlInit()),
   );
 
-  const { scenarios, activeCount, activeTab, setActiveTab, canAdd, addScenario, removeScenario, resetAll } =
+  const { scenarios, activeCount, activeTab, setActiveTab, canAdd, addScenario, removeScenario, resetAll, renameScenario } =
     useScenarios(
       urlInit
         ? {
@@ -223,6 +223,7 @@ export function CalculatorPage({ initialUrlState }: CalculatorPageProps = {}) {
         canAdd={canAdd}
         onAdd={addScenario}
         onRemove={removeScenario}
+        onRename={renameScenario}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(400px,480px)_1fr] gap-6 items-start">

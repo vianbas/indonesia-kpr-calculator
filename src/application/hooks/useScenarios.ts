@@ -8,10 +8,10 @@ import {
   calculateMortgageSummary,
 } from '../../domain/calculators/amortization';
 import { saveDraft, loadDraft, clearDraft } from '../../utils/draftStorage';
+import { DEFAULT_LABELS } from '../../utils/urlState';
 import type { MortgageSummary, ValidationError } from '../../domain';
 import type { MortgageFormState } from '../store/formTypes';
 import type { ScenarioId, ScenarioState } from '../store/scenarioTypes';
-import { SCENARIO_LABELS } from '../store/scenarioTypes';
 
 // ─── Init options (used by URL state loading) ─────────────────────────────────
 
@@ -19,6 +19,7 @@ export interface UseScenariosOptions {
   initialForms?: readonly MortgageFormState[];
   initialActiveCount?: 1 | 2 | 3;
   initialActiveTab?: ScenarioId;
+  initialLabels?: [string, string, string];
 }
 
 // ─── Internal types ───────────────────────────────────────────────────────────
@@ -86,6 +87,7 @@ export interface UseScenariosResult {
   addScenario: () => void;
   removeScenario: (id: ScenarioId) => void;
   resetAll: () => void;
+  renameScenario: (id: ScenarioId, name: string) => void;
 }
 
 export function useScenarios(options: UseScenariosOptions = {}): UseScenariosResult {
@@ -99,12 +101,16 @@ export function useScenarios(options: UseScenariosOptions = {}): UseScenariosRes
       initialForms: draft.forms,
       initialActiveCount: draft.activeCount,
       initialActiveTab: draft.activeTab,
+      initialLabels: draft.labels,
     };
     return options;
   });
 
   const [activeCount, setActiveCount] = useState<1 | 2 | 3>(init.initialActiveCount ?? 1);
   const [activeTab, setActiveTab] = useState<ScenarioId>(init.initialActiveTab ?? 1);
+  const [labels, setLabels] = useState<[string, string, string]>(
+    init.initialLabels ?? [...DEFAULT_LABELS],
+  );
 
   // Scenario 1 — delegates to the existing hook, optionally pre-filled from URL / draft
   const calc1 = useMortgageCalculator(init.initialForms?.[0]);
@@ -191,6 +197,15 @@ export function useScenarios(options: UseScenariosOptions = {}): UseScenariosRes
     isCalcError: isCalcError1,
   } = calc1;
 
+  const renameScenario = useCallback((id: ScenarioId, name: string) => {
+    const trimmed = name.trim() || DEFAULT_LABELS[id - 1];
+    setLabels((prev) => {
+      const next = [...prev] as [string, string, string];
+      next[id - 1] = trimmed;
+      return next;
+    });
+  }, []);
+
   const resetAll = useCallback(() => {
     clearDraft();
     dispatch1({ type: 'RESET_TO_DEFAULT' });
@@ -200,6 +215,7 @@ export function useScenarios(options: UseScenariosOptions = {}): UseScenariosRes
     setR3(emptyResult);
     setActiveCount(1);
     setActiveTab(1);
+    setLabels([...DEFAULT_LABELS]);
   }, [dispatch1, dispatch2, dispatch3]);
 
   // Debounced draft save — persists all active forms so the user never loses work
@@ -209,15 +225,16 @@ export function useScenarios(options: UseScenariosOptions = {}): UseScenariosRes
         forms: [form1, form2, form3].slice(0, activeCount),
         activeCount,
         activeTab,
+        labels,
       });
     }, 1000);
     return () => clearTimeout(t);
-  }, [form1, form2, form3, activeCount, activeTab]);
+  }, [form1, form2, form3, activeCount, activeTab, labels]);
 
   const scenarios = useMemo((): ScenarioState[] => {
     const s1: ScenarioState = {
       id: 1,
-      label: SCENARIO_LABELS[1],
+      label: labels[0],
       form: form1,
       dispatch: dispatch1,
       summary: summary1,
@@ -231,7 +248,7 @@ export function useScenarios(options: UseScenariosOptions = {}): UseScenariosRes
     if (activeCount >= 2) {
       arr.push({
         id: 2,
-        label: SCENARIO_LABELS[2],
+        label: labels[1],
         form: form2,
         dispatch: dispatch2,
         ...r2,
@@ -241,7 +258,7 @@ export function useScenarios(options: UseScenariosOptions = {}): UseScenariosRes
     if (activeCount === 3) {
       arr.push({
         id: 3,
-        label: SCENARIO_LABELS[3],
+        label: labels[2],
         form: form3,
         dispatch: dispatch3,
         ...r3,
@@ -250,7 +267,7 @@ export function useScenarios(options: UseScenariosOptions = {}): UseScenariosRes
 
     return arr;
   }, [
-    activeCount,
+    activeCount, labels,
     form1, dispatch1, summary1, errors1, fieldErrors1, isCalcError1,
     form2, dispatch2, r2,
     form3, dispatch3, r3,
@@ -265,5 +282,6 @@ export function useScenarios(options: UseScenariosOptions = {}): UseScenariosRes
     addScenario,
     removeScenario,
     resetAll,
+    renameScenario,
   };
 }

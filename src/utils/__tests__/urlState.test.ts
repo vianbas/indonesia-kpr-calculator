@@ -108,6 +108,41 @@ describe('encodeUrlState — v2 compression', () => {
     const json = LZString.decompressFromEncodedURIComponent(encodeUrlState(makeUrlState()))!;
     expect(JSON.parse(json).v).toBe(2);
   });
+
+  it('omits labels from payload when all are default', () => {
+    const state = makeUrlState();
+    const json = LZString.decompressFromEncodedURIComponent(encodeUrlState(state))!;
+    expect(JSON.parse(json)).not.toHaveProperty('labels');
+  });
+
+  it('includes labels in payload when any differ from defaults', () => {
+    const state = makeUrlState({ labels: ['BCA 3yr', 'Skenario 2', 'Skenario 3'] });
+    const json = LZString.decompressFromEncodedURIComponent(encodeUrlState(state))!;
+    expect(JSON.parse(json).labels).toEqual(['BCA 3yr', 'Skenario 2', 'Skenario 3']);
+  });
+});
+
+describe('labels — round-trip', () => {
+  it('preserves custom labels through encode → decode', () => {
+    const state = makeUrlState({ labels: ['BCA 3yr', 'Mandiri 1yr', 'Skenario 3'] });
+    const decoded = decodeUrlState(encodeUrlState(state));
+    expect(decoded?.labels).toEqual(['BCA 3yr', 'Mandiri 1yr', 'Skenario 3']);
+  });
+
+  it('returns no labels field when payload omits them', () => {
+    const state = makeUrlState();
+    const decoded = decodeUrlState(encodeUrlState(state));
+    expect(decoded?.labels).toBeUndefined();
+  });
+
+  it('drops invalid labels (wrong length or empty string)', () => {
+    const raw = LZString.compressToEncodedURIComponent(
+      JSON.stringify({ v: 2, forms: [{}], activeCount: 1, activeTab: 1, labels: ['ok', ''] }),
+    );
+    // incomplete array — should not attach labels
+    const decoded = decodeUrlState(raw);
+    expect(decoded?.labels).toBeUndefined();
+  });
 });
 
 // ─── Round-trip (encode → decode) ────────────────────────────────────────────
