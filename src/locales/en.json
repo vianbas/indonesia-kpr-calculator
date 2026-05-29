@@ -8,7 +8,9 @@
     "addScenarioAria": "Add new scenario",
     "removeScenarioAria": "Remove {{label}}",
     "scenariosAria": "Comparison scenarios",
-    "faqLink": "Help"
+    "faqLink": "Help",
+    "renameScenarioAria": "Rename {{label}}",
+    "renameScenarioHint": "Click pencil to rename this scenario"
   },
   "empty": {
     "title": "KPR Simulation",

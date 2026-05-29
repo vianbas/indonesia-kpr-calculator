@@ -65,6 +65,9 @@ function InteractiveDemo() {
         setScenarios([...scenarios, { ...MOCK_SCENARIOS_1[0], id, label: `Skenario ${id}`, summary: null }]);
         setActive(id);
       }}
+      onRename={(id, name) => {
+        setScenarios(scenarios.map((s) => s.id === id ? { ...s, label: name } : s));
+      }}
       onRemove={(id) => {
         setScenarios(scenarios.filter((s) => s.id !== id));
         if (active === id) setActive(1);

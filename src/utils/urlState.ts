@@ -11,12 +11,18 @@ import type {
 import type { ScenarioId } from '../application/store/scenarioTypes';
 import type { PaymentMethod, FinancingMode, SyariahAkadType } from '../domain/models/mortgage.types';
 
+// ─── Defaults ─────────────────────────────────────────────────────────────────
+
+export const DEFAULT_LABELS: [string, string, string] = ['Skenario 1', 'Skenario 2', 'Skenario 3'];
+
 // ─── Public shape ─────────────────────────────────────────────────────────────
 
 export interface UrlState {
   forms: MortgageFormState[];
   activeCount: 1 | 2 | 3;
   activeTab: ScenarioId;
+  /** Custom scenario labels — only present when at least one differs from the default. */
+  labels?: [string, string, string];
 }
 
 /** Internal wire format — never expose the version field outside this module. */
@@ -246,12 +252,16 @@ function stripFormDefaults(form: MortgageFormState): Partial<MortgageFormState> 
 // ─── Encode / decode ──────────────────────────────────────────────────────────
 
 export function encodeUrlState(state: UrlState): string {
-  const payload = {
-    v: 2 as const,
+  const payload: Record<string, unknown> = {
+    v: 2,
     forms: state.forms.map(stripFormDefaults),
     activeCount: state.activeCount,
     activeTab: state.activeTab,
   };
+  // Only encode labels when at least one differs from the default to keep URLs short
+  if (state.labels?.some((l, i) => l !== DEFAULT_LABELS[i])) {
+    payload.labels = state.labels;
+  }
   return LZString.compressToEncodedURIComponent(JSON.stringify(payload));
 }
 
@@ -260,6 +270,15 @@ function parsePayload(json: string): UrlState | null {
   if (!isStoredPayload(raw)) return null;
   const { v: _v, ...urlState } = raw;
   urlState.forms = (urlState.forms as unknown[]).map(normalizeForm);
+  // Validate optional labels: must be a 3-tuple of strings
+  const rawLabels = (raw as unknown as Record<string, unknown>).labels;
+  if (
+    Array.isArray(rawLabels) &&
+    rawLabels.length === 3 &&
+    rawLabels.every((l) => typeof l === 'string' && l.length > 0 && l.length <= 40)
+  ) {
+    (urlState as UrlState).labels = rawLabels as [string, string, string];
+  }
   return urlState as UrlState;
 }
 
