@@ -7,6 +7,7 @@ import { EarlyRepaymentSection } from './EarlyRepaymentSection';
 import { KprFeesSection } from './KprFeesSection';
 import { FinancingModeSelector } from './FinancingModeSelector';
 import { SyariahRateSection } from './SyariahRateSection';
+import { BankRatePicker } from './BankRatePicker';
 import type { MortgageFormState, FormAction } from '../../../application/store/formTypes';
 import type { ValidationError } from '../../../domain';
 
@@ -51,6 +52,7 @@ export function LoanInputForm({ form, dispatch, errors, fieldErrors }: Props) {
       ) : (
         <>
           {!isFlat && <CalculationMethodSelector form={form} dispatch={dispatch} />}
+          {!isFlat && <BankRatePicker form={form} dispatch={dispatch} />}
           <FixedRateSection form={form} dispatch={dispatch} fieldErrors={fieldErrors} />
           {!isFlat && <FloatingRateSection form={form} dispatch={dispatch} fieldErrors={fieldErrors} />}
           <EarlyRepaymentSection form={form} dispatch={dispatch} />

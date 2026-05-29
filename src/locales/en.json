@@ -138,7 +138,10 @@
     "tooltipProvisionFee": "A one-time bank processing fee, typically 1% of the loan amount, paid at disbursement.",
     "tooltipBphtb": "BPHTB (Property Acquisition Tax) is a purchase tax on property, generally 5% of the property value minus the tax-free threshold. Paid by the buyer.",
     "tooltipInsurance": "Life insurance covers the remaining loan if the borrower passes away. Fire insurance protects the property asset. Both are typically mandatory for KPR.",
-    "tooltipSyariahAkad": "Murabahah: the bank buys the property and sells it to you at cost + agreed margin — fixed installments for the full tenor. MMQ (Musyarakah Mutanaqishah): shared ownership where the bank's share decreases over time as you pay — structured around ujrah (rental fee) instead of interest."
+    "tooltipSyariahAkad": "Murabahah: the bank buys the property and sells it to you at cost + agreed margin — fixed installments for the full tenor. MMQ (Musyarakah Mutanaqishah): shared ownership where the bank's share decreases over time as you pay — structured around ujrah (rental fee) instead of interest.",
+    "bankRatePickerLabel": "Quick fill from bank:",
+    "bankRatePickerPlaceholder": "Select a bank promo rate…",
+    "bankRatePickerNote": "Reference rates as of {{date}}. Verify actual rates with your bank before applying."
   },
   "results": {
     "firstInstallmentFixed": "First Fixed-Period Installment",
