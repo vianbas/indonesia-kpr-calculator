@@ -20,6 +20,7 @@ import { KprFeesSummary } from '../components/results/KprFeesSummary';
 import { AffordabilityPanel } from '../components/affordability/AffordabilityPanel';
 import { RefinancingPanel } from '../components/refinancing/RefinancingPanel';
 import { BuyVsRentPanel } from '../components/buyvsrent/BuyVsRentPanel';
+import { FlppPanel } from '../components/flpp/FlppPanel';
 import { FaqSection } from '../components/help/FaqSection';
 import {
   FormIncompleteState,
@@ -29,10 +30,12 @@ import {
 import { calculateAffordability } from '../../domain/calculators/affordability';
 import { calculateRefinancing } from '../../domain/calculators/refinancing';
 import { calculateBuyVsRent } from '../../domain/calculators/buyVsRent';
+import { assessFlpp } from '../../domain/calculators/flpp';
 import { deriveLoanValuation } from '../../application/converters/formToInput';
 import { DEFAULT_AFFORDABILITY } from '../../application/store/affordabilityTypes';
 import { DEFAULT_REFINANCING } from '../../application/store/refinancingTypes';
 import { DEFAULT_BUY_VS_RENT, type BuyVsRentFormState } from '../../application/store/buyVsRentTypes';
+import { DEFAULT_FLPP, type FlppFormState } from '../../application/store/flppTypes';
 import type { AffordabilityFormState } from '../../application/store/affordabilityTypes';
 import type { AffordabilityInput } from '../../domain/calculators/affordability';
 import type { RefinancingFormState } from '../../application/store/refinancingTypes';
@@ -217,6 +220,33 @@ export function CalculatorPage({ initialUrlState }: CalculatorPageProps = {}) {
     });
   }, [buyVsRentForm, activeCalculated]);
 
+  // ── FLPP (subsidized mortgage) state ──────────────────────────────────────
+  const [flppForm, setFlppForm] = useState<FlppFormState>(DEFAULT_FLPP);
+
+  function handleFlppChange<K extends keyof FlppFormState>(key: K, value: FlppFormState[K]) {
+    setFlppForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  const flppResult = useMemo(() => {
+    if (!activeCalculated) return null;
+    const valuation = deriveLoanValuation(activeCalculated.form);
+    if (!valuation) return null;
+    const monthlyIncome = parseFloat(flppForm.monthlyIncome);
+    if (!(monthlyIncome > 0)) return null;
+    return assessFlpp({
+      propertyPrice: valuation.propertyPrice,
+      monthlyIncome,
+      loanPrincipal: valuation.principal,
+      tenorMonths: activeCalculated.summary.originalTenorMonths,
+      isFirstHome: flppForm.isFirstHome,
+      priceCap: parseFloat(flppForm.priceCapIDR) || 0,
+      incomeCap: parseFloat(flppForm.incomeCapIDR) || 0,
+    });
+  }, [flppForm, activeCalculated]);
+
+  const flppCurrentInstallment =
+    activeCalculated?.summary.installmentGroups[0]?.installmentAmount ?? null;
+
   const refinancingExportData =
     refinancingResult !== null
       ? { form: refinancingForm, result: refinancingResult }
@@ -319,6 +349,16 @@ export function CalculatorPage({ initialUrlState }: CalculatorPageProps = {}) {
           form={buyVsRentForm}
           onChange={handleBuyVsRentChange}
           result={buyVsRentResult}
+        />
+      )}
+
+      {/* FLPP subsidized mortgage — after buy vs rent */}
+      {calculated.length >= 1 && (
+        <FlppPanel
+          form={flppForm}
+          onChange={handleFlppChange}
+          result={flppResult}
+          currentInstallment={flppCurrentInstallment}
         />
       )}
 
