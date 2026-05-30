@@ -490,5 +490,28 @@
     "ok": "Aman",
     "needMore": "+{{amount}} DP",
     "disclaimer": "Acuan batas ala BI untuk rumah tapak (syariah +5%). Batas sebenarnya berbeda tiap bank dan kebijakan BI."
+  },
+  "buyVsRent": {
+    "title": "Beli vs Sewa",
+    "intro": "Bandingkan membangun ekuitas dengan membeli versus menyewa sambil menginvestasikan dana Anda.",
+    "monthlyRent": "Sewa per bulan",
+    "monthlyRentHint": "Sewa rumah serupa",
+    "horizon": "Jangka waktu",
+    "years": "thn",
+    "horizonHint": "Berapa lama Anda tinggal",
+    "rentGrowth": "Kenaikan sewa",
+    "appreciation": "Kenaikan harga properti",
+    "investmentReturn": "Imbal hasil investasi",
+    "perYear": "per tahun",
+    "rec_buy": "Beli lebih untung",
+    "rec_rent": "Sewa lebih untung",
+    "rec_close": "Hampir seimbang",
+    "breakEvenAfter": "Beli unggul setelah {{years}}th {{months}}bln",
+    "noBreakEven": "Beli belum unggul dalam jangka waktu ini",
+    "buyerWealth": "Kekayaan pembeli",
+    "renterWealth": "Kekayaan penyewa",
+    "homeValueAtHorizon": "Nilai rumah di akhir periode",
+    "disclaimer": "Proyeksi sederhana: penyewa menginvestasikan uang muka plus selisih bulanan. Belum termasuk perawatan, PBB, dan biaya saat menjual. Asumsi bersifat perkiraan.",
+    "promptFill": "Masukkan nilai sewa bulanan untuk membandingkan beli vs sewa."
   }
 }

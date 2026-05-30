@@ -490,5 +490,28 @@
     "ok": "OK",
     "needMore": "+{{amount}} DP",
     "disclaimer": "Reference BI-style caps for landed houses (syariah +5%). Actual limits vary by bank and BI policy."
+  },
+  "buyVsRent": {
+    "title": "Buy vs Rent",
+    "intro": "Compare building home equity by buying against renting while investing your cash.",
+    "monthlyRent": "Monthly rent",
+    "monthlyRentHint": "Rent for a comparable home",
+    "horizon": "Time horizon",
+    "years": "yr",
+    "horizonHint": "How long you'll stay",
+    "rentGrowth": "Rent growth",
+    "appreciation": "Property appreciation",
+    "investmentReturn": "Investment return",
+    "perYear": "per year",
+    "rec_buy": "Buying wins",
+    "rec_rent": "Renting wins",
+    "rec_close": "Too close to call",
+    "breakEvenAfter": "Buying overtakes after {{years}}y {{months}}m",
+    "noBreakEven": "Buying doesn't overtake within the horizon",
+    "buyerWealth": "Buyer net worth",
+    "renterWealth": "Renter net worth",
+    "homeValueAtHorizon": "Home value at horizon",
+    "disclaimer": "A simplified projection: the renter invests the down payment plus any monthly savings. Excludes maintenance, property tax, and sale costs. Assumptions are estimates.",
+    "promptFill": "Enter a monthly rent to compare buying vs renting."
   }
 }
