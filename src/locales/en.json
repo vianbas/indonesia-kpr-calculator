@@ -513,5 +513,26 @@
     "homeValueAtHorizon": "Home value at horizon",
     "disclaimer": "A simplified projection: the renter invests the down payment plus any monthly savings. Excludes maintenance, property tax, and sale costs. Assumptions are estimates.",
     "promptFill": "Enter a monthly rent to compare buying vs renting."
+  },
+  "flpp": {
+    "title": "FLPP Subsidized Mortgage",
+    "intro": "Check if you qualify for FLPP (government-subsidized KPR) and see the installment at the subsidized 5% fixed rate.",
+    "monthlyIncome": "Monthly income",
+    "monthlyIncomeHint": "Household income",
+    "priceCap": "Max property price",
+    "incomeCap": "Max income",
+    "capHint": "Varies by region/year",
+    "firstHome": "This is my first home",
+    "eligible": "Likely eligible",
+    "notEligible": "Not eligible",
+    "checkPrice": "Property price within cap ({{cap}})",
+    "checkIncome": "Income within cap ({{cap}})",
+    "checkFirstHome": "First home",
+    "checkTenor": "Tenor within 20 years ({{tenor}})",
+    "subsidizedInstallment": "Installment at 5% (subsidized)",
+    "savesVsCurrent": "Saves {{amount}}/month vs this scenario",
+    "totalInterestLabel": "Total interest: {{amount}}",
+    "disclaimer": "FLPP rules and the income/price caps vary by region and year. These are reference defaults, not an official eligibility decision — confirm with a participating bank.",
+    "promptFill": "Enter your monthly income to check FLPP eligibility."
   }
 }

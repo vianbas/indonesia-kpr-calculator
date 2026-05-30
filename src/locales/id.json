@@ -513,5 +513,26 @@
     "homeValueAtHorizon": "Nilai rumah di akhir periode",
     "disclaimer": "Proyeksi sederhana: penyewa menginvestasikan uang muka plus selisih bulanan. Belum termasuk perawatan, PBB, dan biaya saat menjual. Asumsi bersifat perkiraan.",
     "promptFill": "Masukkan nilai sewa bulanan untuk membandingkan beli vs sewa."
+  },
+  "flpp": {
+    "title": "KPR Subsidi FLPP",
+    "intro": "Cek apakah Anda memenuhi syarat FLPP (KPR subsidi pemerintah) dan lihat cicilan dengan bunga subsidi tetap 5%.",
+    "monthlyIncome": "Penghasilan per bulan",
+    "monthlyIncomeHint": "Penghasilan rumah tangga",
+    "priceCap": "Maks harga properti",
+    "incomeCap": "Maks penghasilan",
+    "capHint": "Berbeda per wilayah/tahun",
+    "firstHome": "Ini rumah pertama saya",
+    "eligible": "Kemungkinan memenuhi syarat",
+    "notEligible": "Tidak memenuhi syarat",
+    "checkPrice": "Harga properti di bawah batas ({{cap}})",
+    "checkIncome": "Penghasilan di bawah batas ({{cap}})",
+    "checkFirstHome": "Rumah pertama",
+    "checkTenor": "Tenor maksimal 20 tahun ({{tenor}})",
+    "subsidizedInstallment": "Cicilan bunga 5% (subsidi)",
+    "savesVsCurrent": "Hemat {{amount}}/bulan dibanding skenario ini",
+    "totalInterestLabel": "Total bunga: {{amount}}",
+    "disclaimer": "Aturan FLPP serta batas penghasilan dan harga berbeda tiap wilayah dan tahun. Ini hanya acuan, bukan keputusan kelayakan resmi — konfirmasi ke bank penyalur.",
+    "promptFill": "Masukkan penghasilan bulanan untuk cek kelayakan FLPP."
   }
 }
