@@ -478,5 +478,17 @@
     "syariahA": "Murabahah: the bank buys the property then sells it at cost-plus-margin; installments are fixed for the full tenor. MMQ: joint ownership where the bank's share decreases monthly, so installments can decrease over time.",
     "accuracyQ": "How accurate are the calculations?",
     "accuracyA": "Results are simulation estimates. Actual figures may differ depending on each bank's policies, notary fees, local taxes, and the interest rate at the time the loan agreement is signed."
+  },
+  "ltv": {
+    "title": "Loan-to-Value (LTV)",
+    "ratioBadge": "LTV {{pct}}%",
+    "dpSummary": "Down payment {{pct}}% · {{amount}}",
+    "homeFirst": "1st home",
+    "homeSecond": "2nd home",
+    "homeThird": "3rd+ home",
+    "capLabel": "max {{pct}}%",
+    "ok": "OK",
+    "needMore": "+{{amount}} DP",
+    "disclaimer": "Reference BI-style caps for landed houses (syariah +5%). Actual limits vary by bank and BI policy."
   }
 }

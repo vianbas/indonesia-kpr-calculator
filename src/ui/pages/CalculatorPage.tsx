@@ -5,6 +5,7 @@ import { useScenarios } from '../../application/hooks/useScenarios';
 import { parseUrlInit } from '../../utils/urlState';
 import { LoanInputForm } from '../components/form/LoanInputForm';
 import { SummaryCard } from '../components/results/SummaryCard';
+import { LtvIndicator } from '../components/results/LtvIndicator';
 import { InstallmentGroups } from '../components/results/InstallmentGroups';
 import { AmortizationTable } from '../components/results/AmortizationTable';
 import { NextStepActions } from '../components/results/NextStepActions';
@@ -368,6 +369,8 @@ function ResultsPanel({
         </div>
 
         <SummaryCard summary={summary} onScrollToAmortization={scrollToAmortization} />
+
+        <LtvIndicator form={form} />
 
         {/* Next-step CTAs — immediately after the hero summary */}
         <NextStepActions
