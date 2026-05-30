@@ -94,8 +94,10 @@ different account, move the Workers + D1 (or the zone) so they share one account
 
 > Do **not** set `VITE_BASE_PATH` — the Worker serves from the domain root, so base
 > stays `/`. SPA deep links (`/s/:id`) are handled by `not_found_handling =
-> single-page-application` in `wrangler.toml` (the `public/_redirects` + `404.html`
-> copy are Pages-era leftovers, harmless under Workers Static Assets).
+> single-page-application` in `wrangler.toml`. The Pages-era `public/_redirects` was
+> removed: Workers Static Assets reads it and rejects its `/s/* /index.html 200` rule
+> as an infinite loop (error 100324). The `404.html` copy is an unused leftover (SPA
+> mode never serves it) but harmless.
 
 **Backend — Worker (`workers/share-api`):**
 
