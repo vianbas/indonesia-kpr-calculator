@@ -19,6 +19,7 @@ import { EarlyRepaymentSummary } from '../components/results/EarlyRepaymentSumma
 import { KprFeesSummary } from '../components/results/KprFeesSummary';
 import { AffordabilityPanel } from '../components/affordability/AffordabilityPanel';
 import { RefinancingPanel } from '../components/refinancing/RefinancingPanel';
+import { BuyVsRentPanel } from '../components/buyvsrent/BuyVsRentPanel';
 import { FaqSection } from '../components/help/FaqSection';
 import {
   FormIncompleteState,
@@ -27,8 +28,11 @@ import {
 } from '../components/results/EmptyState';
 import { calculateAffordability } from '../../domain/calculators/affordability';
 import { calculateRefinancing } from '../../domain/calculators/refinancing';
+import { calculateBuyVsRent } from '../../domain/calculators/buyVsRent';
+import { deriveLoanValuation } from '../../application/converters/formToInput';
 import { DEFAULT_AFFORDABILITY } from '../../application/store/affordabilityTypes';
 import { DEFAULT_REFINANCING } from '../../application/store/refinancingTypes';
+import { DEFAULT_BUY_VS_RENT, type BuyVsRentFormState } from '../../application/store/buyVsRentTypes';
 import type { AffordabilityFormState } from '../../application/store/affordabilityTypes';
 import type { AffordabilityInput } from '../../domain/calculators/affordability';
 import type { RefinancingFormState } from '../../application/store/refinancingTypes';
@@ -186,6 +190,33 @@ export function CalculatorPage({ initialUrlState }: CalculatorPageProps = {}) {
     return null;
   }, [refinancingForm]);
 
+  // ── Buy vs Rent state ─────────────────────────────────────────────────────
+  const [buyVsRentForm, setBuyVsRentForm] = useState<BuyVsRentFormState>(DEFAULT_BUY_VS_RENT);
+
+  function handleBuyVsRentChange(key: keyof BuyVsRentFormState, value: string) {
+    setBuyVsRentForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  const buyVsRentResult = useMemo(() => {
+    if (!activeCalculated) return null;
+    const valuation = deriveLoanValuation(activeCalculated.form);
+    if (!valuation) return null;
+    const monthlyRent = parseFloat(buyVsRentForm.monthlyRent);
+    const horizonMonths = (parseInt(buyVsRentForm.horizonYears) || 0) * 12;
+    if (!(monthlyRent > 0) || horizonMonths <= 0) return null;
+    const { summary } = activeCalculated;
+    return calculateBuyVsRent({
+      propertyPrice: valuation.propertyPrice,
+      upfrontCost: valuation.downPayment + summary.adminFee,
+      schedule: summary.schedule.map((r) => ({ installment: r.installment, closingBalance: r.closingBalance })),
+      monthlyRent,
+      rentGrowthAnnual: (parseFloat(buyVsRentForm.rentGrowthPercent) || 0) / 100,
+      appreciationAnnual: (parseFloat(buyVsRentForm.appreciationPercent) || 0) / 100,
+      investmentReturnAnnual: (parseFloat(buyVsRentForm.investmentReturnPercent) || 0) / 100,
+      horizonMonths,
+    });
+  }, [buyVsRentForm, activeCalculated]);
+
   const refinancingExportData =
     refinancingResult !== null
       ? { form: refinancingForm, result: refinancingResult }
@@ -280,6 +311,15 @@ export function CalculatorPage({ initialUrlState }: CalculatorPageProps = {}) {
             onPrefill={handleRefinancingPrefill}
           />
         </div>
+      )}
+
+      {/* Buy vs Rent — after refinancing */}
+      {calculated.length >= 1 && (
+        <BuyVsRentPanel
+          form={buyVsRentForm}
+          onChange={handleBuyVsRentChange}
+          result={buyVsRentResult}
+        />
       )}
 
       {/* Scenario comparison — advanced feature, at the bottom */}
