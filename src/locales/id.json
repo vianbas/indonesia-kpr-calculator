@@ -478,5 +478,17 @@
     "syariahA": "Murabahah: bank membeli properti lalu menjualnya ke nasabah dengan harga + margin, angsuran tetap sepanjang tenor. MMQ: kepemilikan bersama; porsi bank berkurang tiap bulan, angsuran bisa turun seiring waktu.",
     "accuracyQ": "Seberapa akurat hasil kalkulasi ini?",
     "accuracyA": "Hasil ini adalah estimasi simulasi. Angka aktual dapat berbeda tergantung kebijakan bank masing-masing, biaya notaris, pajak daerah, dan kondisi suku bunga pada saat akad kredit ditandatangani."
+  },
+  "ltv": {
+    "title": "Loan-to-Value (LTV)",
+    "ratioBadge": "LTV {{pct}}%",
+    "dpSummary": "Uang muka {{pct}}% · {{amount}}",
+    "homeFirst": "Rumah ke-1",
+    "homeSecond": "Rumah ke-2",
+    "homeThird": "Rumah ke-3+",
+    "capLabel": "maks {{pct}}%",
+    "ok": "Aman",
+    "needMore": "+{{amount}} DP",
+    "disclaimer": "Acuan batas ala BI untuk rumah tapak (syariah +5%). Batas sebenarnya berbeda tiap bank dan kebijakan BI."
   }
 }

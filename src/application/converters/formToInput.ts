@@ -239,6 +239,33 @@ function parsePositiveNumber(value: string, allowZero = false): number | null {
   return n;
 }
 
+export interface LoanValuation {
+  propertyPrice: number;
+  downPayment: number;
+  principal: number;
+}
+
+/**
+ * Derives property price + down payment from the form, independent of the
+ * optional KPR-fees section. The fees builder only carries the down payment when
+ * that section is enabled, so this is the reliable source for LTV/valuation.
+ * Returns null when inputs are incomplete or imply a non-positive loan.
+ */
+export function deriveLoanValuation(form: MortgageFormState): LoanValuation | null {
+  const propertyPrice = parsePositiveNumber(form.propertyPrice);
+  if (propertyPrice === null) return null;
+
+  const dpRaw = parsePositiveNumber(form.downPaymentValue, true);
+  if (dpRaw === null) return null;
+
+  const downPayment =
+    form.downPaymentMode === 'percent' ? propertyPrice * (dpRaw / 100) : dpRaw;
+  const principal = propertyPrice - downPayment;
+  if (principal <= 0) return null;
+
+  return { propertyPrice, downPayment, principal };
+}
+
 /** Converts a percent string "7.5" to decimal 0.075 */
 function percentToDecimal(value: string): number {
   return parseFloat(value) / 100;
