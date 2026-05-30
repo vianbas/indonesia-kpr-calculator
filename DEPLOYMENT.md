@@ -1,18 +1,35 @@
 # Deployment Guide — KPR Calculator
 
+## Production Architecture
+
+Production runs entirely on **Cloudflare**, one account, all within free tiers:
+
+| Layer | Host | URL |
+|---|---|---|
+| Frontend (Vite SPA) | **Cloudflare Pages** | `https://kpr.vikoabastian.com` |
+| Share API (`workers/share-api`) | **Cloudflare Worker** + D1 | `https://api.kpr.vikoabastian.com` |
+
+The DNS zone `vikoabastian.com` is managed on Cloudflare. The Worker and Pages
+custom domains must live on the **same Cloudflare account that owns the zone** —
+verify this before deploying (Step 0 below). See **Option A** for the runbook.
+
 ## Environment Variables
 
-This app is a fully client-side SPA. **No secrets are required.** Vite inlines
-`VITE_*` variables at build time — they end up in the compiled JS bundle, visible
-to anyone who downloads the page. Never store tokens or API keys here.
+The frontend is a client-side SPA. **No secrets belong here** — Vite inlines
+`VITE_*` variables into the JS bundle at build time, visible to anyone who
+downloads the page. Never store tokens or API keys in `VITE_*`.
 
 | Variable | Required | Description |
 |---|---|---|
+| `VITE_SHARE_API_URL` | No | Share-link Worker base URL. Prod: `https://api.kpr.vikoabastian.com`. Empty disables short links (falls back to `?s=` URLs). |
 | `VITE_SENTRY_DSN` | No | Sentry DSN for error tracking (see Monitoring section) |
-| `VITE_APP_VERSION` | No | Injected by CI (`${{ github.sha }}`), shown in error reports |
+| `VITE_APP_VERSION` | No | Injected by CI (`${{ github.sha }}` / `$CF_PAGES_COMMIT_SHA`), shown in error reports |
 
 All variables are documented in `.env.production`. Copy `.env.example` to
 `.env.local` for local overrides.
+
+> **Worker secrets** (never in `wrangler.toml`): `IP_HASH_SECRET` (required) and
+> `TURNSTILE_SECRET` (optional) are set with `npx wrangler secret put <NAME>`.
 
 ---
 
@@ -45,7 +62,57 @@ Run through this list before every production deployment.
 
 ## Deployment Steps
 
-### Option A — Docker on a VPS (recommended)
+### Option A — Cloudflare Pages + Worker (production)
+
+This is the live production setup (`kpr.vikoabastian.com` + `api.kpr.vikoabastian.com`).
+
+**Step 0 — Verify account topology (once).** The Worker is on the Cloudflare account
+logged into wrangler (`npx wrangler whoami`). Confirm the `vikoabastian.com` zone is on
+that **same account** — both custom domains depend on it. If the zone is on a different
+account, move the Worker + D1 (or the zone) so they share one account first.
+
+**Frontend — Cloudflare Pages (connect once, auto-deploys on push to `master`):**
+
+1. Cloudflare dashboard → **Workers & Pages → Create → Pages → Connect to Git**
+2. Select the `vianbas/indonesia-kpr-calculator` repo, production branch `master`
+3. Build settings:
+   - Framework preset: **Vite** (or none)
+   - Build command: `npm run build`
+   - Build output directory: `dist`
+   - Environment variables: `VITE_APP_ENV=production`, `VITE_APP_VERSION=$CF_PAGES_COMMIT_SHA`
+     (`VITE_SHARE_API_URL` is already baked in from `.env.production`)
+4. After the first build: **Custom domains → Set up a domain → `kpr.vikoabastian.com`**
+   (Cloudflare creates the DNS record + cert automatically since the zone is on-account)
+
+> Do **not** set `VITE_BASE_PATH` — Pages serves from the domain root, so base stays `/`.
+> SPA deep links (`/s/:id`) are handled by `public/_redirects` and the `404.html` copy.
+
+**Backend — Worker (`workers/share-api`):**
+
+```bash
+# 1. Set the required secret (once per environment)
+cd workers/share-api && npx wrangler secret put IP_HASH_SECRET
+#    (optional) npx wrangler secret put TURNSTILE_SECRET
+
+# 2. Apply D1 migrations to the production database
+npm run worker:migrate:prod        # wrangler d1 migrations apply kpr-shares --remote
+
+# 3. Deploy — the [[routes]] custom_domain in wrangler.toml binds
+#    api.kpr.vikoabastian.com and provisions its cert automatically
+npm run worker:deploy              # wrangler deploy
+```
+
+**Verify the wiring:**
+
+```bash
+curl -i https://api.kpr.vikoabastian.com/api/share/kpr_invalid   # → 400 INVALID_ID (CORS header present)
+# Then open https://kpr.vikoabastian.com, create a share link, confirm it returns a
+# https://kpr.vikoabastian.com/s/... URL and that reopening it restores the scenario.
+```
+
+---
+
+### Option B — Docker on a VPS
 
 ```bash
 # 1. Pull the image built by CI
@@ -67,7 +134,7 @@ curl -s http://localhost:8080/health   # → ok
 
 Put Nginx or Caddy in front on port 443 to handle SSL (see SSL section below).
 
-### Option B — Static hosting (Netlify / Vercel / Cloudflare Pages)
+### Option C — Static hosting (Netlify / Vercel / other)
 
 ```bash
 npm run build
