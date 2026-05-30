@@ -1,0 +1,21 @@
+# Frontend deployment — Cloudflare Workers Static Assets.
+#
+# Cloudflare Builds runs `npm run build` (→ dist/) then `npx wrangler deploy`,
+# which publishes dist/ as static assets. Declaring [assets] here makes wrangler
+# skip the Vite-plugin auto-config (which would require Vite 6) and just serve
+# the built SPA. The share API is a separate Worker in workers/share-api/.
+name = "indonesia-kpr-calculator"
+compatibility_date = "2024-12-18"
+
+[assets]
+directory = "./dist"
+# Serve index.html (200) for any unmatched path so client-side routes like
+# /s/:id resolve to the SPA instead of 404.
+not_found_handling = "single-page-application"
+
+# Bind the production custom domain. kpr.vikoabastian.com is a one-level
+# subdomain, so Universal SSL (*.vikoabastian.com) covers its cert. Deploying
+# recreates the DNS record (proxied) pointing at this Worker.
+[[routes]]
+pattern = "kpr.vikoabastian.com"
+custom_domain = true

@@ -6,12 +6,16 @@ Production runs entirely on **Cloudflare**, one account, all within free tiers:
 
 | Layer | Host | URL |
 |---|---|---|
-| Frontend (Vite SPA) | **Cloudflare Pages** | `https://kpr.vikoabastian.com` |
+| Frontend (Vite SPA) | **Cloudflare Worker (Static Assets)** | `https://kpr.vikoabastian.com` |
 | Share API (`workers/share-api`) | **Cloudflare Worker** + D1 | `https://api.kpr.vikoabastian.com` |
 
-The DNS zone `vikoabastian.com` is managed on Cloudflare. The Worker and Pages
-custom domains must live on the **same Cloudflare account that owns the zone** —
-verify this before deploying (Step 0 below). See **Option A** for the runbook.
+Both are Workers on one Cloudflare account; the DNS zone `vikoabastian.com` is on
+the same account (required so the `custom_domain` routes provision DNS + certs).
+The frontend is served via **Workers Static Assets** — Cloudflare Builds runs
+`npm run build`, then `wrangler deploy` publishes `dist/` per the root
+`wrangler.toml`. (We use Workers Static Assets rather than Pages because the
+project is on Vite 5; the Pages/Workers Vite-plugin auto-config requires Vite 6.)
+See **Option A** for the runbook.
 
 ## Environment Variables
 
@@ -62,30 +66,38 @@ Run through this list before every production deployment.
 
 ## Deployment Steps
 
-### Option A — Cloudflare Pages + Worker (production)
+### Option A — Cloudflare Workers (production)
 
 This is the live production setup (`kpr.vikoabastian.com` + `api.kpr.vikoabastian.com`).
 
-**Step 0 — Verify account topology (once).** The Worker is on the Cloudflare account
+**Step 0 — Verify account topology (once).** The Workers are on the Cloudflare account
 logged into wrangler (`npx wrangler whoami`). Confirm the `vikoabastian.com` zone is on
-that **same account** — both custom domains depend on it. If the zone is on a different
-account, move the Worker + D1 (or the zone) so they share one account first.
+that **same account** — the `custom_domain` routes depend on it. If the zone is on a
+different account, move the Workers + D1 (or the zone) so they share one account first.
 
-**Frontend — Cloudflare Pages (connect once, auto-deploys on push to `master`):**
+**Frontend — Workers Static Assets (connect once, auto-deploys on push to `master`):**
 
-1. Cloudflare dashboard → **Workers & Pages → Create → Pages → Connect to Git**
+1. Cloudflare dashboard → **Workers & Pages → Create → Workers → Import a repository**
 2. Select the `vianbas/indonesia-kpr-calculator` repo, production branch `master`
-3. Build settings:
-   - Framework preset: **Vite** (or none)
    - Build command: `npm run build`
-   - Build output directory: `dist`
+   - Deploy command: `npx wrangler deploy` (default)
    - Environment variables: `VITE_APP_ENV=production`, `VITE_APP_VERSION=$CF_PAGES_COMMIT_SHA`
      (`VITE_SHARE_API_URL` is already baked in from `.env.production`)
-4. After the first build: **Custom domains → Set up a domain → `kpr.vikoabastian.com`**
-   (Cloudflare creates the DNS record + cert automatically since the zone is on-account)
+3. The root `wrangler.toml` does the rest: `[assets] directory=./dist` publishes the
+   built SPA (no Vite-plugin auto-config, so Vite 5 is fine), `not_found_handling =
+   single-page-application` handles `/s/:id` routes, and the `[[routes]] custom_domain`
+   binds `kpr.vikoabastian.com` + provisions its cert automatically on deploy.
 
-> Do **not** set `VITE_BASE_PATH` — Pages serves from the domain root, so base stays `/`.
-> SPA deep links (`/s/:id`) are handled by `public/_redirects` and the `404.html` copy.
+> The custom domain is declared in `wrangler.toml`, so a successful deploy recreates the
+> `kpr.vikoabastian.com` DNS record (proxied) — no manual DNS step needed. Do **not** also
+> point this hostname at GitHub Pages; remove any leftover `kpr → vianbas.github.io` CNAME.
+
+> Do **not** set `VITE_BASE_PATH` — the Worker serves from the domain root, so base
+> stays `/`. SPA deep links (`/s/:id`) are handled by `not_found_handling =
+> single-page-application` in `wrangler.toml`. The Pages-era `public/_redirects` was
+> removed: Workers Static Assets reads it and rejects its `/s/* /index.html 200` rule
+> as an infinite loop (error 100324). The `404.html` copy is an unused leftover (SPA
+> mode never serves it) but harmless.
 
 **Backend — Worker (`workers/share-api`):**
 
