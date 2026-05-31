@@ -15,10 +15,16 @@ A client-side Indonesian mortgage (KPR) simulation tool built with React 18, Typ
 | Affordability analysis | DSR calculation, net surplus, max affordable loan, min recommended income |
 | Stress test | Rate-shock simulation (+0 – +3%) from the first floating period |
 | Refinancing simulator | Break-even, net savings, monthly savings vs switching cost |
+| **LTV guardrail** | Loan-to-value ratio vs BI-style caps (1st / 2nd / 3rd home, syariah +5%) with the minimum down payment to qualify per tier |
+| **Buy vs Rent** | Net-worth breakeven — building home equity vs renting and investing the down payment plus the monthly difference |
+| **FLPP subsidy** | Eligibility check (income / property-price caps, first home, tenor ≤ 20 yr) + the installment at the subsidized 5% fixed rate |
 | Scenario comparison | Up to 3 scenarios side-by-side |
-| Shareable URL | Full calculator state encoded in the URL `?s=` parameter |
-| PDF export | Lazy-loaded; generates a detailed amortization + summary PDF |
-| Early repayment | Extra monthly payment, lump-sum prepayment, or both |
+| Shareable URL | Full calculator state encoded in the URL `?s=` parameter (LZString-compressed) |
+| PDF / CSV export | Lazy-loaded; generates a detailed amortization + summary PDF, or the schedule as CSV |
+| Early repayment | Extra monthly payment, one or more scheduled lump-sum prepayments, or both |
+| **Installable PWA** | Add to Home Screen + offline support via a service worker |
+
+See **[docs/decision-tools.md](docs/decision-tools.md)** for how each decision tool works and its assumptions.
 
 ---
 
@@ -30,6 +36,9 @@ A client-side Indonesian mortgage (KPR) simulation tool built with React 18, Typ
 - **Affordability output is guidance, not approval.** The DSR limit and stress-test results are indicative. Banks apply their own credit-scoring criteria, income verification, and internal risk policies.
 - **Stress test scope.** The +1–+3% stress scenarios simulate a uniform rate shift applied from the opening balance of the first floating period for the remaining tenor. They do not regenerate a full per-tier schedule.
 - **Decimal precision.** All monetary arithmetic uses `Decimal.js` (banker's rounding) to avoid floating-point drift.
+- **LTV caps are reference defaults.** The 1st / 2nd / 3rd-home caps (85% / 80% / 75%, +5% for syariah) follow Bank Indonesia's historical macroprudential tiers but are **editable in the panel** — BI has at times relaxed LTV to 100%, and each bank sets its own limit. The output is guidance, not an approval.
+- **Buy vs Rent is a net-worth projection.** The renter is assumed to invest the upfront cash plus any monthly difference at the entered return; the buyer's wealth is home equity (appreciating value − remaining balance). It **excludes** maintenance, property tax, and transaction costs at sale, so the breakeven is indicative.
+- **FLPP eligibility is indicative, not an approval.** The subsidized rate (5% fixed for up to 20 years) is the scheme's fixed part, but the income and property-price caps are **reference defaults that vary by region and year** — confirm with a participating bank.
 
 ### KPR Syariah / iB — Assumptions and Limitations
 
