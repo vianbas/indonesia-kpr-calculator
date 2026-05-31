@@ -205,18 +205,26 @@ function buildEarlyRepaymentConfig(form: import('../store/formTypes').MortgageFo
   }
 
   if (earlyRepaymentMode === 'lump_sum' || earlyRepaymentMode === 'both') {
-    const amount = parsePositiveNumber(form.lumpSumAmount);
-    const monthRaw = parseInt(form.lumpSumMonth);
-    // Cap to tenor so a month beyond the loan end doesn't silently vanish
-    const month = !isNaN(monthRaw) ? Math.min(monthRaw, tenorMonths) : NaN;
-    if (amount !== null && amount > 0 && !isNaN(month) && month > 0) {
-      config.lumpSum = { amount, month };
+    const lumpSums = form.lumpSums
+      .map((row) => {
+        const amount = parsePositiveNumber(row.amount);
+        const monthRaw = parseInt(row.month);
+        // Cap to tenor so a month beyond the loan end doesn't silently vanish
+        const month = !isNaN(monthRaw) ? Math.min(monthRaw, tenorMonths) : NaN;
+        if (amount !== null && amount > 0 && !isNaN(month) && month > 0) {
+          return { amount, month };
+        }
+        return null;
+      })
+      .filter((l): l is { amount: number; month: number } => l !== null);
+    if (lumpSums.length > 0) {
+      config.lumpSums = lumpSums;
     }
   }
 
   // If the mode requires data but none was provided, treat as 'none'
   const hasExtra = Boolean(config.extraMonthly);
-  const hasLump = Boolean(config.lumpSum);
+  const hasLump = Boolean(config.lumpSums && config.lumpSums.length > 0);
   if (
     (earlyRepaymentMode === 'extra_monthly' && !hasExtra) ||
     (earlyRepaymentMode === 'lump_sum' && !hasLump) ||

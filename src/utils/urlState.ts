@@ -4,6 +4,7 @@ import { captureError } from '../lib/sentry';
 import type {
   MortgageFormState,
   TierFormRow,
+  LumpSumFormRow,
   DownPaymentMode,
   CalculationMethod,
   EarlyRepaymentMode,
@@ -76,6 +77,12 @@ function isTier(t: unknown): t is TierFormRow {
   return isStr(o.id) && isStr(o.toMonth) && isStr(o.rate);
 }
 
+function isLumpSumRow(l: unknown): l is LumpSumFormRow {
+  if (!l || typeof l !== 'object') return false;
+  const o = l as Record<string, unknown>;
+  return isStr(o.id) && isStr(o.amount) && isStr(o.month);
+}
+
 function isForm(f: unknown): f is Partial<MortgageFormState> {
   if (!f || typeof f !== 'object') return false;
   const o = f as Record<string, unknown>;
@@ -106,6 +113,8 @@ function isForm(f: unknown): f is Partial<MortgageFormState> {
   if ('extraMonthlyAmount' in o && !isStr(o.extraMonthlyAmount)) return false;
   if ('extraMonthlyStartMonth' in o && !isStr(o.extraMonthlyStartMonth)) return false;
   if ('extraMonthlyEndMonth' in o && !isStr(o.extraMonthlyEndMonth)) return false;
+  if ('lumpSums' in o && (!Array.isArray(o.lumpSums) || !(o.lumpSums as unknown[]).every(isLumpSumRow))) return false;
+  // Legacy single-lump fields (pre-multi-lump URLs) — accepted and migrated in normalizeForm
   if ('lumpSumAmount' in o && !isStr(o.lumpSumAmount)) return false;
   if ('lumpSumMonth' in o && !isStr(o.lumpSumMonth)) return false;
 
@@ -131,10 +140,20 @@ function isForm(f: unknown): f is Partial<MortgageFormState> {
   return true;
 }
 
+/** Restores a one-off lump sum from legacy URLs/drafts into the multi-lump list. */
+function normalizeLumpSums(o: Record<string, unknown>): LumpSumFormRow[] {
+  if (Array.isArray(o.lumpSums)) return (o.lumpSums as unknown[]).filter(isLumpSumRow) as LumpSumFormRow[];
+  // Legacy single-lump fields → one row (only when an amount was actually set)
+  if (isStr(o.lumpSumAmount) && o.lumpSumAmount !== '') {
+    return [{ id: crypto.randomUUID(), amount: o.lumpSumAmount, month: isStr(o.lumpSumMonth) ? o.lumpSumMonth : '' }];
+  }
+  return [];
+}
+
 /** Fills every optional field with its default when loading a URL that lacks them. */
 function normalizeForm(f: unknown): MortgageFormState {
   const o = f as Record<string, unknown>;
-  return {
+  const normalized = {
     ...(f as MortgageFormState),
     // Fields made optional in v2 (stripped when equal to defaults)
     downPaymentMode: isDpMode(o.downPaymentMode) ? o.downPaymentMode : 'percent',
@@ -151,8 +170,7 @@ function normalizeForm(f: unknown): MortgageFormState {
     extraMonthlyAmount: isStr(o.extraMonthlyAmount) ? o.extraMonthlyAmount : '',
     extraMonthlyStartMonth: isStr(o.extraMonthlyStartMonth) ? o.extraMonthlyStartMonth : '1',
     extraMonthlyEndMonth: isStr(o.extraMonthlyEndMonth) ? o.extraMonthlyEndMonth : '',
-    lumpSumAmount: isStr(o.lumpSumAmount) ? o.lumpSumAmount : '',
-    lumpSumMonth: isStr(o.lumpSumMonth) ? o.lumpSumMonth : '',
+    lumpSums: normalizeLumpSums(o),
     // KPR fee fields (added in Phase 15)
     includeKprFees: isBool(o.includeKprFees) ? o.includeKprFees : false,
     provisionFeePercent: isStr(o.provisionFeePercent) ? o.provisionFeePercent : '1',
@@ -172,6 +190,10 @@ function normalizeForm(f: unknown): MortgageFormState {
     syariahUjrahPercent: isStr(o.syariahUjrahPercent) ? o.syariahUjrahPercent : '8',
     syariahBankSharePercent: isStr(o.syariahBankSharePercent) ? o.syariahBankSharePercent : '80',
   };
+  // Drop legacy single-lump keys so they aren't re-encoded after migration.
+  delete (normalized as Record<string, unknown>).lumpSumAmount;
+  delete (normalized as Record<string, unknown>).lumpSumMonth;
+  return normalized;
 }
 
 function isStoredPayload(raw: unknown): raw is StoredPayload {
@@ -218,8 +240,7 @@ const FORM_WIRE_DEFAULTS: Partial<Record<keyof MortgageFormState, unknown>> = {
   extraMonthlyAmount: '',
   extraMonthlyStartMonth: '1',
   extraMonthlyEndMonth: '',
-  lumpSumAmount: '',
-  lumpSumMonth: '',
+  lumpSums: [],
   financingMode: 'conventional',
   syariahAkadType: 'murabahah',
   syariahMarginPercent: '8',

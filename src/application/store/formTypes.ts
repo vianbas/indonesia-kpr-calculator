@@ -10,6 +10,14 @@ export interface TierFormRow {
   rate: string;
 }
 
+export interface LumpSumFormRow {
+  id: string;
+  /** One-time extra payment amount (IDR string). */
+  amount: string;
+  /** 1-based month the lump sum is applied. */
+  month: string;
+}
+
 export type DownPaymentMode = 'amount' | 'percent';
 
 /**
@@ -88,10 +96,8 @@ export interface MortgageFormState {
   extraMonthlyStartMonth: string;
   /** 1-based month to stop extra monthly payments; empty = until loan ends */
   extraMonthlyEndMonth: string;
-  /** One-time extra IDR payment amount */
-  lumpSumAmount: string;
-  /** 1-based month when the lump sum is applied */
-  lumpSumMonth: string;
+  /** Zero or more one-time prepayments, each at its own month. */
+  lumpSums: LumpSumFormRow[];
 }
 
 // ─── Action types ─────────────────────────────────────────────────────────────
@@ -128,8 +134,9 @@ export type FormAction =
   | { type: 'SET_EXTRA_MONTHLY_AMOUNT'; value: string }
   | { type: 'SET_EXTRA_MONTHLY_START_MONTH'; value: string }
   | { type: 'SET_EXTRA_MONTHLY_END_MONTH'; value: string }
-  | { type: 'SET_LUMP_SUM_AMOUNT'; value: string }
-  | { type: 'SET_LUMP_SUM_MONTH'; value: string }
+  | { type: 'ADD_LUMP_SUM' }
+  | { type: 'UPDATE_LUMP_SUM'; id: string; field: 'amount' | 'month'; value: string }
+  | { type: 'REMOVE_LUMP_SUM'; id: string }
   | { type: 'SET_FINANCING_MODE'; mode: FinancingMode }
   | { type: 'SET_SYARIAH_AKAD_TYPE'; akadType: SyariahAkadType }
   | { type: 'SET_SYARIAH_MARGIN_PERCENT'; value: string }
