@@ -189,6 +189,7 @@
     "amortColExtra": "Extra",
     "amortTotal": "Total ({{count}} months)",
     "amortSubtitle": "{{count}} months",
+    "amortCaption": "Monthly amortization schedule over {{count}} months: month, year, rate, installment, principal, interest, and remaining balance.",
     "amortSubtitleVirtual": "{{count}} months — scroll to see all. Rows optimized with virtualization.",
     "amortRateChange": "Rate changes from Month {{month}} > {{rate}} ({{type}})",
     "amortLegendPrincipal": "Principal — reduction of loan balance",

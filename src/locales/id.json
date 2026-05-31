@@ -189,6 +189,7 @@
     "amortColExtra": "Ekstra",
     "amortTotal": "Total ({{count}} bulan)",
     "amortSubtitle": "{{count}} bulan",
+    "amortCaption": "Jadwal amortisasi bulanan selama {{count}} bulan: bulan, tahun, suku bunga, cicilan, pokok, bunga, dan sisa saldo.",
     "amortSubtitleVirtual": "{{count}} bulan — scroll untuk lihat semua. Baris dioptimasi dengan virtualisasi.",
     "amortRateChange": "Suku bunga berubah mulai Bulan {{month}} > {{rate}} ({{type}})",
     "amortLegendPrincipal": "Pokok — pengurangan saldo utang",

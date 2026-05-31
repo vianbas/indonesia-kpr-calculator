@@ -179,6 +179,7 @@ export function AmortizationTable({ schedule, financingMode, syariahAkadType }: 
         style={{ height: Math.min(520, schedule.length * DATA_ROW_HEIGHT + 80) }}
       >
         <table className="w-full text-xs border-collapse min-w-[640px]">
+          <caption className="sr-only">{t('results.amortCaption', { count: schedule.length })}</caption>
           <TableHead COLUMNS={COLUMNS} />
           <tbody>
             {topPadding > 0 && (
@@ -239,6 +240,7 @@ function SmallScheduleTable({ schedule, tableItems, showExtra, COL_SPAN, COLUMNS
       <ColumnLegend showExtra={showExtra} t={t} />
       <div className="overflow-x-auto border border-gray-200 rounded-lg">
         <table className="w-full text-xs border-collapse min-w-[640px]">
+          <caption className="sr-only">{t('results.amortCaption', { count: schedule.length })}</caption>
           <TableHead COLUMNS={COLUMNS} />
           <tbody>
             {tableItems.map((item, i) => {
@@ -268,6 +270,7 @@ function TableHead({ COLUMNS }: TableHeadProps) {
         {COLUMNS.map((col) => (
           <th
             key={col.key}
+            scope="col"
             className={[
               'py-2.5 px-3 text-xs font-semibold text-gray-600 uppercase tracking-wide whitespace-nowrap',
               col.align,

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { InputField } from '../common/InputField';
 import { ChevronIcon } from '../common/ChevronIcon';
@@ -31,6 +31,7 @@ function Stat({ label, value, sub, color = 'text-gray-900' }: { label: string; v
 export function BuyVsRentPanel({ form, onChange, result }: Props) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(true);
+  const panelId = useId();
 
   const breakEvenText = (() => {
     if (!result) return '';
@@ -43,16 +44,18 @@ export function BuyVsRentPanel({ form, onChange, result }: Props) {
   return (
     <div className="rounded-xl border border-gray-200 overflow-hidden">
       <button
+        id={`${panelId}-btn`}
         onClick={() => setOpen((o) => !o)}
         className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-sm font-semibold text-gray-700"
         aria-expanded={open}
+        aria-controls={panelId}
       >
         <span>{t('buyVsRent.title')}</span>
         <ChevronIcon open={open} />
       </button>
 
       {open && (
-        <div className="bg-white">
+        <div className="bg-white" id={panelId} role="region" aria-labelledby={`${panelId}-btn`}>
           {/* Inputs */}
           <div className="p-4 border-b border-gray-100 space-y-4">
             <p className="text-xs text-gray-500">{t('buyVsRent.intro')}</p>
