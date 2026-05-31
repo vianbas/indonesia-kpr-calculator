@@ -102,7 +102,8 @@ export function ShareReportModal({ calculated, allScenarios, activeCount, active
   }
 
   async function handleCopyLink() {
-    if (!shortUrl) history.replaceState(null, '', longUrl);
+    // Copy the shareable URL (short link when available, else the long ?s= URL).
+    // Note: we intentionally do NOT push the long URL into the address bar.
     try {
       await navigator.clipboard.writeText(displayUrl);
     } catch {
@@ -113,7 +114,7 @@ export function ShareReportModal({ calculated, allScenarios, activeCount, active
   }
 
   function handleWhatsApp() {
-    if (!shortUrl) history.replaceState(null, '', longUrl);
+    // The URL travels inside the shared text; no need to alter the address bar.
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
   }
 
