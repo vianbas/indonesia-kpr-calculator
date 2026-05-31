@@ -56,9 +56,44 @@ jobs:
           path: dist/
           retention-days: 7
 
+      # ── Storybook ──────────────────────────────────────────────────────────
+      # Catches broken stories (component API drift) that unit tests may miss.
+
+      - name: Build Storybook
+        run: npm run build-storybook
+
       # ── Security ───────────────────────────────────────────────────────────
       # Fails the job on critical vulnerabilities in production dependencies.
       # Use --audit-level=high to catch high-severity issues too.
 
       - name: Dependency vulnerability scan
         run: npm audit --audit-level=critical --omit=dev
+
+  # ── Worker (share-api) ─────────────────────────────────────────────────────
+  # The Cloudflare Worker has its own deps/tsconfig; typecheck it and validate
+  # the deploy config (dry-run) so Worker regressions are caught in CI too.
+  worker:
+    name: Worker · typecheck + deploy dry-run
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: workers/share-api
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+          cache-dependency-path: workers/share-api/package-lock.json
+
+      - name: Install worker dependencies
+        run: npm ci
+
+      - name: Type check worker
+        run: npm run typecheck
+
+      - name: Validate deploy config (dry-run)
+        run: |
+          cp wrangler.toml.example wrangler.toml
+          npx wrangler deploy --dry-run
