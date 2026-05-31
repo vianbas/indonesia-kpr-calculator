@@ -53,7 +53,8 @@ export interface LumpSumPayment {
 export interface EarlyRepaymentConfig {
   mode: 'none' | 'extra_monthly' | 'lump_sum' | 'both';
   extraMonthly?: ExtraMonthlyPayment;
-  lumpSum?: LumpSumPayment;
+  /** Zero or more one-time prepayments, each applied at its own month. */
+  lumpSums?: LumpSumPayment[];
 }
 
 export interface MortgageInput {

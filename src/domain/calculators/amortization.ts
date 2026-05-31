@@ -113,7 +113,7 @@ export function generateAmortizationSchedule(input: MortgageInput): Amortization
     // ── Extra payment (early repayment) ──────────────────────────────────────
     let extraPayment = 0;
     if (hasEarlyRepayment && erCfg) {
-      const { mode, extraMonthly, lumpSum } = erCfg;
+      const { mode, extraMonthly, lumpSums } = erCfg;
 
       if ((mode === 'extra_monthly' || mode === 'both') && extraMonthly) {
         const { amount, startMonth, endMonth } = extraMonthly;
@@ -122,8 +122,10 @@ export function generateAmortizationSchedule(input: MortgageInput): Amortization
         }
       }
 
-      if ((mode === 'lump_sum' || mode === 'both') && lumpSum && lumpSum.month === month) {
-        extraPayment += lumpSum.amount;
+      if ((mode === 'lump_sum' || mode === 'both') && lumpSums) {
+        for (const lump of lumpSums) {
+          if (lump.month === month) extraPayment += lump.amount;
+        }
       }
 
       // Cap: can never pay more than the remaining balance after regular principal

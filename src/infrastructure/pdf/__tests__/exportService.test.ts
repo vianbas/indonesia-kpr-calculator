@@ -115,8 +115,7 @@ function makeForm(overrides: Partial<MortgageFormState> = {}): MortgageFormState
     extraMonthlyAmount:           '',
     extraMonthlyStartMonth:       '',
     extraMonthlyEndMonth:         '',
-    lumpSumAmount:                '',
-    lumpSumMonth:                 '',
+    lumpSums:                     [],
     ...overrides,
   };
 }

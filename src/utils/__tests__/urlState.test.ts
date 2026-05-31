@@ -27,8 +27,7 @@ function minimalForm() {
     extraMonthlyAmount: '',
     extraMonthlyStartMonth: '1',
     extraMonthlyEndMonth: '',
-    lumpSumAmount: '',
-    lumpSumMonth: '',
+    lumpSums: [],
     includeKprFees: false,
     provisionFeePercent: '1',
     appraisalFeeAmount: '0',
@@ -291,5 +290,48 @@ describe('encodeUrlState / decodeUrlState — Syariah round-trip', () => {
     };
     const s = LZString.compressToEncodedURIComponent(JSON.stringify(raw));
     expect(decodeUrlState(s)).toBeNull();
+  });
+});
+
+describe('lump sum — backward compatibility', () => {
+  it('migrates a legacy single lump sum (lumpSumAmount/lumpSumMonth) into lumpSums', () => {
+    const legacyForm: Record<string, unknown> = {
+      ...minimalForm(),
+      earlyRepaymentMode: 'lump_sum',
+      lumpSumAmount: '50000000',
+      lumpSumMonth: '24',
+    };
+    delete legacyForm.lumpSums; // old URLs predate the lumpSums field
+    const raw = { v: 2, forms: [legacyForm], activeCount: 1, activeTab: 1 };
+    const decoded = decodeUrlState(LZString.compressToEncodedURIComponent(JSON.stringify(raw)));
+    expect(decoded).not.toBeNull();
+    const form = decoded!.forms[0];
+    expect(form.lumpSums).toHaveLength(1);
+    expect(form.lumpSums[0].amount).toBe('50000000');
+    expect(form.lumpSums[0].month).toBe('24');
+    // legacy keys are dropped so they aren't re-encoded
+    expect('lumpSumAmount' in form).toBe(false);
+    expect('lumpSumMonth' in form).toBe(false);
+  });
+
+  it('round-trips multiple lump sums through encode → decode', () => {
+    const state: UrlState = {
+      forms: [
+        {
+          ...minimalForm(),
+          earlyRepaymentMode: 'lump_sum' as const,
+          lumpSums: [
+            { id: 'a', amount: '40000000', month: '12' },
+            { id: 'b', amount: '60000000', month: '24' },
+          ],
+        },
+      ],
+      activeCount: 1,
+      activeTab: 1,
+    };
+    const decoded = decodeUrlState(encodeUrlState(state));
+    expect(decoded).not.toBeNull();
+    expect(decoded!.forms[0].lumpSums).toHaveLength(2);
+    expect(decoded!.forms[0].lumpSums.map((l) => l.amount)).toEqual(['40000000', '60000000']);
   });
 });

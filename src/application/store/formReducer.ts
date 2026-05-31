@@ -1,4 +1,4 @@
-import type { MortgageFormState, FormAction, TierFormRow } from './formTypes';
+import type { MortgageFormState, FormAction, TierFormRow, LumpSumFormRow } from './formTypes';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -14,6 +14,10 @@ function getFixedEnd(state: MortgageFormState): number {
 
 function newTier(toMonth: string, rate = ''): TierFormRow {
   return { id: crypto.randomUUID(), toMonth, rate };
+}
+
+function newLumpSum(amount = '', month = ''): LumpSumFormRow {
+  return { id: crypto.randomUUID(), amount, month };
 }
 
 // ─── Default state ────────────────────────────────────────────────────────────
@@ -58,8 +62,7 @@ export function createDefaultFormState(): MortgageFormState {
     extraMonthlyAmount: '',
     extraMonthlyStartMonth: '1',
     extraMonthlyEndMonth: '',
-    lumpSumAmount: '',
-    lumpSumMonth: '',
+    lumpSums: [],
     financingMode: 'conventional',
     syariahAkadType: 'murabahah',
     syariahMarginPercent: '8',
@@ -201,18 +204,29 @@ export function formReducer(state: MortgageFormState, action: FormAction): Mortg
       return { ...state, fireInsurancePremiumPercent: action.value };
 
     // ── Early repayment ───────────────────────────────────────────────────────
-    case 'SET_EARLY_REPAYMENT_MODE':
-      return { ...state, earlyRepaymentMode: action.mode };
+    case 'SET_EARLY_REPAYMENT_MODE': {
+      const showsLump = action.mode === 'lump_sum' || action.mode === 'both';
+      const lumpSums =
+        showsLump && state.lumpSums.length === 0 ? [newLumpSum()] : state.lumpSums;
+      return { ...state, earlyRepaymentMode: action.mode, lumpSums };
+    }
     case 'SET_EXTRA_MONTHLY_AMOUNT':
       return { ...state, extraMonthlyAmount: action.value };
     case 'SET_EXTRA_MONTHLY_START_MONTH':
       return { ...state, extraMonthlyStartMonth: action.value };
     case 'SET_EXTRA_MONTHLY_END_MONTH':
       return { ...state, extraMonthlyEndMonth: action.value };
-    case 'SET_LUMP_SUM_AMOUNT':
-      return { ...state, lumpSumAmount: action.value };
-    case 'SET_LUMP_SUM_MONTH':
-      return { ...state, lumpSumMonth: action.value };
+    case 'ADD_LUMP_SUM':
+      return { ...state, lumpSums: [...state.lumpSums, newLumpSum()] };
+    case 'UPDATE_LUMP_SUM':
+      return {
+        ...state,
+        lumpSums: state.lumpSums.map((l) =>
+          l.id === action.id ? { ...l, [action.field]: action.value } : l,
+        ),
+      };
+    case 'REMOVE_LUMP_SUM':
+      return { ...state, lumpSums: state.lumpSums.filter((l) => l.id !== action.id) };
 
     // ── Syariah mode ─────────────────────────────────────────────────────────
     case 'SET_FINANCING_MODE':

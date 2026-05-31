@@ -43,8 +43,7 @@ const baseForm: MortgageFormState = {
   extraMonthlyAmount: '',
   extraMonthlyStartMonth: '',
   extraMonthlyEndMonth: '',
-  lumpSumAmount: '',
-  lumpSumMonth: '',
+  lumpSums: [],
 };
 
 // ─── Tests ────────────────────────────────────────────────────────────────────

@@ -126,7 +126,7 @@ describe('generateAmortizationSchedule — lump_sum', () => {
     const input = makeInput({
       earlyRepayment: {
         mode: 'lump_sum',
-        lumpSum: { amount: 50_000_000, month: lumpMonth },
+        lumpSums: [{ amount: 50_000_000, month: lumpMonth }],
       },
     });
     const schedule = generateAmortizationSchedule(input);
@@ -139,7 +139,7 @@ describe('generateAmortizationSchedule — lump_sum', () => {
     const input = makeInput({
       earlyRepayment: {
         mode: 'lump_sum',
-        lumpSum: { amount: 200_000_000, month: 12 },
+        lumpSums: [{ amount: 200_000_000, month: 12 }],
       },
     });
     const schedule = generateAmortizationSchedule(input);
@@ -150,11 +150,47 @@ describe('generateAmortizationSchedule — lump_sum', () => {
     const input = makeInput({
       earlyRepayment: {
         mode: 'lump_sum',
-        lumpSum: { amount: 50_000_000, month: 24 },
+        lumpSums: [{ amount: 50_000_000, month: 24 }],
       },
     });
     const schedule = generateAmortizationSchedule(input);
     expect(schedule[schedule.length - 1].closingBalance).toBe(0);
+  });
+
+  it('applies multiple lump sums, each on its own month', () => {
+    const input = makeInput({
+      earlyRepayment: {
+        mode: 'lump_sum',
+        lumpSums: [
+          { amount: 40_000_000, month: 12 },
+          { amount: 60_000_000, month: 24 },
+        ],
+      },
+    });
+    const schedule = generateAmortizationSchedule(input);
+    const extraMonths = schedule.filter((r) => r.extraPayment > 0).map((r) => r.month);
+    expect(extraMonths).toContain(12);
+    expect(extraMonths).toContain(24);
+    // Two separate lumps reduce the balance faster than either alone
+    const single = generateAmortizationSchedule(
+      makeInput({ earlyRepayment: { mode: 'lump_sum', lumpSums: [{ amount: 40_000_000, month: 12 }] } }),
+    );
+    expect(schedule.length).toBeLessThan(single.length);
+  });
+
+  it('sums multiple lump sums that fall on the same month', () => {
+    const input = makeInput({
+      earlyRepayment: {
+        mode: 'lump_sum',
+        lumpSums: [
+          { amount: 25_000_000, month: 12 },
+          { amount: 25_000_000, month: 12 },
+        ],
+      },
+    });
+    const schedule = generateAmortizationSchedule(input);
+    const row12 = schedule.find((r) => r.month === 12)!;
+    expect(row12.extraPayment).toBe(50_000_000);
   });
 });
 
@@ -166,7 +202,7 @@ describe('generateAmortizationSchedule — both', () => {
       earlyRepayment: {
         mode: 'both',
         extraMonthly: { amount: 1_000_000, startMonth: 1 },
-        lumpSum: { amount: 30_000_000, month: 12 },
+        lumpSums: [{ amount: 30_000_000, month: 12 }],
       },
     });
     const scheduleBase   = generateAmortizationSchedule(makeInput());
@@ -215,7 +251,7 @@ describe('calculateMortgageSummary — savings fields', () => {
     const input = makeInput({
       earlyRepayment: {
         mode: 'lump_sum',
-        lumpSum: { amount: 50_000_000, month: 12 },
+        lumpSums: [{ amount: 50_000_000, month: 12 }],
       },
     });
     const schedule = generateAmortizationSchedule(input);

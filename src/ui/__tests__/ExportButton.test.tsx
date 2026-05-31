@@ -46,7 +46,7 @@ const mockForm: MortgageFormState = {
   financingMode: 'conventional', syariahAkadType: 'murabahah',
   syariahMarginPercent: '', syariahUjrahPercent: '', syariahBankSharePercent: '',
   earlyRepaymentMode: 'none', extraMonthlyAmount: '', extraMonthlyStartMonth: '',
-  extraMonthlyEndMonth: '', lumpSumAmount: '', lumpSumMonth: '',
+  extraMonthlyEndMonth: '', lumpSums: [],
 };
 
 const mockSummary: Partial<MortgageSummary> = {

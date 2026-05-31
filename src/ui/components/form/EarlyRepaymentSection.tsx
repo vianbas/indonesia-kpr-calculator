@@ -44,10 +44,6 @@ export function EarlyRepaymentSection({ form, dispatch }: Props) {
       ? t('form.erErrEndBeforeStart', { start: extraStartRaw })
       : ''
     : '';
-  const lumpAmountErr   = showLump  && form.lumpSumAmount !== ''      && !isPositiveNumber(form.lumpSumAmount)
-    ? t('form.erErrPositive') : '';
-  const lumpMonthErr    = showLump  && form.lumpSumMonth !== ''       && !isPositiveInt(form.lumpSumMonth)
-    ? t('form.erErrLumpMonth') : '';
 
   return (
     <Card title={t('form.earlyRepayment')} subtitle={t('form.earlyRepaymentSubtitle')} tooltip={t('form.tooltipEarlyRepayment')}>
@@ -146,52 +142,76 @@ export function EarlyRepaymentSection({ form, dispatch }: Props) {
           </div>
         )}
 
-        {/* Lump sum fields */}
+        {/* Lump sum list — one or more one-time prepayments */}
         {showLump && (
           <div className="rounded-lg border border-teal-200 bg-teal-50/40 p-4 space-y-3">
             <p className="text-xs font-semibold text-teal-800 uppercase tracking-wide">
               {t('form.lumpSum')}
             </p>
 
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                {t('form.lumpSumAmount')}
-              </label>
-              <input
-                type="text"
-                inputMode="numeric"
-                value={form.lumpSumAmount}
-                onChange={(e) => dispatch({ type: 'SET_LUMP_SUM_AMOUNT', value: e.target.value })}
-                placeholder="cth: 50000000"
-                className={[
-                  'w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2',
-                  lumpAmountErr
-                    ? 'border-red-400 focus:ring-red-400'
-                    : 'border-gray-300 focus:ring-teal-400',
-                ].join(' ')}
-              />
-              {lumpAmountErr && <p className="mt-1 text-xs text-red-600">{lumpAmountErr}</p>}
-            </div>
+            {form.lumpSums.length === 0 && (
+              <p className="text-xs text-gray-500">{t('form.lumpSumEmpty')}</p>
+            )}
 
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                {t('form.lumpSumMonth')}
-              </label>
-              <input
-                type="number"
-                min="1"
-                value={form.lumpSumMonth}
-                onChange={(e) => dispatch({ type: 'SET_LUMP_SUM_MONTH', value: e.target.value })}
-                placeholder="cth: 24"
-                className={[
-                  'w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2',
-                  lumpMonthErr
-                    ? 'border-red-400 focus:ring-red-400'
-                    : 'border-gray-300 focus:ring-teal-400',
-                ].join(' ')}
-              />
-              {lumpMonthErr && <p className="mt-1 text-xs text-red-600">{lumpMonthErr}</p>}
-            </div>
+            {form.lumpSums.map((row, i) => {
+              const amountErr = row.amount !== '' && !isPositiveNumber(row.amount);
+              const monthErr = row.month !== '' && !isPositiveInt(row.month);
+              return (
+                <div key={row.id} className="rounded-md border border-teal-100 bg-white p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-gray-500">{t('form.lumpSumN', { n: i + 1 })}</span>
+                    <button
+                      type="button"
+                      onClick={() => dispatch({ type: 'REMOVE_LUMP_SUM', id: row.id })}
+                      className="text-xs text-red-500 hover:text-red-700 underline underline-offset-2"
+                      aria-label={t('form.lumpSumRemoveAria', { n: i + 1 })}
+                    >
+                      {t('form.tierRemove')}
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">{t('form.lumpSumAmount')}</label>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={row.amount}
+                        onChange={(e) => dispatch({ type: 'UPDATE_LUMP_SUM', id: row.id, field: 'amount', value: e.target.value })}
+                        placeholder="cth: 50000000"
+                        className={[
+                          'w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2',
+                          amountErr ? 'border-red-400 focus:ring-red-400' : 'border-gray-300 focus:ring-teal-400',
+                        ].join(' ')}
+                      />
+                      {amountErr && <p className="mt-1 text-xs text-red-600">{t('form.erErrPositive')}</p>}
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">{t('form.lumpSumMonth')}</label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={row.month}
+                        onChange={(e) => dispatch({ type: 'UPDATE_LUMP_SUM', id: row.id, field: 'month', value: e.target.value })}
+                        placeholder="cth: 24"
+                        className={[
+                          'w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2',
+                          monthErr ? 'border-red-400 focus:ring-red-400' : 'border-gray-300 focus:ring-teal-400',
+                        ].join(' ')}
+                      />
+                      {monthErr && <p className="mt-1 text-xs text-red-600">{t('form.erErrLumpMonth')}</p>}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+
+            <button
+              type="button"
+              onClick={() => dispatch({ type: 'ADD_LUMP_SUM' })}
+              className="text-xs font-medium text-teal-700 hover:text-teal-900 underline underline-offset-2"
+            >
+              {t('form.lumpSumAdd')}
+            </button>
           </div>
         )}
 
