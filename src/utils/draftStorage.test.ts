@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach } from 'vitest';
-import { saveDraft, loadDraft, clearDraft } from './draftStorage';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { saveDraft, loadDraft, clearDraft, DRAFT_TTL_MS } from './draftStorage';
+import { encodeUrlState } from './urlState';
 import type { UrlState } from './urlState';
 import { createDefaultFormState } from '../application/store/formReducer';
 
@@ -56,5 +57,43 @@ describe('draftStorage', () => {
     saveDraft(makeState({ forms: [createDefaultFormState(), createDefaultFormState()], activeCount: 2, activeTab: 2 }));
     const loaded = loadDraft();
     expect(loaded!.activeCount).toBe(2);
+  });
+});
+
+describe('draftStorage — TTL expiry', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('discards a draft older than the TTL and clears storage', () => {
+    vi.setSystemTime(new Date('2026-01-01T00:00:00Z'));
+    saveDraft(makeState());
+
+    // Jump just past the 30-day window
+    vi.setSystemTime(Date.now() + DRAFT_TTL_MS + 1);
+    expect(loadDraft()).toBeNull();
+    // Stale entries should be cleaned up, not left lingering
+    expect(localStorage.getItem('kpr_draft')).toBeNull();
+    expect(localStorage.getItem('kpr_draft_saved_at')).toBeNull();
+  });
+
+  it('keeps a draft saved exactly within the TTL window', () => {
+    vi.setSystemTime(new Date('2026-01-01T00:00:00Z'));
+    saveDraft(makeState({ activeCount: 1 }));
+
+    // One hour short of the TTL — still valid
+    vi.setSystemTime(Date.now() + DRAFT_TTL_MS - 60 * 60 * 1000);
+    expect(loadDraft()).not.toBeNull();
+  });
+
+  it('keeps a legacy draft that has no saved-at timestamp', () => {
+    // Simulate a draft written before TTL tracking existed
+    localStorage.setItem('kpr_draft', encodeUrlState(makeState()));
+    expect(loadDraft()).not.toBeNull();
   });
 });
