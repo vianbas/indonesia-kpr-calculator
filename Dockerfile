@@ -1,6 +1,7 @@
 # ─── Stage 1: Build ───────────────────────────────────────────────────────────
 # Uses the LTS Node image to install dependencies and compile production assets.
-FROM node:20-alpine AS builder
+# Node 22 LTS — matches .nvmrc and the CI runtime.
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
@@ -25,6 +26,11 @@ RUN find /app/dist -name '*.map' -delete 2>/dev/null || true
 # The final image contains only Nginx + the compiled static assets.
 # No Node.js, no source code, no devDependencies, no secrets.
 FROM nginx:stable-alpine AS runner
+
+# Patch OS packages for known CVEs in the base image.
+# CVE-2026-6732 (libxml2) is fixed in 2.13.9-r1 — upgrade it explicitly so the
+# image doesn't wait on a base-image refresh. Runs as root (before USER nginx).
+RUN apk upgrade --no-cache libxml2
 
 # Create temp directories that Nginx needs for its internal buffers.
 # /tmp is writable by any user, so the non-root nginx user can write here.
