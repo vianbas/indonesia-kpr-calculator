@@ -14,6 +14,7 @@ import { ExportButton } from '../components/export/ExportButton';
 import { CsvExportButton } from '../components/export/CsvExportButton';
 import { ShareReportModal } from '../components/export/ShareReportModal';
 import { MobileSeeResultsShortcut } from '../components/common/MobileSeeResultsShortcut';
+import { DecisionToolsNav } from '../components/common/DecisionToolsNav';
 import { ScenarioTabs } from '../components/scenarios/ScenarioTabs';
 import { ScenarioComparisonPanel } from '../components/scenarios/ScenarioComparisonPanel';
 import { ChartSection } from '../components/charts/ChartSection';
@@ -301,6 +302,20 @@ export function CalculatorPage({ initialUrlState }: CalculatorPageProps = {}) {
     history.replaceState(null, '', url.toString());
   }
 
+  // Contextual jump-bar sections — only the tools currently on the page, in
+  // page order. Gated identically to the panels below so there are no dead links.
+  const navSections = [
+    { id: 'section-results', label: t('toolsNav.results') },
+    { id: 'section-max-property', label: t('toolsNav.maxProperty') },
+    { id: 'section-affordability', label: t('toolsNav.affordability') },
+    { id: 'section-refinancing', label: t('toolsNav.refinancing') },
+    { id: 'section-buy-vs-rent', label: t('toolsNav.buyVsRent') },
+    { id: 'section-flpp', label: t('toolsNav.flpp') },
+    ...(activeCount > 1 && calculated.length >= 2
+      ? [{ id: 'section-comparison', label: t('toolsNav.comparison') }]
+      : []),
+  ];
+
   return (
     <>
       {showOnboarding && <OnboardingOverlay onDismiss={() => setShowOnboarding(false)} />}
@@ -327,7 +342,7 @@ export function CalculatorPage({ initialUrlState }: CalculatorPageProps = {}) {
         </div>
 
         {/* ── Right: results for active scenario ─────────────────────────── */}
-        <div ref={resultsRef} className="space-y-4 lg:sticky lg:top-6">
+        <div ref={resultsRef} id="section-results" className="space-y-4 lg:sticky lg:top-6 scroll-mt-16">
           <ResultsPanel
             scenario={active}
             calculated={calculated}
@@ -345,12 +360,17 @@ export function CalculatorPage({ initialUrlState }: CalculatorPageProps = {}) {
 
       {/* ── Decision tools — immediately below results grid ─────────────────── */}
 
+      {/* Contextual jump bar — appears once a calculation exists */}
+      {calculated.length >= 1 && <DecisionToolsNav sections={navSections} />}
+
       {/* Max property (reverse affordability) — standalone; works with no scenario */}
-      <MaxPropertyPanel form={maxPropertyForm} onChange={handleMaxPropertyChange} />
+      <div id="section-max-property" className="scroll-mt-16">
+        <MaxPropertyPanel form={maxPropertyForm} onChange={handleMaxPropertyChange} />
+      </div>
 
       {/* Affordability — first tool after the main result */}
       {calculated.length >= 1 && (
-        <div ref={affordabilityRef}>
+        <div ref={affordabilityRef} id="section-affordability" className="scroll-mt-16">
           <AffordabilityPanel
             calculated={calculated}
             form={affordabilityForm}
@@ -362,7 +382,7 @@ export function CalculatorPage({ initialUrlState }: CalculatorPageProps = {}) {
 
       {/* Refinancing — right after affordability */}
       {calculated.length >= 1 && (
-        <div ref={refinancingRef}>
+        <div ref={refinancingRef} id="section-refinancing" className="scroll-mt-16">
           <RefinancingPanel
             form={refinancingForm}
             onChange={handleRefinancingChange}
@@ -375,30 +395,36 @@ export function CalculatorPage({ initialUrlState }: CalculatorPageProps = {}) {
 
       {/* Buy vs Rent — after refinancing */}
       {calculated.length >= 1 && (
-        <BuyVsRentPanel
-          form={buyVsRentForm}
-          onChange={handleBuyVsRentChange}
-          result={buyVsRentResult}
-        />
+        <div id="section-buy-vs-rent" className="scroll-mt-16">
+          <BuyVsRentPanel
+            form={buyVsRentForm}
+            onChange={handleBuyVsRentChange}
+            result={buyVsRentResult}
+          />
+        </div>
       )}
 
       {/* FLPP subsidized mortgage — after buy vs rent */}
       {calculated.length >= 1 && (
-        <FlppPanel
-          form={flppForm}
-          onChange={handleFlppChange}
-          result={flppResult}
-          currentInstallment={flppCurrentInstallment}
-        />
+        <div id="section-flpp" className="scroll-mt-16">
+          <FlppPanel
+            form={flppForm}
+            onChange={handleFlppChange}
+            result={flppResult}
+            currentInstallment={flppCurrentInstallment}
+          />
+        </div>
       )}
 
       {/* Scenario comparison — advanced feature, at the bottom */}
       {activeCount > 1 && calculated.length >= 2 && (
-        <ScenarioComparisonPanel
-          scenarios={calculated}
-          affordability={affordabilityExportData}
-          refinancing={refinancingExportData}
-        />
+        <div id="section-comparison" className="scroll-mt-16">
+          <ScenarioComparisonPanel
+            scenarios={calculated}
+            affordability={affordabilityExportData}
+            refinancing={refinancingExportData}
+          />
+        </div>
       )}
 
       {/* FAQ — always visible at the very bottom */}

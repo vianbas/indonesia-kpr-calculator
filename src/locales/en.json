@@ -578,5 +578,15 @@
     "noteSyariah": "For Syariah financing, the rate is an estimated margin/ujrah, not bank-confirmed.",
     "noteEstimateOnly": "Initial estimate based on DSR and your rate/margin assumption.",
     "disclaimer": "This is an early estimate based on DSR and rate/margin assumptions. Confirm eligibility and the final offer with a bank."
+  },
+  "toolsNav": {
+    "aria": "Jump to tool",
+    "results": "Results",
+    "maxProperty": "Price Estimate",
+    "affordability": "Affordability",
+    "refinancing": "Refinancing",
+    "buyVsRent": "Buy vs Rent",
+    "flpp": "FLPP",
+    "comparison": "Compare"
   }
 }

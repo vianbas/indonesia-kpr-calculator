@@ -59,6 +59,12 @@ describe('calculator flow — jsdom integration', () => {
     ).toBeInTheDocument();
   });
 
+  it('shows the contextual jump bar once a calculation exists', async () => {
+    render(<CalculatorPage />);
+    // The default form auto-calculates, so the decision-tools nav should appear.
+    expect(await screen.findByRole('navigation', { name: /jump to tool/i }, CALC)).toBeInTheDocument();
+  });
+
   it('recalculates without crashing when the property price changes', async () => {
     render(<CalculatorPage />);
     await screen.findByRole('button', { name: DOWNLOAD }, CALC);
