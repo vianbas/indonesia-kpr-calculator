@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "gen:icons": "node scripts/generate-pwa-icons.mjs",
+    "gen:og": "node scripts/generate-og-image.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
