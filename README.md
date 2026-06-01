@@ -13,6 +13,7 @@ A client-side Indonesian mortgage (KPR) simulation tool built with React 18, Typ
 | **KPR Syariah / iB (v1.1.0)** | Murabahah (margin tetap) and Musyarakah Mutanaqishah (ujrah menurun) simulation |
 | Upfront cost / cash-to-close | Down payment, provision, appraisal, notary, BPHTB, PPN, life & fire insurance |
 | Affordability analysis | DSR calculation, net surplus, max affordable loan, min recommended income |
+| **Reverse affordability** | "Berapa rumah yang bisa saya beli?" — estimates the max property price, loan/financing, down payment, and installment from income, DSR, tenor, rate/margin, and DP. An estimate only (not a bank approval) |
 | Stress test | Rate-shock simulation (+0 – +3%) from the first floating period |
 | Refinancing simulator | Break-even, net savings, monthly savings vs switching cost |
 | **LTV guardrail** | Loan-to-value ratio vs BI-style caps (1st / 2nd / 3rd home, syariah +5%) with the minimum down payment to qualify per tier |

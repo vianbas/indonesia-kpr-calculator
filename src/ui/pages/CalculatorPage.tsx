@@ -20,6 +20,7 @@ import { ChartSection } from '../components/charts/ChartSection';
 import { EarlyRepaymentSummary } from '../components/results/EarlyRepaymentSummary';
 import { KprFeesSummary } from '../components/results/KprFeesSummary';
 import { AffordabilityPanel } from '../components/affordability/AffordabilityPanel';
+import { MaxPropertyPanel } from '../components/affordability/MaxPropertyPanel';
 import { RefinancingPanel } from '../components/refinancing/RefinancingPanel';
 import { BuyVsRentPanel } from '../components/buyvsrent/BuyVsRentPanel';
 import { FlppPanel } from '../components/flpp/FlppPanel';
@@ -37,6 +38,7 @@ import { deriveLoanValuation } from '../../application/converters/formToInput';
 import { DEFAULT_AFFORDABILITY } from '../../application/store/affordabilityTypes';
 import { DEFAULT_REFINANCING } from '../../application/store/refinancingTypes';
 import { DEFAULT_BUY_VS_RENT, type BuyVsRentFormState } from '../../application/store/buyVsRentTypes';
+import { DEFAULT_MAX_PROPERTY, type MaxPropertyFormState } from '../../application/store/maxPropertyTypes';
 import { DEFAULT_FLPP, type FlppFormState } from '../../application/store/flppTypes';
 import type { AffordabilityFormState } from '../../application/store/affordabilityTypes';
 import type { AffordabilityInput } from '../../domain/calculators/affordability';
@@ -223,6 +225,16 @@ export function CalculatorPage({ initialUrlState }: CalculatorPageProps = {}) {
     });
   }, [buyVsRentForm, activeCalculated]);
 
+  // ── Max property (reverse affordability) state — standalone, not in URL ────
+  const [maxPropertyForm, setMaxPropertyForm] = useState<MaxPropertyFormState>(DEFAULT_MAX_PROPERTY);
+
+  function handleMaxPropertyChange<K extends keyof MaxPropertyFormState>(
+    key: K,
+    value: MaxPropertyFormState[K],
+  ) {
+    setMaxPropertyForm((prev) => ({ ...prev, [key]: value }));
+  }
+
   // ── FLPP (subsidized mortgage) state ──────────────────────────────────────
   const [flppForm, setFlppForm] = useState<FlppFormState>(DEFAULT_FLPP);
 
@@ -332,6 +344,9 @@ export function CalculatorPage({ initialUrlState }: CalculatorPageProps = {}) {
       </div>
 
       {/* ── Decision tools — immediately below results grid ─────────────────── */}
+
+      {/* Max property (reverse affordability) — standalone; works with no scenario */}
+      <MaxPropertyPanel form={maxPropertyForm} onChange={handleMaxPropertyChange} />
 
       {/* Affordability — first tool after the main result */}
       {calculated.length >= 1 && (

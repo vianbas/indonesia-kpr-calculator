@@ -78,14 +78,29 @@ function stressInstallment(input: AffordabilityInput, rateOffset: number): numbe
 
 // ─── Max affordable loan ──────────────────────────────────────────────────────
 
-function maxAffordableLoan(input: AffordabilityInput): number {
-  const maxInstallment = input.totalIncome * input.maxDSR - input.existingMonthlyDebt;
-  if (maxInstallment <= 0) return 0;
+export interface MaxLoanForInstallmentInput {
+  /** Largest monthly payment the borrower can sustain (principal + interest). */
+  maxInstallment: number;
+  /** Annual nominal rate as a decimal, e.g. 0.08 for 8%. */
+  annualRate: number;
+  tenorMonths: number;
+  paymentMethod: 'annuity' | 'flat';
+}
 
-  const r = input.stressBaseRate / 12;
-  const n = input.tenorMonths;
+/**
+ * Inverse of the installment formula: the largest loan principal whose monthly
+ * payment does not exceed `maxInstallment`. Pure and reusable — shared by the
+ * affordability analysis and the reverse "max property" estimator. Always
+ * returns a finite, non-negative number (0 for invalid/insufficient capacity).
+ */
+export function maxLoanForInstallment(input: MaxLoanForInstallmentInput): number {
+  const { maxInstallment, annualRate, tenorMonths, paymentMethod } = input;
+  if (!(maxInstallment > 0) || !(tenorMonths > 0) || !(annualRate >= 0)) return 0;
 
-  if (input.paymentMethod === 'flat') {
+  const r = annualRate / 12;
+  const n = tenorMonths;
+
+  if (paymentMethod === 'flat') {
     // installment = L/n + L*r → L = installment / (1/n + r)
     const divisor = 1 / n + r;
     return divisor > 0 ? Math.round(maxInstallment / divisor) : 0;
@@ -93,9 +108,19 @@ function maxAffordableLoan(input: AffordabilityInput): number {
 
   // Annuity inverse: L = M × [(1 − (1+r)^−n) / r]
   if (r === 0) return Math.round(maxInstallment * n);
-  const factor =
-    (1 - Math.pow(1 + r, -n)) / r;
-  return Math.round(maxInstallment * factor);
+  const factor = (1 - Math.pow(1 + r, -n)) / r;
+  const loan = Math.round(maxInstallment * factor);
+  return Number.isFinite(loan) ? Math.max(0, loan) : 0;
+}
+
+function maxAffordableLoan(input: AffordabilityInput): number {
+  const maxInstallment = input.totalIncome * input.maxDSR - input.existingMonthlyDebt;
+  return maxLoanForInstallment({
+    maxInstallment,
+    annualRate: input.stressBaseRate,
+    tenorMonths: input.tenorMonths,
+    paymentMethod: input.paymentMethod,
+  });
 }
 
 // ─── Main export ──────────────────────────────────────────────────────────────
