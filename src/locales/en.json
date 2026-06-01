@@ -175,6 +175,9 @@
     "month": "Mo",
     "resetAll": "Reset",
     "resetAria": "Reset all inputs to defaults",
+    "seeResults": "See Results",
+    "seeResultsAria": "Jump to calculation results",
+    "seeResultsErrorsAria": "Jump to the input form to fix errors",
     "amortizationTitle": "Amortization Table",
     "amortizationDesc": "View monthly payment details throughout the loan term.",
     "amortizationShow": "Show",
@@ -381,6 +384,7 @@
     "downloadedFallback": "PDF downloaded (file sharing not supported on this browser)",
     "downloadCsv": "Download CSV",
     "downloadCsvAria": "Download amortization schedule as CSV",
+    "downloadCsvAriaMulti": "Download scenario comparison as CSV",
     "csvError": "Failed to generate CSV."
   },
   "shareModal": {

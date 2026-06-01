@@ -20,7 +20,8 @@ A client-side Indonesian mortgage (KPR) simulation tool built with React 18, Typ
 | **FLPP subsidy** | Eligibility check (income / property-price caps, first home, tenor ≤ 20 yr) + the installment at the subsidized 5% fixed rate |
 | Scenario comparison | Up to 3 scenarios side-by-side |
 | Shareable URL | Full calculator state encoded in the URL `?s=` parameter (LZString-compressed) |
-| PDF / CSV export | Lazy-loaded; generates a detailed amortization + summary PDF, or the schedule as CSV |
+| PDF / CSV export | Lazy-loaded; a detailed amortization + summary PDF, or a CSV. CSV covers **all calculated scenarios** in two sections (scenario summary + amortization schedule), with mode-aware labels (Bunga / Margin / Ujrah) and a UTF-8 BOM for Excel |
+| Mobile "See Results" | Sticky shortcut on small screens that jumps from the input form to the results (or to the first error) |
 | Early repayment | Extra monthly payment, one or more scheduled lump-sum prepayments, or both |
 | **Installable PWA** | Add to Home Screen + offline support via a service worker |
 

@@ -11,7 +11,9 @@ import { AmortizationTable } from '../components/results/AmortizationTable';
 import { NextStepActions } from '../components/results/NextStepActions';
 import { ChevronIcon } from '../components/common/ChevronIcon';
 import { ExportButton } from '../components/export/ExportButton';
+import { CsvExportButton } from '../components/export/CsvExportButton';
 import { ShareReportModal } from '../components/export/ShareReportModal';
+import { MobileSeeResultsShortcut } from '../components/common/MobileSeeResultsShortcut';
 import { ScenarioTabs } from '../components/scenarios/ScenarioTabs';
 import { ScenarioComparisonPanel } from '../components/scenarios/ScenarioComparisonPanel';
 import { ChartSection } from '../components/charts/ChartSection';
@@ -90,6 +92,7 @@ interface CalculatorPageProps {
 }
 
 export function CalculatorPage({ initialUrlState }: CalculatorPageProps = {}) {
+  const { t } = useTranslation();
   const [showOnboarding, setShowOnboarding] = useState(() => {
     try { return localStorage.getItem('kpr_onboarding_seen') !== '1'; } catch { return false; }
   });
@@ -255,6 +258,8 @@ export function CalculatorPage({ initialUrlState }: CalculatorPageProps = {}) {
   // ── Section refs + scroll helpers ─────────────────────────────────────────
   const affordabilityRef = useRef<HTMLDivElement>(null);
   const refinancingRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLDivElement>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   function scrollToAffordability() {
     affordabilityRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
@@ -263,6 +268,16 @@ export function CalculatorPage({ initialUrlState }: CalculatorPageProps = {}) {
   function scrollToRefinancing() {
     handleRefinancingPrefill();
     refinancingRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+  }
+
+  // Mobile "See Results" shortcut: jump to the first error when the active
+  // scenario is invalid, otherwise to the computed results.
+  const activeHasSummary = active.summary !== null;
+  const activeHasErrors = !activeHasSummary && active.errors.length > 0;
+
+  function handleSeeResults() {
+    const target = activeHasErrors ? formRef.current : resultsRef.current;
+    target?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -290,7 +305,7 @@ export function CalculatorPage({ initialUrlState }: CalculatorPageProps = {}) {
 
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(400px,480px)_1fr] gap-6 items-start">
         {/* ── Left: active scenario form ─────────────────────────────────── */}
-        <div>
+        <div ref={formRef}>
           <LoanInputForm
             form={active.form}
             dispatch={active.dispatch}
@@ -300,7 +315,7 @@ export function CalculatorPage({ initialUrlState }: CalculatorPageProps = {}) {
         </div>
 
         {/* ── Right: results for active scenario ─────────────────────────── */}
-        <div className="space-y-4 lg:sticky lg:top-6">
+        <div ref={resultsRef} className="space-y-4 lg:sticky lg:top-6">
           <ResultsPanel
             scenario={active}
             calculated={calculated}
@@ -376,6 +391,14 @@ export function CalculatorPage({ initialUrlState }: CalculatorPageProps = {}) {
         <FaqSection />
       </div>
     </div>
+
+      <MobileSeeResultsShortcut
+        hasSummary={activeHasSummary}
+        hasErrors={activeHasErrors}
+        onClick={handleSeeResults}
+        label={t('results.seeResults')}
+        ariaLabel={activeHasErrors ? t('results.seeResultsErrorsAria') : t('results.seeResultsAria')}
+      />
     </>
   );
 }
@@ -439,6 +462,7 @@ function ResultsPanel({
             activeTab={activeTab}
             disabled={calculated.length === 0}
           />
+          <CsvExportButton scenarios={calculated} affordability={affordability} />
           <ExportButton
             form={form}
             summary={summary}

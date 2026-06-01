@@ -106,49 +106,6 @@ export function downloadBlob(blob: Blob, filename: string): void {
   setTimeout(() => URL.revokeObjectURL(url), 100);
 }
 
-/**
- * Builds a UTF-8 BOM CSV blob of the amortization schedule + loan summary.
- * The BOM (0xFEFF) ensures Excel opens the file without encoding prompts.
- */
-export function buildCsvBlob(
-  form: MortgageFormState,
-  summary: MortgageSummary,
-): { blob: Blob; filename: string } {
-  const isSyariah = summary.financingMode === 'syariah';
-  const isMurabahah = summary.syariahAkadType === 'murabahah';
-  const rows: string[] = [];
-
-  const q = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
-  const row = (...cells: (string | number)[]) => rows.push(cells.map(q).join(','));
-
-  // ── Metadata header ──
-  row('Simulasi KPR', isSyariah ? `Syariah (${isMurabahah ? 'Murabahah' : 'MMQ'})` : 'Konvensional');
-  row('Dibuat', new Date().toLocaleString('id-ID'));
-  row('Harga Properti', summary.totalPrincipal + summary.downPayment);
-  row('Uang Muka', summary.downPayment);
-  row('Pokok Pinjaman', summary.totalPrincipal);
-  row('Tenor', `${form.tenorYears} Tahun`);
-  row('Total Bunga / Margin', summary.totalInterest);
-  row('Total Pembayaran', summary.totalPayment);
-  rows.push('');
-
-  // ── Schedule header ──
-  const interestColLabel = isSyariah ? (isMurabahah ? 'Margin' : 'Ujrah') : 'Bunga';
-  row('Bulan', 'Tahun', 'Tanggal', 'Cicilan', 'Pokok', interestColLabel, 'Extra', 'Saldo Akhir', 'Suku Bunga (%)');
-
-  // ── Schedule rows ──
-  for (const r of summary.schedule) {
-    const year = Math.ceil(r.month / 12);
-    const date = r.date instanceof Date ? r.date.toISOString().slice(0, 10) : String(r.date);
-    row(r.month, year, date, r.installment, r.principal, r.interest ?? 0, r.extraPayment ?? 0, r.closingBalance, ((r.annualRate ?? 0) * 100).toFixed(2));
-  }
-
-  const bom = '﻿';
-  const csv = bom + rows.join('\r\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  return { blob, filename: `SimulasiKPR_${makeDateTag()}.csv` };
-}
-
 export async function exportToPdf(
   form: MortgageFormState,
   summary: MortgageSummary,

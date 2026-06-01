@@ -22,12 +22,6 @@ interface Props {
   refinancing?: RefinancingExportData;
 }
 
-const CsvIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4" aria-hidden="true">
-    <path fillRule="evenodd" d="M4.5 2A1.5 1.5 0 0 0 3 3.5v13A1.5 1.5 0 0 0 4.5 18h11a1.5 1.5 0 0 0 1.5-1.5V7.621a1.5 1.5 0 0 0-.44-1.06l-4.12-4.122A1.5 1.5 0 0 0 11.378 2H4.5Zm4.75 6.75a.75.75 0 0 1 .75.75v4.19l1.22-1.22a.75.75 0 1 1 1.06 1.06l-2.5 2.5a.75.75 0 0 1-1.06 0l-2.5-2.5a.75.75 0 1 1 1.06-1.06l1.22 1.22V9.5a.75.75 0 0 1 .75-.75Z" clipRule="evenodd" />
-  </svg>
-);
-
 const DownloadIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -73,7 +67,6 @@ const SpinnerIcon = () => (
 export function ExportButton({ form, summary, scenarios = [], affordability, refinancing }: Props) {
   const { t } = useTranslation();
   const [status, setStatus] = useState<'idle' | 'loading' | 'sharing' | 'downloaded' | 'error'>('idle');
-  const [csvStatus, setCsvStatus] = useState<'idle' | 'loading' | 'error'>('idle');
 
   const isMulti = scenarios.length >= 2;
   const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
@@ -141,19 +134,6 @@ export function ExportButton({ form, summary, scenarios = [], affordability, ref
     }
   }
 
-  async function handleCsvExport() {
-    setCsvStatus('loading');
-    try {
-      const svc = await import('../../../infrastructure/pdf/exportService');
-      const { blob, filename } = svc.buildCsvBlob(form, summary);
-      svc.downloadBlob(blob, filename);
-      setCsvStatus('idle');
-    } catch (err) {
-      console.error('CSV export failed:', err);
-      setCsvStatus('error');
-    }
-  }
-
   const isBusy = status === 'loading' || status === 'sharing';
 
   return (
@@ -170,19 +150,6 @@ export function ExportButton({ form, summary, scenarios = [], affordability, ref
             aria-label={isMulti ? t('export.shareAria') : t('export.shareAriaOne')}
           >
             {status === 'sharing' ? t('export.creating') : t('export.share')}
-          </Button>
-        )}
-        {!isMulti && (
-          <Button
-            variant="secondary"
-            size="sm"
-            className="sm:text-sm sm:px-4 sm:py-2 sm:gap-1.5"
-            icon={csvStatus === 'loading' ? <SpinnerIcon /> : <CsvIcon />}
-            onClick={handleCsvExport}
-            disabled={isBusy || csvStatus === 'loading'}
-            aria-label={t('export.downloadCsvAria')}
-          >
-            {csvStatus === 'loading' ? t('export.creating') : t('export.downloadCsv')}
           </Button>
         )}
         <Button
@@ -207,14 +174,6 @@ export function ExportButton({ form, summary, scenarios = [], affordability, ref
         <p className="text-xs text-red-600">
           {t('export.error')}{' '}
           <button className="underline hover:text-red-800" onClick={() => setStatus('idle')}>
-            {t('export.retry')}
-          </button>
-        </p>
-      )}
-      {csvStatus === 'error' && (
-        <p className="text-xs text-red-600">
-          {t('export.csvError')}{' '}
-          <button className="underline hover:text-red-800" onClick={() => setCsvStatus('idle')}>
             {t('export.retry')}
           </button>
         </p>
