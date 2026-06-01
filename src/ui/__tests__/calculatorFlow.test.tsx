@@ -22,6 +22,9 @@ vi.mock('../../infrastructure/pdf/exportService', () => ({
 }));
 
 const DOWNLOAD = /download kpr simulation as pdf/i;
+// The default form auto-calculates behind a debounce; under heavy parallel test
+// load the render can exceed RTL's 1000 ms default, so wait a little longer.
+const CALC = { timeout: 3000 };
 
 beforeEach(async () => {
   localStorage.setItem('kpr_onboarding_seen', '1');
@@ -36,25 +39,33 @@ describe('calculator flow — jsdom integration', () => {
   it('auto-calculates the default form and renders the export action', async () => {
     render(<CalculatorPage />);
     // The PDF download action only renders once a summary has been computed.
-    expect(await screen.findByRole('button', { name: DOWNLOAD })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: DOWNLOAD }, CALC)).toBeInTheDocument();
   });
 
   it('drives calc → lazy export service → download', async () => {
     render(<CalculatorPage />);
-    fireEvent.click(await screen.findByRole('button', { name: DOWNLOAD }));
+    fireEvent.click(await screen.findByRole('button', { name: DOWNLOAD }, CALC));
     await waitFor(() => expect(mockBuildPdfBlob).toHaveBeenCalledTimes(1));
     expect(mockDownloadBlob).toHaveBeenCalledTimes(1);
     // the filename produced by the export service is the one handed to the downloader
     expect(mockDownloadBlob.mock.calls[0][1]).toBe('KPR.pdf');
   });
 
+  it('renders the standalone max-property tool on the page', async () => {
+    render(<CalculatorPage />);
+    // The reverse-affordability panel is always present, even before any calc.
+    expect(
+      await screen.findByRole('button', { name: /how much home can i afford/i }),
+    ).toBeInTheDocument();
+  });
+
   it('recalculates without crashing when the property price changes', async () => {
     render(<CalculatorPage />);
-    await screen.findByRole('button', { name: DOWNLOAD });
+    await screen.findByRole('button', { name: DOWNLOAD }, CALC);
     // Target the price input by its unique default value (500jt).
     fireEvent.change(screen.getByDisplayValue('500000000'), { target: { value: '900000000' } });
     // results still present after the change (the engine re-ran without crashing)
-    expect(await screen.findByRole('button', { name: DOWNLOAD })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: DOWNLOAD }, CALC)).toBeInTheDocument();
     expect(screen.getByDisplayValue('900000000')).toBeInTheDocument();
   });
 });
