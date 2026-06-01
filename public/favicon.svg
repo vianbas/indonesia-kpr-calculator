@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Kalkulator KPR">
+  <rect width="100" height="100" rx="20" fill="#1d4ed8"/>
+  <!-- White house glyph: roof triangle + body, with a cut-out door -->
+  <path fill="#ffffff" fill-rule="evenodd"
+        d="M50 18 82 46 72 46 72 80 56 80 56 58 44 58 44 80 28 80 28 46 18 46Z"/>
+</svg>
