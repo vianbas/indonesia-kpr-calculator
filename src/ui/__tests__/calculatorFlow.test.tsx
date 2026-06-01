@@ -16,7 +16,6 @@ const mockDownloadBlob = vi.fn();
 vi.mock('../../infrastructure/pdf/exportService', () => ({
   buildPdfBlob: (...args: unknown[]) => mockBuildPdfBlob(...args),
   buildMultiPdfBlob: vi.fn().mockResolvedValue({ blob: new Blob(['x']), filename: 'multi.pdf' }),
-  buildCsvBlob: vi.fn().mockReturnValue({ blob: new Blob(['x']), filename: 'k.csv' }),
   downloadBlob: (...args: unknown[]) => mockDownloadBlob(...args),
   exportToPdf: vi.fn().mockResolvedValue(undefined),
   exportMultiScenarioPdf: vi.fn().mockResolvedValue(undefined),

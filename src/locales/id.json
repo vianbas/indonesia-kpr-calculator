@@ -175,6 +175,9 @@
     "month": "Bln",
     "resetAll": "Reset",
     "resetAria": "Reset semua input ke nilai awal",
+    "seeResults": "Lihat Hasil",
+    "seeResultsAria": "Lompat ke hasil perhitungan",
+    "seeResultsErrorsAria": "Lompat ke formulir untuk memperbaiki kesalahan",
     "amortizationTitle": "Tabel Amortisasi",
     "amortizationDesc": "Lihat rincian pembayaran bulanan sepanjang tenor.",
     "amortizationShow": "Tampilkan",
@@ -381,6 +384,7 @@
     "downloadedFallback": "PDF diunduh (berbagi file tidak didukung browser ini)",
     "downloadCsv": "Unduh CSV",
     "downloadCsvAria": "Unduh tabel angsuran sebagai CSV",
+    "downloadCsvAriaMulti": "Unduh perbandingan skenario sebagai CSV",
     "csvError": "Gagal membuat CSV."
   },
   "shareModal": {
