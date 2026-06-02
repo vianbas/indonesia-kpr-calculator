@@ -26,6 +26,7 @@ export function RefinancingPanel({ form, onChange, result, activeScenario, onPre
         id={`${panelId}-btn`}
         onClick={() => setOpen((o) => !o)}
         className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-sm font-semibold text-gray-700"
+        data-jump-toggle
         aria-expanded={open}
         aria-controls={panelId}
       >

@@ -25,7 +25,13 @@ export function DecisionToolsNav({ sections }: Props) {
 
   function jumpTo(id: string) {
     const el = typeof document !== 'undefined' ? document.getElementById(id) : null;
-    el?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+    if (!el) return;
+    // Expand the target panel first (if collapsed) so the user lands on its
+    // content. Only panel headers carry [data-jump-toggle]; nested collapsibles
+    // like the amortization table are deliberately left untouched.
+    const toggle = el.querySelector('[data-jump-toggle][aria-expanded="false"]');
+    if (toggle instanceof HTMLElement) toggle.click();
+    el.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
   }
 
   return (

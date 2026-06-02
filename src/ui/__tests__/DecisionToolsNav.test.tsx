@@ -48,4 +48,41 @@ describe('DecisionToolsNav', () => {
     render(<DecisionToolsNav sections={sections} />);
     expect(() => fireEvent.click(screen.getByRole('button', { name: 'Results' }))).not.toThrow();
   });
+
+  it('expands a collapsed panel (clicks its data-jump-toggle) before scrolling', () => {
+    const target = document.createElement('div');
+    target.id = 'section-refinancing';
+    const header = document.createElement('button');
+    header.setAttribute('data-jump-toggle', '');
+    header.setAttribute('aria-expanded', 'false');
+    const onToggle = vi.fn();
+    header.addEventListener('click', onToggle);
+    target.appendChild(header);
+    document.body.appendChild(target);
+
+    render(<DecisionToolsNav sections={sections} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Refinancing' }));
+
+    expect(onToggle).toHaveBeenCalledOnce();
+    expect(target.scrollIntoView).toHaveBeenCalled();
+    target.remove();
+  });
+
+  it('does not toggle an already-expanded panel', () => {
+    const target = document.createElement('div');
+    target.id = 'section-affordability';
+    const header = document.createElement('button');
+    header.setAttribute('data-jump-toggle', '');
+    header.setAttribute('aria-expanded', 'true');
+    const onToggle = vi.fn();
+    header.addEventListener('click', onToggle);
+    target.appendChild(header);
+    document.body.appendChild(target);
+
+    render(<DecisionToolsNav sections={sections} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Affordability' }));
+
+    expect(onToggle).not.toHaveBeenCalled();
+    target.remove();
+  });
 });

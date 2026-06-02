@@ -65,6 +65,7 @@ export function ScenarioComparisonPanel({ scenarios, affordability, refinancing 
         <button
           onClick={() => setOpen((o) => !o)}
           className="flex-1 flex items-center justify-between px-4 py-3 text-sm font-semibold text-gray-700"
+          data-jump-toggle
           aria-expanded={open}
         >
           <span>{t('scenarios.comparisonTitle')}</span>
