@@ -578,5 +578,15 @@
     "noteSyariah": "Untuk pembiayaan Syariah, rate adalah estimasi margin/ujrah, bukan angka resmi bank.",
     "noteEstimateOnly": "Estimasi awal berdasarkan DSR dan asumsi rate/margin.",
     "disclaimer": "Ini estimasi awal berdasarkan DSR dan asumsi rate/margin. Konfirmasi kelayakan dan penawaran final ke bank."
+  },
+  "toolsNav": {
+    "aria": "Lompat ke alat",
+    "results": "Hasil",
+    "maxProperty": "Estimasi Harga",
+    "affordability": "Kemampuan Bayar",
+    "refinancing": "Refinancing",
+    "buyVsRent": "Beli vs Sewa",
+    "flpp": "FLPP",
+    "comparison": "Bandingkan"
   }
 }
