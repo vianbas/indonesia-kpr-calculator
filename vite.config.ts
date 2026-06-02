@@ -57,6 +57,16 @@ export default defineConfig(({ command }) => {
             if (id.includes('node_modules/i18next') || id.includes('node_modules/react-i18next')) {
               return 'vendor-i18n';
             }
+            // Charts: recharts + its d3 dependency tree (via victory-vendor).
+            // Statically imported, so still eager — but split out of the main
+            // chunk for better caching and to clear the size warning.
+            if (
+              id.includes('node_modules/recharts') ||
+              id.includes('node_modules/victory-vendor') ||
+              id.includes('node_modules/d3-')
+            ) {
+              return 'vendor-charts';
+            }
             if (id.includes('/src/domain/')) {
               return 'domain-engine';
             }
