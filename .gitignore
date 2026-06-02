@@ -29,3 +29,6 @@ workers/share-api/wrangler.toml
 *.njsproj
 *.sln
 *.sw?
+
+# IDE / editor
+.cursor/
