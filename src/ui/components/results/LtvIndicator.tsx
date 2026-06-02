@@ -38,16 +38,21 @@ export function LtvIndicator({ form }: Props) {
   // Headline risk: does the DP fail even the most lenient (first-home) cap?
   const exceedsAll = !assessment.tiers[0].withinCap;
 
+  // Syariah financing uses BI's "Financing to Value (FTV)" term, not LTV.
+  const isSyariah = form.financingMode === 'syariah';
+  const titleKey = isSyariah ? 'ltv.titleFtv' : 'ltv.title';
+  const badgeKey = isSyariah ? 'ltv.ratioBadgeFtv' : 'ltv.ratioBadge';
+
   return (
     <div className="rounded-xl border border-gray-200 bg-white px-4 py-3.5" data-testid="ltv-indicator">
       <div className="flex items-center justify-between mb-2">
-        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{t('ltv.title')}</p>
+        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{t(titleKey)}</p>
         <span
           className={`text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 ${
             exceedsAll ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
           }`}
         >
-          {t('ltv.ratioBadge', { pct: ltvPct.toFixed(0) })}
+          {t(badgeKey, { pct: ltvPct.toFixed(0) })}
         </span>
       </div>
 

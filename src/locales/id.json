@@ -490,7 +490,9 @@
   },
   "ltv": {
     "title": "Loan-to-Value (LTV)",
+    "titleFtv": "Financing-to-Value (FTV)",
     "ratioBadge": "LTV {{pct}}%",
+    "ratioBadgeFtv": "FTV {{pct}}%",
     "dpSummary": "Uang muka {{pct}}% · {{amount}}",
     "homeFirst": "Rumah ke-1",
     "homeSecond": "Rumah ke-2",
