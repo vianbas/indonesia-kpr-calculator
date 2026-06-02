@@ -1,0 +1,17 @@
+# Cloudflare Pages response headers. Vite copies this file to dist/ on build.
+#
+# The CSP is shipped in REPORT-ONLY mode first: it reports violations (browser
+# console / report endpoint) without blocking anything, so we can verify the
+# real app — Google Fonts, the share API, Sentry, charts, inline styles — isn't
+# broken before enforcing it. To enforce, rename the header below from
+# `Content-Security-Policy-Report-Only` to `Content-Security-Policy`.
+#
+# style-src allows 'unsafe-inline' because React/recharts set inline style
+# attributes; script-src stays 'self' (no inline/eval needed by the prod build).
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Content-Security-Policy-Report-Only: default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://api.kpr.vikoabastian.com https://*.ingest.sentry.io https://*.sentry.io; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests
