@@ -490,7 +490,9 @@
   },
   "ltv": {
     "title": "Loan-to-Value (LTV)",
+    "titleFtv": "Financing-to-Value (FTV)",
     "ratioBadge": "LTV {{pct}}%",
+    "ratioBadgeFtv": "FTV {{pct}}%",
     "dpSummary": "Down payment {{pct}}% · {{amount}}",
     "homeFirst": "1st home",
     "homeSecond": "2nd home",
