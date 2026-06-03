@@ -140,13 +140,14 @@ export function BalanceLineChart({ calculated, useYearlyGrouping }: Props) {
       <ResponsiveContainer width="100%" height={220}>
         <LineChart
           data={mergedData}
-          margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
+          margin={{ top: 4, right: 4, left: 0, bottom: 4 }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
           <XAxis
             dataKey="period"
             tickFormatter={(v: number) => (useYearlyGrouping ? `Thn ${v}` : `Bln ${v}`)}
-            tick={{ fontSize: 10, fill: '#9CA3AF' }}
+            tick={{ fontSize: 11, fill: '#4B5563' }}
+            tickMargin={8}
             tickLine={false}
             axisLine={false}
             interval={xInterval}
