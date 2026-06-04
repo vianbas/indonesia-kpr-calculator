@@ -136,7 +136,7 @@ export function BalanceLineChart({ calculated, useYearlyGrouping }: Props) {
       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
         Saldo Sisa per {useYearlyGrouping ? 'Tahun' : 'Bulan'}
       </p>
-      <ResponsiveContainer width="100%" height={220}>
+      <ResponsiveContainer width="100%" height={240}>
         <LineChart
           data={mergedData}
           margin={{ top: 4, right: 4, left: 0, bottom: 4 }}
@@ -146,11 +146,14 @@ export function BalanceLineChart({ calculated, useYearlyGrouping }: Props) {
             dataKey="period"
             tickFormatter={(v: number) => (useYearlyGrouping ? `Thn ${v}` : `Bln ${v}`)}
             tick={{ fontSize: 11, fill: '#4B5563' }}
-            tickMargin={8}
+            tickMargin={6}
             tickLine={false}
             axisLine={false}
+            angle={-90}
+            textAnchor="end"
             interval="preserveStartEnd"
-            minTickGap={28}
+            minTickGap={2}
+            height={52}
           />
           <YAxis
             tickFormatter={formatChartAmount}
