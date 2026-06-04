@@ -129,7 +129,6 @@ export function BalanceLineChart({ calculated, useYearlyGrouping }: Props) {
     [calculated.length, primarySchedule, useYearlyGrouping],
   );
 
-  const xInterval = mergedData.length > 24 ? Math.floor(mergedData.length / 10) - 1 : 0;
   const showLegend = calculated.length > 1;
 
   return (
@@ -150,7 +149,8 @@ export function BalanceLineChart({ calculated, useYearlyGrouping }: Props) {
             tickMargin={8}
             tickLine={false}
             axisLine={false}
-            interval={xInterval}
+            interval="preserveStartEnd"
+            minTickGap={28}
           />
           <YAxis
             tickFormatter={formatChartAmount}

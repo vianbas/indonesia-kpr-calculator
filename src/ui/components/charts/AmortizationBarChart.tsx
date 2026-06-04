@@ -92,8 +92,6 @@ export function AmortizationBarChart({ schedule, useYearlyGrouping }: Props) {
   );
   const hasExtraPayment = data.some((d) => d.extraPayment > 0);
 
-  const xInterval = data.length > 24 ? Math.floor(data.length / 10) - 1 : 0;
-
   return (
     <>
       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
@@ -112,7 +110,8 @@ export function AmortizationBarChart({ schedule, useYearlyGrouping }: Props) {
             tickMargin={8}
             tickLine={false}
             axisLine={false}
-            interval={xInterval}
+            interval="preserveStartEnd"
+            minTickGap={28}
           />
           <YAxis
             tickFormatter={formatChartAmount}
