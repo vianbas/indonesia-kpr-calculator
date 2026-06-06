@@ -590,5 +590,20 @@
     "buyVsRent": "Buy vs Rent",
     "flpp": "FLPP",
     "comparison": "Compare"
+  },
+  "decision": {
+    "title": "Decision Summary",
+    "badgeIncomplete": "Incomplete",
+    "verdictSafe": "Looking good — this loan is within your limits.",
+    "verdictWatch": "Doable, but tight — check the warnings below.",
+    "verdictRisky": "Over your limits — consider a larger down payment, smaller loan, or longer tenor.",
+    "verdictIncomplete": "Enter your income in Affordability for a full verdict.",
+    "flagDsrOver": "DSR {{dsr}}% exceeds your {{max}}% limit",
+    "flagNegativeSurplus": "Net surplus is negative at the highest installment",
+    "flagRateShock": "A +{{pct}}% rate rise already pushes DSR into risky",
+    "flagLtvOver": "Down payment is below the reference minimum for a first home",
+    "flagInstallmentJump": "Installment rises {{pct}}% when the variable rate kicks in",
+    "bestScenario": "{{label}} has the lowest total interest while staying affordable — worth comparing.",
+    "disclaimer": "For reference only. Not financial advice."
   }
 }

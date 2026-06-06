@@ -20,6 +20,7 @@ import { ScenarioComparisonPanel } from '../components/scenarios/ScenarioCompari
 import { ChartSection } from '../components/charts/ChartSection';
 import { EarlyRepaymentSummary } from '../components/results/EarlyRepaymentSummary';
 import { KprFeesSummary } from '../components/results/KprFeesSummary';
+import { DecisionSummary } from '../components/decision/DecisionSummary';
 import { AffordabilityPanel } from '../components/affordability/AffordabilityPanel';
 import { MaxPropertyPanel } from '../components/affordability/MaxPropertyPanel';
 import { RefinancingPanel } from '../components/refinancing/RefinancingPanel';
@@ -35,6 +36,8 @@ import { calculateAffordability } from '../../domain/calculators/affordability';
 import { calculateRefinancing } from '../../domain/calculators/refinancing';
 import { calculateBuyVsRent } from '../../domain/calculators/buyVsRent';
 import { assessFlpp } from '../../domain/calculators/flpp';
+import { assessLtv } from '../../domain/calculators/ltv';
+import { computeDecisionSummary } from '../../domain/calculators/decisionSummary';
 import { deriveLoanValuation } from '../../application/converters/formToInput';
 import { DEFAULT_AFFORDABILITY } from '../../application/store/affordabilityTypes';
 import { DEFAULT_REFINANCING } from '../../application/store/refinancingTypes';
@@ -45,6 +48,7 @@ import type { AffordabilityFormState } from '../../application/store/affordabili
 import type { AffordabilityInput } from '../../domain/calculators/affordability';
 import type { RefinancingFormState } from '../../application/store/refinancingTypes';
 import type { ScenarioState, CalculatedScenario } from '../../application/store/scenarioTypes';
+import type { DecisionSummaryResult, ScenarioDecisionInput } from '../../domain/calculators/decisionSummary';
 import type { UrlState } from '../../utils/urlState';
 
 // ─── Affordability helpers ────────────────────────────────────────────────────
@@ -160,6 +164,35 @@ export function CalculatorPage({ initialUrlState }: CalculatorPageProps = {}) {
   }
 
   const activeCalculated = calculated.find((s) => s.id === activeTab) ?? calculated[0] ?? null;
+
+  // ── Decision Summary ──────────────────────────────────────────────────────
+  const decisionResult = useMemo((): DecisionSummaryResult | null => {
+    if (!activeCalculated) return null;
+    const valuation = deriveLoanValuation(activeCalculated.form);
+    const ltvAssessment = valuation
+      ? assessLtv({
+          propertyValue: valuation.propertyPrice,
+          downPayment: valuation.downPayment,
+          financingMode: activeCalculated.form.financingMode,
+        })
+      : null;
+    const maxDSR = Math.max(0.01, parseNum(affordabilityForm.maxDSRPercent) / 100);
+    const decisionScenarios: ScenarioDecisionInput[] =
+      affordabilityTotalIncome > 0
+        ? affordabilityResults.map(({ scenario, result }) => ({
+            id: scenario.id,
+            label: scenario.label,
+            totalInterest: scenario.summary.totalInterest,
+            affordability: result,
+            maxDSR,
+          }))
+        : [];
+    return computeDecisionSummary({
+      activeScenarioId: activeTab,
+      scenarios: decisionScenarios,
+      ltvAssessment,
+    });
+  }, [activeCalculated, activeTab, affordabilityResults, affordabilityTotalIncome, affordabilityForm.maxDSRPercent]);
 
   function handleRefinancingPrefill() {
     if (!activeCalculated) return;
@@ -354,6 +387,7 @@ export function CalculatorPage({ initialUrlState }: CalculatorPageProps = {}) {
             refinancing={refinancingExportData}
             onScrollToAffordability={scrollToAffordability}
             onScrollToRefinancing={scrollToRefinancing}
+            decisionResult={decisionResult}
           />
         </div>
       </div>
@@ -457,6 +491,7 @@ interface ResultsPanelProps {
   refinancing: import('../../infrastructure/pdf/exportService').RefinancingExportData | undefined;
   onScrollToAffordability: () => void;
   onScrollToRefinancing: () => void;
+  decisionResult?: DecisionSummaryResult | null;
 }
 
 function ResultsPanel({
@@ -470,6 +505,7 @@ function ResultsPanel({
   refinancing,
   onScrollToAffordability,
   onScrollToRefinancing,
+  decisionResult,
 }: ResultsPanelProps) {
   const { t } = useTranslation();
   const { form, summary, errors, isCalcError } = scenario;
@@ -512,6 +548,8 @@ function ResultsPanel({
             refinancing={refinancing}
           />
         </div>
+
+        {decisionResult && <DecisionSummary result={decisionResult} />}
 
         <SummaryCard summary={summary} onScrollToAmortization={scrollToAmortization} />
 
