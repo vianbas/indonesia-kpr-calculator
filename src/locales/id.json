@@ -590,5 +590,20 @@
     "buyVsRent": "Beli vs Sewa",
     "flpp": "FLPP",
     "comparison": "Bandingkan"
+  },
+  "decision": {
+    "title": "Ringkasan Keputusan",
+    "badgeIncomplete": "Belum Lengkap",
+    "verdictSafe": "Tampak OK — pinjaman ini dalam batas kemampuan Anda.",
+    "verdictWatch": "Bisa, tapi mepet — perhatikan peringatan di bawah.",
+    "verdictRisky": "Melebihi batas — pertimbangkan DP lebih besar, pinjaman lebih kecil, atau tenor lebih panjang.",
+    "verdictIncomplete": "Masukkan penghasilan di Kemampuan Bayar untuk melihat verdik lengkap.",
+    "flagDsrOver": "DSR {{dsr}}% melebihi batas {{max}}%",
+    "flagNegativeSurplus": "Surplus bersih negatif pada cicilan tertinggi",
+    "flagRateShock": "Kenaikan bunga +{{pct}}% sudah bisa membuat DSR berisiko",
+    "flagLtvOver": "Uang muka di bawah acuan minimum KPR rumah pertama",
+    "flagInstallmentJump": "Cicilan naik {{pct}}% saat periode bunga variabel",
+    "bestScenario": "{{label}} paling hemat bunga total sambil tetap dalam batas aman — coba bandingkan.",
+    "disclaimer": "Hanya acuan. Bukan saran keuangan."
   }
 }
