@@ -581,6 +581,7 @@ function ResultsPanel({
             activeCount={activeCount}
             activeTab={activeTab}
             disabled={calculated.length === 0}
+            decisions={allDecisionResults?.length ? allDecisionResults : undefined}
           />
           <CsvExportButton scenarios={calculated} affordability={affordability} />
           <ExportButton
