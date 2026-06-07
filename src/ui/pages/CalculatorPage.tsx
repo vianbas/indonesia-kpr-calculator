@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, useEffect } from 'react';
+import { useState, useRef, useMemo, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { OnboardingOverlay } from '../components/onboarding/OnboardingOverlay';
 import { useScenarios } from '../../application/hooks/useScenarios';
@@ -232,6 +232,31 @@ export function CalculatorPage({ initialUrlState }: CalculatorPageProps = {}) {
     return Object.fromEntries(entries) as Partial<Record<ScenarioId, DecisionVerdict>>;
   }, [calculated, allDecisionResults]);
 
+  // What-if sandbox: re-run affordability + decision with extra income, no form changes.
+  const computeSandbox = useCallback((extraIncome: number): DecisionSummaryResult | null => {
+    if (!activeCalculated || affordabilityTotalIncome <= 0) return null;
+    const input = deriveAffordabilityInput(activeCalculated, affordabilityForm);
+    const sandboxInput: AffordabilityInput = { ...input, totalIncome: input.totalIncome + extraIncome };
+    const newAffordability = calculateAffordability(sandboxInput);
+    const maxDSR = Math.max(0.01, parseNum(affordabilityForm.maxDSRPercent) / 100);
+    const valuation = deriveLoanValuation(activeCalculated.form);
+    const ltvAssessment = valuation
+      ? assessLtv({ propertyValue: valuation.propertyPrice, downPayment: valuation.downPayment, financingMode: activeCalculated.form.financingMode })
+      : null;
+    return computeDecisionSummary({
+      activeScenarioId: activeTab,
+      scenarios: [{
+        id: activeTab,
+        label: active.label,
+        totalInterest: activeCalculated.summary.totalInterest,
+        totalPrincipal: activeCalculated.summary.totalPrincipal,
+        affordability: newAffordability,
+        maxDSR,
+      }],
+      ltvAssessment,
+    });
+  }, [activeCalculated, active.label, activeTab, affordabilityForm, affordabilityTotalIncome]);
+
   function handleRefinancingPrefill() {
     if (!activeCalculated) return;
     const { summary } = activeCalculated;
@@ -437,6 +462,7 @@ export function CalculatorPage({ initialUrlState }: CalculatorPageProps = {}) {
             onScrollToRefinancing={scrollToRefinancing}
             decisionResult={decisionResult}
             allDecisionResults={allDecisionResults}
+            onComputeSandbox={computeSandbox}
           />
         </div>
       </div>
@@ -545,6 +571,7 @@ interface ResultsPanelProps {
   onScrollToRefinancing: () => void;
   decisionResult?: DecisionSummaryResult | null;
   allDecisionResults?: DecisionSummaryResult[];
+  onComputeSandbox?: (extraIncome: number) => DecisionSummaryResult | null;
 }
 
 function ResultsPanel({
@@ -560,6 +587,7 @@ function ResultsPanel({
   onScrollToRefinancing,
   decisionResult,
   allDecisionResults,
+  onComputeSandbox,
 }: ResultsPanelProps) {
   const { t } = useTranslation();
   const { form, summary, errors, isCalcError } = scenario;
@@ -610,6 +638,7 @@ function ResultsPanel({
           <DecisionSummary
             result={decisionResult}
             onScrollToAffordability={onScrollToAffordability}
+            onComputeSandbox={onComputeSandbox}
           />
         )}
 

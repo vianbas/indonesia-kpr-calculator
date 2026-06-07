@@ -610,6 +610,9 @@
     "suggestReduceLoan": "Or reduce the loan by {{amount}}",
     "suggestExtendFixed": "Consider extending the fixed-rate period",
     "bestScenario": "{{label}} has the lowest total interest while staying affordable — worth comparing.",
-    "disclaimer": "For reference only. Not financial advice."
+    "disclaimer": "For reference only. Not financial advice.",
+    "sandboxTitle": "Try a Scenario",
+    "sandboxLabel": "Additional monthly income",
+    "sandboxResult": "→ Verdict:"
   }
 }

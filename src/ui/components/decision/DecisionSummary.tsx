@@ -1,3 +1,4 @@
+import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { DecisionSummaryResult, DecisionFlag } from '../../../domain/calculators/decisionSummary';
 import { formatIDR } from '../../../domain/utils/currency';
@@ -5,6 +6,7 @@ import { formatIDR } from '../../../domain/utils/currency';
 interface Props {
   result: DecisionSummaryResult;
   onScrollToAffordability?: () => void;
+  onComputeSandbox?: (extraIncome: number) => DecisionSummaryResult | null;
 }
 
 const VERDICT_STYLE = {
@@ -13,6 +15,13 @@ const VERDICT_STYLE = {
   risky:      { badge: 'bg-red-100 text-red-800',      border: 'border-red-200',    bg: 'bg-red-50' },
   incomplete: { badge: 'bg-gray-100 text-gray-600',    border: 'border-gray-200',   bg: 'bg-gray-50' },
 } as const;
+
+const BADGE_LABEL_KEY: Record<string, string> = {
+  safe:       'affordability.bandSafe',
+  watch:      'affordability.bandWatch',
+  risky:      'affordability.bandRisky',
+  incomplete: 'decision.badgeIncomplete',
+};
 
 function FlagItem({ flag }: { flag: DecisionFlag }) {
   const { t } = useTranslation();
@@ -80,7 +89,7 @@ function FlagItem({ flag }: { flag: DecisionFlag }) {
   );
 }
 
-export function DecisionSummary({ result, onScrollToAffordability }: Props) {
+export function DecisionSummary({ result, onScrollToAffordability, onComputeSandbox }: Props) {
   const { t } = useTranslation();
   const style = VERDICT_STYLE[result.verdict];
 
@@ -91,12 +100,16 @@ export function DecisionSummary({ result, onScrollToAffordability }: Props) {
     incomplete: 'decision.verdictIncomplete',
   }[result.verdict];
 
-  const badgeLabelKey = {
-    safe:       'affordability.bandSafe',
-    watch:      'affordability.bandWatch',
-    risky:      'affordability.bandRisky',
-    incomplete: 'decision.badgeIncomplete',
-  }[result.verdict];
+  const badgeLabelKey = BADGE_LABEL_KEY[result.verdict];
+
+  // What-if sandbox state
+  const [sandboxIncome, setSandboxIncome] = useState('');
+  const sandboxExtra = parseFloat(sandboxIncome) || 0;
+  const sandboxResult = useMemo(
+    () => sandboxExtra > 0 && onComputeSandbox ? onComputeSandbox(sandboxExtra) : null,
+    [sandboxExtra, onComputeSandbox],
+  );
+  const showSandbox = (result.verdict === 'risky' || result.verdict === 'watch') && !!onComputeSandbox;
 
   return (
     <div
@@ -141,6 +154,39 @@ export function DecisionSummary({ result, onScrollToAffordability }: Props) {
         <p className="text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded px-2.5 py-1.5 mb-2.5">
           {t('decision.bestScenario', { label: result.bestScenarioLabel })}
         </p>
+      )}
+
+      {/* What-if income sandbox */}
+      {showSandbox && (
+        <div className="mt-1 mb-2.5 rounded-lg border border-gray-200 bg-white px-3 py-2.5" data-testid="decision-sandbox">
+          <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-2">
+            {t('decision.sandboxTitle')}
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="text-xs text-gray-600 shrink-0">
+              {t('decision.sandboxLabel')}
+            </label>
+            <div className="relative min-w-[130px] flex-1">
+              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">Rp</span>
+              <input
+                type="number"
+                min="0"
+                step="500000"
+                value={sandboxIncome}
+                onChange={(e) => setSandboxIncome(e.target.value)}
+                className="w-full text-xs border border-gray-200 rounded pl-8 pr-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                placeholder="0"
+                aria-label={t('decision.sandboxLabel')}
+                data-testid="sandbox-income-input"
+              />
+            </div>
+            {sandboxResult && (
+              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 ${VERDICT_STYLE[sandboxResult.verdict].badge}`} data-testid="sandbox-verdict-badge">
+                {t('decision.sandboxResult')} {t(BADGE_LABEL_KEY[sandboxResult.verdict])}
+              </span>
+            )}
+          </div>
+        </div>
       )}
 
       {/* Disclaimer */}
