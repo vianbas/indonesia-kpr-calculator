@@ -8,3 +8,11 @@ class ResizeObserverStub {
   disconnect() {}
 }
 global.ResizeObserver = ResizeObserverStub;
+
+// IntersectionObserver is not implemented in jsdom
+class IntersectionObserverStub {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+global.IntersectionObserver = IntersectionObserverStub as unknown as typeof IntersectionObserver;
