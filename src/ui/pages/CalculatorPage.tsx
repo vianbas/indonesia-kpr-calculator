@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { OnboardingOverlay } from '../components/onboarding/OnboardingOverlay';
 import { useScenarios } from '../../application/hooks/useScenarios';
@@ -354,6 +354,16 @@ export function CalculatorPage({ initialUrlState }: CalculatorPageProps = {}) {
     refinancingRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
   }
 
+  // Hide the "Lihat Hasil" button when the results section is on screen.
+  const [resultsVisible, setResultsVisible] = useState(false);
+  useEffect(() => {
+    const el = resultsRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([entry]) => setResultsVisible(entry.isIntersecting), { threshold: 0.1 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
   // Mobile "See Results" shortcut: jump to the first error when the active
   // scenario is invalid, otherwise to the computed results.
   const activeHasSummary = active.summary !== null;
@@ -511,6 +521,7 @@ export function CalculatorPage({ initialUrlState }: CalculatorPageProps = {}) {
       <MobileSeeResultsShortcut
         hasSummary={activeHasSummary}
         hasErrors={activeHasErrors}
+        resultsVisible={resultsVisible}
         onClick={handleSeeResults}
         label={t('results.seeResults')}
         ariaLabel={activeHasErrors ? t('results.seeResultsErrorsAria') : t('results.seeResultsAria')}

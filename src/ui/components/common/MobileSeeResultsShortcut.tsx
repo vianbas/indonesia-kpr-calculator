@@ -3,6 +3,8 @@ interface Props {
   hasSummary: boolean;
   /** The active scenario has validation errors the user can jump to. */
   hasErrors: boolean;
+  /** Results section is currently visible in the viewport. */
+  resultsVisible?: boolean;
   /** Scroll to results (or to the first error when hasErrors). */
   onClick: () => void;
   /** Pre-translated button label. */
@@ -23,9 +25,10 @@ const ArrowDownIcon = () => (
  * desktop (`sm:hidden`) where the results sit beside the form. Respects the
  * mobile safe-area inset so it clears the home indicator.
  */
-export function MobileSeeResultsShortcut({ hasSummary, hasErrors, onClick, label, ariaLabel }: Props) {
-  // Nothing actionable to jump to yet.
+export function MobileSeeResultsShortcut({ hasSummary, hasErrors, resultsVisible, onClick, label, ariaLabel }: Props) {
+  // Nothing actionable to jump to yet, or results are already on screen.
   if (!hasSummary && !hasErrors) return null;
+  if (hasSummary && resultsVisible) return null;
 
   return (
     <div

@@ -61,6 +61,20 @@ describe('MobileSeeResultsShortcut', () => {
     expect(onClick).toHaveBeenCalledOnce();
   });
 
+  it('hides when results section is visible in viewport', () => {
+    const { container } = render(
+      <MobileSeeResultsShortcut
+        hasSummary
+        hasErrors={false}
+        resultsVisible
+        onClick={vi.fn()}
+        label="See Results"
+        ariaLabel="Jump to results"
+      />,
+    );
+    expect(container).toBeEmptyDOMElement();
+  });
+
   it('uses the provided label text', () => {
     render(
       <MobileSeeResultsShortcut
