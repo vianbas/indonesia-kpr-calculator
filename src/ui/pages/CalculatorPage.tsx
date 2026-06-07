@@ -233,15 +233,31 @@ export function CalculatorPage({ initialUrlState }: CalculatorPageProps = {}) {
   }, [calculated, allDecisionResults]);
 
   // What-if sandbox: re-run affordability + decision with extra income, no form changes.
-  const computeSandbox = useCallback((extraIncome: number): DecisionSummaryResult | null => {
+  const computeSandbox = useCallback((extraIncome: number, extraDP: number): DecisionSummaryResult | null => {
     if (!activeCalculated || affordabilityTotalIncome <= 0) return null;
     const input = deriveAffordabilityInput(activeCalculated, affordabilityForm);
-    const sandboxInput: AffordabilityInput = { ...input, totalIncome: input.totalIncome + extraIncome };
+    const originalPrincipal = activeCalculated.summary.totalPrincipal;
+    // Scale installments linearly — both annuity and flat are linear in principal
+    const dpRatio = extraDP > 0 && originalPrincipal > extraDP
+      ? (originalPrincipal - extraDP) / originalPrincipal
+      : 1;
+    const sandboxInput: AffordabilityInput = {
+      ...input,
+      totalIncome: input.totalIncome + extraIncome,
+      firstInstallment: input.firstInstallment * dpRatio,
+      highestInstallment: input.highestInstallment * dpRatio,
+      principalAmount: input.principalAmount * dpRatio,
+      stressBalance: input.stressBalance * dpRatio,
+    };
     const newAffordability = calculateAffordability(sandboxInput);
     const maxDSR = Math.max(0.01, parseNum(affordabilityForm.maxDSRPercent) / 100);
     const valuation = deriveLoanValuation(activeCalculated.form);
     const ltvAssessment = valuation
-      ? assessLtv({ propertyValue: valuation.propertyPrice, downPayment: valuation.downPayment, financingMode: activeCalculated.form.financingMode })
+      ? assessLtv({
+          propertyValue: valuation.propertyPrice,
+          downPayment: valuation.downPayment + extraDP,
+          financingMode: activeCalculated.form.financingMode,
+        })
       : null;
     return computeDecisionSummary({
       activeScenarioId: activeTab,
@@ -249,7 +265,7 @@ export function CalculatorPage({ initialUrlState }: CalculatorPageProps = {}) {
         id: activeTab,
         label: active.label,
         totalInterest: activeCalculated.summary.totalInterest,
-        totalPrincipal: activeCalculated.summary.totalPrincipal,
+        totalPrincipal: originalPrincipal - extraDP,
         affordability: newAffordability,
         maxDSR,
       }],

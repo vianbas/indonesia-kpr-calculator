@@ -41,7 +41,13 @@ describe('DecisionSummary — DSR gauge', () => {
   });
 
   it('renders gauge for safe verdict', () => {
-    render(<DecisionSummary result={safeResult} activeAffordability={{ ...mockAffordability, dsrAtHighest: 0.30, riskBand: 'safe' }} maxDSR={0.35} />);
+    render(
+      <DecisionSummary
+        result={safeResult}
+        activeAffordability={{ ...mockAffordability, dsrAtHighest: 0.30, riskBand: 'safe' }}
+        maxDSR={0.35}
+      />,
+    );
     expect(screen.getByTestId('dsr-gauge')).toBeInTheDocument();
   });
 });
@@ -80,29 +86,43 @@ describe('DecisionSummary — sandbox', () => {
     expect(screen.queryByTestId('decision-sandbox')).not.toBeInTheDocument();
   });
 
-  it('renders sandbox when verdict is risky and callback is provided', () => {
+  it('renders sandbox with income and DP inputs when verdict is risky', () => {
     render(<DecisionSummary result={riskyResult} onComputeSandbox={vi.fn()} />);
     expect(screen.getByTestId('decision-sandbox')).toBeInTheDocument();
     expect(screen.getByTestId('sandbox-income-input')).toBeInTheDocument();
+    expect(screen.getByTestId('sandbox-dp-input')).toBeInTheDocument();
   });
 
-  it('renders sandbox when verdict is watch and callback is provided', () => {
+  it('renders sandbox when verdict is watch', () => {
     render(<DecisionSummary result={watchResult} onComputeSandbox={vi.fn()} />);
     expect(screen.getByTestId('decision-sandbox')).toBeInTheDocument();
   });
 
-  it('calls onComputeSandbox and shows verdict badge when income is typed', () => {
+  it('calls onComputeSandbox with income and DP and shows verdict badge', () => {
     const sandbox = vi.fn().mockReturnValue({ verdict: 'safe', flags: [] } satisfies DecisionSummaryResult);
     render(<DecisionSummary result={riskyResult} onComputeSandbox={sandbox} />);
 
     fireEvent.change(screen.getByTestId('sandbox-income-input'), { target: { value: '3000000' } });
+    expect(sandbox).toHaveBeenCalledWith(3_000_000, 0);
 
-    expect(sandbox).toHaveBeenCalledWith(3_000_000);
+    fireEvent.change(screen.getByTestId('sandbox-dp-input'), { target: { value: '50000000' } });
+    expect(sandbox).toHaveBeenCalledWith(3_000_000, 50_000_000);
+
     expect(screen.getByTestId('sandbox-verdict-badge')).toBeInTheDocument();
   });
 
-  it('does not show verdict badge when input is empty', () => {
+  it('does not show verdict badge when both inputs are empty', () => {
     render(<DecisionSummary result={riskyResult} onComputeSandbox={vi.fn().mockReturnValue(null)} />);
+    // both inputs start as '' → no sandboxResult
     expect(screen.queryByTestId('sandbox-verdict-badge')).not.toBeInTheDocument();
+  });
+
+  it('shows reset button only when sandbox values are changed from seeded defaults', () => {
+    render(<DecisionSummary result={riskyResult} onComputeSandbox={vi.fn()} />);
+    // initially no suggestions → both inputs empty → reset hidden
+    expect(screen.queryByTestId('sandbox-reset')).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByTestId('sandbox-income-input'), { target: { value: '1000000' } });
+    expect(screen.getByTestId('sandbox-reset')).toBeInTheDocument();
   });
 });

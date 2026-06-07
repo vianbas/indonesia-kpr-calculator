@@ -10,7 +10,7 @@ interface Props {
   /** maxDSR as a decimal (e.g. 0.35) from the affordability form — used for the gauge tick. */
   maxDSR?: number;
   onScrollToAffordability?: () => void;
-  onComputeSandbox?: (extraIncome: number) => DecisionSummaryResult | null;
+  onComputeSandbox?: (extraIncome: number, extraDP: number) => DecisionSummaryResult | null;
 }
 
 const VERDICT_STYLE = {
@@ -27,7 +27,6 @@ const BADGE_LABEL_KEY: Record<string, string> = {
   incomplete: 'decision.badgeIncomplete',
 };
 
-// Bar fill colour by verdict
 const GAUGE_BAR_COLOR: Record<string, string> = {
   safe:  'bg-green-500',
   watch: 'bg-yellow-400',
@@ -44,10 +43,7 @@ function FlagItem({ flag }: { flag: DecisionFlag }) {
   let text: string;
   switch (flag.type) {
     case 'dsr_over':
-      text = t('decision.flagDsrOver', {
-        dsr: (flag.dsrPct ?? 0).toFixed(1),
-        max: (flag.maxDsrPct ?? 0).toFixed(0),
-      });
+      text = t('decision.flagDsrOver', { dsr: (flag.dsrPct ?? 0).toFixed(1), max: (flag.maxDsrPct ?? 0).toFixed(0) });
       break;
     case 'negative_surplus':
       text = t('decision.flagNegativeSurplus');
@@ -107,7 +103,6 @@ function DsrGauge({ affordability, verdict, maxDSR }: {
 }) {
   const { t } = useTranslation();
   const dsrPct = affordability.dsrAtHighest * 100;
-  // Clamp fill to 100% visually; scale relative to max * 1.5 so bar doesn't hit edge at exactly max
   const scale = maxDSR * 100 * 1.5;
   const fillPct = Math.min(100, (dsrPct / scale) * 100);
   const limitPct = Math.min(100, ((maxDSR * 100) / scale) * 100);
@@ -125,10 +120,33 @@ function DsrGauge({ affordability, verdict, maxDSR }: {
         aria-valuenow={Math.round(dsrPct)} aria-valuemin={0} aria-valuemax={Math.round(maxDSR * 100)}>
         <div className={`absolute inset-y-0 left-0 rounded-full transition-all ${barColor}`}
           style={{ width: `${fillPct}%` }} />
-        {/* Limit tick */}
         <div className="absolute inset-y-0 w-0.5 bg-gray-500 opacity-60"
           style={{ left: `${limitPct}%` }} aria-hidden="true" />
       </div>
+    </div>
+  );
+}
+
+function RpInput({ value, onChange, label, testId }: {
+  value: string;
+  onChange: (v: string) => void;
+  label: string;
+  testId: string;
+}) {
+  return (
+    <div className="relative min-w-[130px] flex-1">
+      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">Rp</span>
+      <input
+        type="number"
+        min="0"
+        step="500000"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full text-xs border border-gray-200 rounded pl-8 pr-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-400"
+        placeholder="0"
+        aria-label={label}
+        data-testid={testId}
+      />
     </div>
   );
 }
@@ -146,31 +164,47 @@ export function DecisionSummary({ result, activeAffordability, maxDSR = 0.35, on
 
   const badgeLabelKey = BADGE_LABEL_KEY[result.verdict];
 
-  // Min recommended income — show when risky/watch and income is below threshold
+  // Auto-populate sandbox from flag suggestions
+  const addIncomeFlag = result.flags.find((f) => f.suggestions.some((s) => s.type === 'add_income'));
+  const addDpFlag = result.flags.find((f) => f.suggestions.some((s) => s.type === 'add_dp'));
+  const suggestedIncome = addIncomeFlag?.suggestions.find((s) => s.type === 'add_income')?.amountIDR ?? 0;
+  const suggestedDp = addDpFlag?.suggestions.find((s) => s.type === 'add_dp')?.amountIDR ?? 0;
+
+  // What-if sandbox state (auto-seeded with suggestion amounts)
+  const [sandboxIncome, setSandboxIncome] = useState(() => suggestedIncome > 0 ? String(suggestedIncome) : '');
+  const [sandboxDp, setSandboxDp] = useState(() => suggestedDp > 0 ? String(suggestedDp) : '');
+
+  const sandboxExtraIncome = parseFloat(sandboxIncome) || 0;
+  const sandboxExtraDp = parseFloat(sandboxDp) || 0;
+
+  const sandboxResult = useMemo(
+    () => (sandboxExtraIncome > 0 || sandboxExtraDp > 0) && onComputeSandbox
+      ? onComputeSandbox(sandboxExtraIncome, sandboxExtraDp)
+      : null,
+    [sandboxExtraIncome, sandboxExtraDp, onComputeSandbox],
+  );
+
+  const showSandbox = (result.verdict === 'risky' || result.verdict === 'watch') && !!onComputeSandbox;
+
+  function resetSandbox() {
+    setSandboxIncome(suggestedIncome > 0 ? String(suggestedIncome) : '');
+    setSandboxDp(suggestedDp > 0 ? String(suggestedDp) : '');
+  }
+
+  const sandboxDirty = sandboxIncome !== (suggestedIncome > 0 ? String(suggestedIncome) : '')
+    || sandboxDp !== (suggestedDp > 0 ? String(suggestedDp) : '');
+
+  // Min income callout
   const showMinIncome =
     activeAffordability &&
     (result.verdict === 'risky' || result.verdict === 'watch') &&
     activeAffordability.minRecommendedIncome > activeAffordability.totalIncome;
 
-  // What-if sandbox state
-  const [sandboxIncome, setSandboxIncome] = useState('');
-  const sandboxExtra = parseFloat(sandboxIncome) || 0;
-  const sandboxResult = useMemo(
-    () => sandboxExtra > 0 && onComputeSandbox ? onComputeSandbox(sandboxExtra) : null,
-    [sandboxExtra, onComputeSandbox],
-  );
-  const showSandbox = (result.verdict === 'risky' || result.verdict === 'watch') && !!onComputeSandbox;
-
   return (
-    <div
-      className={`rounded-xl border ${style.border} ${style.bg} px-4 py-3.5`}
-      data-testid="decision-summary"
-    >
+    <div className={`rounded-xl border ${style.border} ${style.bg} px-4 py-3.5`} data-testid="decision-summary">
       {/* Header row: title + verdict badge */}
       <div className="flex items-center justify-between gap-2 mb-2">
-        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-          {t('decision.title')}
-        </p>
+        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{t('decision.title')}</p>
         <span className={`text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 ${style.badge}`}>
           {t(badgeLabelKey)}
         </span>
@@ -179,11 +213,10 @@ export function DecisionSummary({ result, activeAffordability, maxDSR = 0.35, on
       {/* Verdict headline */}
       <p className="text-sm font-medium text-gray-800 mb-2.5">{t(verdictTextKey)}</p>
 
-      {/* DSR gauge (all complete verdicts) */}
+      {/* DSR gauge */}
       {activeAffordability && result.verdict !== 'incomplete' && (
         <DsrGauge affordability={activeAffordability} verdict={result.verdict} maxDSR={maxDSR} />
       )}
-
 
       {/* Scroll-to-affordability CTA (incomplete state only) */}
       {result.verdict === 'incomplete' && onScrollToAffordability && (
@@ -199,9 +232,7 @@ export function DecisionSummary({ result, activeAffordability, maxDSR = 0.35, on
       {/* Flags */}
       {result.flags.length > 0 && (
         <ul className="space-y-2 mb-2.5">
-          {result.flags.map((flag, i) => (
-            <FlagItem key={`${flag.type}-${i}`} flag={flag} />
-          ))}
+          {result.flags.map((flag, i) => <FlagItem key={`${flag.type}-${i}`} flag={flag} />)}
         </ul>
       )}
 
@@ -220,37 +251,51 @@ export function DecisionSummary({ result, activeAffordability, maxDSR = 0.35, on
         </p>
       )}
 
-      {/* What-if income sandbox */}
+      {/* What-if sandbox */}
       {showSandbox && (
         <div className="mt-1 mb-2.5 rounded-lg border border-gray-200 bg-white px-3 py-2.5" data-testid="decision-sandbox">
-          <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-2">
-            {t('decision.sandboxTitle')}
-          </p>
-          <div className="flex flex-wrap items-center gap-2">
-            <label className="text-xs text-gray-600 shrink-0">
-              {t('decision.sandboxLabel')}
-            </label>
-            <div className="relative min-w-[130px] flex-1">
-              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">Rp</span>
-              <input
-                type="number"
-                min="0"
-                step="500000"
-                value={sandboxIncome}
-                onChange={(e) => setSandboxIncome(e.target.value)}
-                className="w-full text-xs border border-gray-200 rounded pl-8 pr-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-400"
-                placeholder="0"
-                aria-label={t('decision.sandboxLabel')}
-                data-testid="sandbox-income-input"
-              />
-            </div>
-            {sandboxResult && (
-              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 ${VERDICT_STYLE[sandboxResult.verdict].badge}`}
-                data-testid="sandbox-verdict-badge">
-                {t('decision.sandboxResult')} {t(BADGE_LABEL_KEY[sandboxResult.verdict])}
-              </span>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
+              {t('decision.sandboxTitle')}
+            </p>
+            {sandboxDirty && (
+              <button
+                type="button"
+                onClick={resetSandbox}
+                className="text-[11px] text-gray-400 hover:text-gray-600 underline underline-offset-1"
+                data-testid="sandbox-reset"
+              >
+                {t('decision.sandboxReset')}
+              </button>
             )}
           </div>
+
+          <div className="space-y-2">
+            {/* Income row */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-gray-600 w-32 shrink-0">{t('decision.sandboxLabel')}</span>
+              <RpInput value={sandboxIncome} onChange={setSandboxIncome}
+                label={t('decision.sandboxLabel')} testId="sandbox-income-input" />
+            </div>
+
+            {/* DP row */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-gray-600 w-32 shrink-0">{t('decision.sandboxLabelDp')}</span>
+              <RpInput value={sandboxDp} onChange={setSandboxDp}
+                label={t('decision.sandboxLabelDp')} testId="sandbox-dp-input" />
+            </div>
+          </div>
+
+          {/* Result badge */}
+          {sandboxResult && (
+            <div className="mt-2 flex items-center gap-1.5">
+              <span className="text-[11px] text-gray-500">{t('decision.sandboxResult')}</span>
+              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${VERDICT_STYLE[sandboxResult.verdict].badge}`}
+                data-testid="sandbox-verdict-badge">
+                {t(BADGE_LABEL_KEY[sandboxResult.verdict])}
+              </span>
+            </div>
+          )}
         </div>
       )}
 
