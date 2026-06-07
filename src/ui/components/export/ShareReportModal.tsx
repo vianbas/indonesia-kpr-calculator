@@ -5,6 +5,7 @@ import { encodeUrlState } from '../../../utils/urlState';
 import { createShortLink } from '../../../utils/shortLinkApi';
 import { formatShareText, type SharePreset } from '../../utils/shareText';
 import type { CalculatedScenario, ScenarioState, ScenarioId } from '../../../application/store/scenarioTypes';
+import type { DecisionSummaryResult } from '../../../domain/calculators/decisionSummary';
 
 interface Props {
   calculated: CalculatedScenario[];
@@ -12,6 +13,7 @@ interface Props {
   activeCount: 1 | 2 | 3;
   activeTab: ScenarioId;
   disabled?: boolean;
+  decisions?: DecisionSummaryResult[];
 }
 
 const PRESETS: SharePreset[] = ['pasangan', 'agen', 'bank'];
@@ -34,7 +36,7 @@ const XIcon = () => (
   </svg>
 );
 
-export function ShareReportModal({ calculated, allScenarios, activeCount, activeTab, disabled }: Props) {
+export function ShareReportModal({ calculated, allScenarios, activeCount, activeTab, disabled, decisions }: Props) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [preset, setPreset] = useState<SharePreset>('pasangan');
@@ -55,7 +57,7 @@ export function ShareReportModal({ calculated, allScenarios, activeCount, active
   }, [payload]);
 
   const displayUrl = shortUrl ?? longUrl;
-  const text = formatShareText(preset, calculated, displayUrl);
+  const text = formatShareText(preset, calculated, displayUrl, decisions);
 
   const close = useCallback(() => setOpen(false), []);
 

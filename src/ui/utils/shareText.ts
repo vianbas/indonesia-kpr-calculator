@@ -1,4 +1,5 @@
 import type { CalculatedScenario } from '../../application/store/scenarioTypes';
+import type { DecisionSummaryResult, DecisionFlag } from '../../domain/calculators/decisionSummary';
 import { formatIDR, formatIDRCompact, formatPercent, formatTenor } from '../../domain/utils/currency';
 
 const AKAD_LABEL: Record<string, string> = {
@@ -48,9 +49,92 @@ function groupLines(s: CalculatedScenario): string[] {
   });
 }
 
+// ─── Decision verdict helpers ─────────────────────────────────────────────────
+
+function flagText(flag: DecisionFlag): string {
+  switch (flag.type) {
+    case 'dsr_over':
+      return `DSR ${(flag.dsrPct ?? 0).toFixed(1)}% melebihi batas ${(flag.maxDsrPct ?? 0).toFixed(0)}%`;
+    case 'negative_surplus':
+      return 'Surplus bersih negatif pada cicilan tertinggi';
+    case 'rate_shock':
+      return `Kenaikan bunga +${flag.rateOffsetPct ?? 1}% sudah bisa membuat DSR berisiko`;
+    case 'ltv_over':
+      return 'Uang muka di bawah acuan minimum KPR rumah pertama';
+    case 'installment_jump':
+      return `Cicilan naik ${Math.round(flag.jumpPct ?? 0)}% saat periode bunga variabel`;
+  }
+}
+
+function suggestionText(flag: DecisionFlag): string | null {
+  const sug = flag.suggestions[0];
+  if (!sug) return null;
+  switch (sug.type) {
+    case 'add_dp': return `Tambah DP ${formatIDRCompact(sug.amountIDR ?? 0)}`;
+    case 'add_income': return `Butuh tambahan penghasilan ${formatIDRCompact(sug.amountIDR ?? 0)}/bln`;
+    case 'reduce_loan': return `Atau kurangi pinjaman ${formatIDRCompact(sug.amountIDR ?? 0)}`;
+    case 'extend_fixed': return 'Pertimbangkan memperpanjang periode bunga tetap';
+  }
+}
+
+// Verdict block for casual (pasangan) preset — emoji-rich, single scenario
+function verdictBlockCasual(decision: DecisionSummaryResult): string[] {
+  if (decision.verdict === 'incomplete') return [];
+
+  const emoji = decision.verdict === 'safe' ? '✅' : decision.verdict === 'watch' ? '⚠️' : '🚫';
+  const label = decision.verdict === 'safe' ? 'Aman' : decision.verdict === 'watch' ? 'Waspada' : 'Berisiko';
+
+  const lines = ['', `📊 Kemampuan bayar: ${label} ${emoji}`];
+
+  const critical = decision.flags.find((f) => f.severity === 'critical');
+  if (critical) {
+    lines.push(`   • ${flagText(critical)}`);
+    const sug = suggestionText(critical);
+    if (sug) lines.push(`   → ${sug}`);
+  }
+
+  return lines;
+}
+
+// Verdict block for formal (agen) preset — brief label, no emoji
+function verdictBlockFormal(decision: DecisionSummaryResult, indent = ''): string[] {
+  if (decision.verdict === 'incomplete') return [];
+
+  const label = decision.verdict === 'safe' ? 'Aman' : decision.verdict === 'watch' ? 'Waspada' : 'Berisiko';
+  const lines = [`${indent}Status Kemampuan : ${label}`];
+
+  const critical = decision.flags.find((f) => f.severity === 'critical');
+  if (critical) {
+    lines.push(`${indent}  Catatan: ${flagText(critical)}`);
+  }
+
+  return lines;
+}
+
+// Verdict block for very formal (bank) preset — uppercase section header
+function verdictBlockBank(decision: DecisionSummaryResult): string[] {
+  if (decision.verdict === 'incomplete') return [];
+
+  const label = decision.verdict === 'safe' ? 'AMAN' : decision.verdict === 'watch' ? 'WASPADA' : 'BERISIKO';
+  const lines = [
+    '',
+    'STATUS KEMAMPUAN BAYAR',
+    '─────────────────────────────────────',
+    `Status                : ${label}`,
+  ];
+
+  for (const flag of decision.flags) {
+    lines.push(`Catatan               : ${flagText(flag)}`);
+    const sug = suggestionText(flag);
+    if (sug) lines.push(`Rekomendasi           : ${sug}`);
+  }
+
+  return lines;
+}
+
 // ─── Single-scenario formatters ───────────────────────────────────────────────
 
-function pasangan(s: CalculatedScenario, url: string): string {
+function pasangan(s: CalculatedScenario, url: string, decision?: DecisionSummaryResult): string {
   const d = coreData(s);
   const loanWord = d.isSyariah ? 'Pembiayaan' : 'Pinjaman';
   const installWord = d.isSyariah ? 'Angsuran' : 'Cicilan';
@@ -75,11 +159,13 @@ function pasangan(s: CalculatedScenario, url: string): string {
     lines.push(`💵 Dana awal (DP + biaya): ${formatIDRCompact(d.totalUpfront)}`);
   }
 
+  if (decision) lines.push(...verdictBlockCasual(decision));
+
   lines.push('', 'Cek simulasinya di sini:', url);
   return lines.join('\n');
 }
 
-function agen(s: CalculatedScenario, url: string): string {
+function agen(s: CalculatedScenario, url: string, decision?: DecisionSummaryResult): string {
   const d = coreData(s);
   const sep = '══════════════════════════';
   const title = d.isSyariah ? `Simulasi KPR Syariah — ${s.label}` : `Simulasi KPR — ${s.label}`;
@@ -108,11 +194,16 @@ function agen(s: CalculatedScenario, url: string): string {
     lines.push('', `Dana Awal        : ${formatIDR(d.totalUpfront)}`);
   }
 
+  if (decision) {
+    const block = verdictBlockFormal(decision);
+    if (block.length > 0) lines.push('', ...block);
+  }
+
   lines.push('', `Link simulasi: ${url}`);
   return lines.join('\n');
 }
 
-function bank(s: CalculatedScenario, url: string): string {
+function bank(s: CalculatedScenario, url: string, decision?: DecisionSummaryResult): string {
   const d = coreData(s);
   const sep = '══════════════════════════════════════';
   const title = d.isSyariah ? 'SIMULASI KPR SYARIAH / iB' : 'PERMOHONAN KREDIT PEMILIKAN RUMAH';
@@ -168,6 +259,8 @@ function bank(s: CalculatedScenario, url: string): string {
     lines.push(`Dana Awal (Cash-to-Close) : ${formatIDR(d.totalUpfront)}`);
   }
 
+  if (decision) lines.push(...verdictBlockBank(decision));
+
   if (d.isSyariah) {
     lines.push('', 'Simulasi ini bersifat estimasi. Tidak menggantikan penawaran resmi dari bank.');
   }
@@ -178,13 +271,15 @@ function bank(s: CalculatedScenario, url: string): string {
 
 // ─── Multi-scenario formatters ────────────────────────────────────────────────
 
-function multiPasangan(scenarios: CalculatedScenario[], url: string): string {
+function multiPasangan(scenarios: CalculatedScenario[], url: string, decisions?: DecisionSummaryResult[]): string {
   const lines = ['Halo! Ini perbandingan simulasi KPR yang aku hitung:', ''];
 
-  for (const s of scenarios) {
+  for (let i = 0; i < scenarios.length; i++) {
+    const s = scenarios[i];
     const d = coreData(s);
     const g0 = d.groups[0];
     const gN = d.groups[d.groups.length - 1];
+    const decision = decisions?.[i];
 
     lines.push(`📌 ${s.label}`);
     lines.push(`   Pinjaman: ${formatIDRCompact(d.loanAmount)} – ${formatTenor(d.tenorMonths)}`);
@@ -197,6 +292,11 @@ function multiPasangan(scenarios: CalculatedScenario[], url: string): string {
     if (d.totalUpfront > 0) {
       lines.push(`   Dana awal: ${formatIDRCompact(d.totalUpfront)}`);
     }
+    if (decision && decision.verdict !== 'incomplete') {
+      const emoji = decision.verdict === 'safe' ? '✅' : decision.verdict === 'watch' ? '⚠️' : '🚫';
+      const label = decision.verdict === 'safe' ? 'Aman' : decision.verdict === 'watch' ? 'Waspada' : 'Berisiko';
+      lines.push(`   📊 ${label} ${emoji}`);
+    }
     lines.push('');
   }
 
@@ -204,11 +304,14 @@ function multiPasangan(scenarios: CalculatedScenario[], url: string): string {
   return lines.join('\n');
 }
 
-function multiAgen(scenarios: CalculatedScenario[], url: string): string {
+function multiAgen(scenarios: CalculatedScenario[], url: string, decisions?: DecisionSummaryResult[]): string {
   const lines = ['Perbandingan Simulasi KPR', '══════════════════════════', ''];
 
-  for (const s of scenarios) {
+  for (let i = 0; i < scenarios.length; i++) {
+    const s = scenarios[i];
     const d = coreData(s);
+    const decision = decisions?.[i];
+
     lines.push(`▸ ${s.label}`);
     lines.push(`  Nilai Kredit : ${formatIDR(d.loanAmount)}`);
     lines.push(`  Tenor        : ${formatTenor(d.tenorMonths)}`);
@@ -220,6 +323,10 @@ function multiAgen(scenarios: CalculatedScenario[], url: string): string {
     if (d.totalUpfront > 0) {
       lines.push(`  Dana Awal    : ${formatIDR(d.totalUpfront)}`);
     }
+    if (decision && decision.verdict !== 'incomplete') {
+      const label = decision.verdict === 'safe' ? 'Aman' : decision.verdict === 'watch' ? 'Waspada' : 'Berisiko';
+      lines.push(`  Kemampuan    : ${label}`);
+    }
     lines.push('');
   }
 
@@ -227,11 +334,14 @@ function multiAgen(scenarios: CalculatedScenario[], url: string): string {
   return lines.join('\n');
 }
 
-function multiBank(scenarios: CalculatedScenario[], url: string): string {
+function multiBank(scenarios: CalculatedScenario[], url: string, decisions?: DecisionSummaryResult[]): string {
   const lines = ['PERBANDINGAN KREDIT PEMILIKAN RUMAH', '══════════════════════════════════════', ''];
 
-  for (const s of scenarios) {
+  for (let i = 0; i < scenarios.length; i++) {
+    const s = scenarios[i];
     const d = coreData(s);
+    const decision = decisions?.[i];
+
     lines.push(`[ ${s.label.toUpperCase()} ]`);
     lines.push(`Plafon Kredit  : ${formatIDR(d.loanAmount)}`);
     lines.push(`Jangka Waktu   : ${d.tenorMonths} bulan (${formatTenor(d.tenorMonths)})`);
@@ -240,6 +350,10 @@ function multiBank(scenarios: CalculatedScenario[], url: string): string {
     lines.push(`Total Bayar    : ${formatIDR(d.totalPayment)}`);
     if (d.totalUpfront > 0) {
       lines.push(`Dana Awal      : ${formatIDR(d.totalUpfront)}`);
+    }
+    if (decision && decision.verdict !== 'incomplete') {
+      const label = decision.verdict === 'safe' ? 'AMAN' : decision.verdict === 'watch' ? 'WASPADA' : 'BERISIKO';
+      lines.push(`Status Kemampuan : ${label}`);
     }
     lines.push('Jadwal Bunga:');
     for (const g of d.groups) {
@@ -259,16 +373,18 @@ export function formatShareText(
   preset: SharePreset,
   scenarios: CalculatedScenario[],
   url: string,
+  decisions?: DecisionSummaryResult[],
 ): string {
   if (scenarios.length === 0) return '';
 
   if (scenarios.length === 1) {
-    if (preset === 'pasangan') return pasangan(scenarios[0], url);
-    if (preset === 'agen') return agen(scenarios[0], url);
-    return bank(scenarios[0], url);
+    const decision = decisions?.[0];
+    if (preset === 'pasangan') return pasangan(scenarios[0], url, decision);
+    if (preset === 'agen') return agen(scenarios[0], url, decision);
+    return bank(scenarios[0], url, decision);
   }
 
-  if (preset === 'pasangan') return multiPasangan(scenarios, url);
-  if (preset === 'agen') return multiAgen(scenarios, url);
-  return multiBank(scenarios, url);
+  if (preset === 'pasangan') return multiPasangan(scenarios, url, decisions);
+  if (preset === 'agen') return multiAgen(scenarios, url, decisions);
+  return multiBank(scenarios, url, decisions);
 }
