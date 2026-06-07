@@ -613,6 +613,9 @@
     "disclaimer": "For reference only. Not financial advice.",
     "sandboxTitle": "Try a Scenario",
     "sandboxLabel": "Additional monthly income",
-    "sandboxResult": "→ Verdict:"
+    "sandboxResult": "→ Verdict:",
+    "dsrGaugeLabel": "DSR",
+    "dsrGaugeMax": "max {{pct}}%",
+    "minIncomeLabel": "Min. recommended income: {{amount}}/mo"
   }
 }
