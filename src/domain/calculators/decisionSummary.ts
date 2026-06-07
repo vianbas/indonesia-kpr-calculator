@@ -11,6 +11,11 @@ export type DecisionFlagType =
   | 'ltv_over'
   | 'installment_jump';
 
+export interface DecisionSuggestion {
+  type: 'add_dp' | 'add_income' | 'reduce_loan' | 'extend_fixed';
+  amountIDR?: number;
+}
+
 export interface DecisionFlag {
   type: DecisionFlagType;
   severity: 'critical' | 'warn';
@@ -19,12 +24,14 @@ export interface DecisionFlag {
   maxDsrPct?: number;
   rateOffsetPct?: number;
   jumpPct?: number;
+  suggestions: DecisionSuggestion[];
 }
 
 export interface ScenarioDecisionInput {
   id: ScenarioId;
   label: string;
   totalInterest: number;
+  totalPrincipal: number;
   affordability: AffordabilityResult;
   maxDSR: number; // decimal, e.g. 0.35
 }
@@ -46,30 +53,51 @@ export interface DecisionSummaryResult {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+function roundUpTo1k(n: number): number {
+  return Math.ceil(n / 1_000) * 1_000;
+}
+
 function buildFlags(s: ScenarioDecisionInput, ltvAssessment: LtvAssessment | null): DecisionFlag[] {
   const flags: DecisionFlag[] = [];
-  const { affordability: r, maxDSR } = s;
+  const { affordability: r, maxDSR, totalPrincipal } = s;
 
   if (r.dsrAtHighest > maxDSR) {
+    const incomeShortfall = roundUpTo1k(r.totalIncome * (r.dsrAtHighest / maxDSR - 1));
+    const loanExcess = Math.max(0, totalPrincipal - r.maxAffordableLoan);
+    const suggestions: DecisionSuggestion[] = [
+      { type: 'add_income', amountIDR: incomeShortfall },
+      ...(loanExcess > 0 ? [{ type: 'reduce_loan' as const, amountIDR: roundUpTo1k(loanExcess) }] : []),
+    ];
     flags.push({
       type: 'dsr_over',
       severity: 'critical',
       dsrPct: r.dsrAtHighest * 100,
       maxDsrPct: maxDSR * 100,
+      suggestions,
     });
   }
 
   if (r.netSurplusAtHighest < 0) {
-    flags.push({ type: 'negative_surplus', severity: 'critical' });
+    const deficit = roundUpTo1k(-r.netSurplusAtHighest);
+    flags.push({
+      type: 'negative_surplus',
+      severity: 'critical',
+      suggestions: [{ type: 'add_income', amountIDR: deficit }],
+    });
   }
 
   // Rate shock: +1% pushes into risky territory
   if (r.stressTest[1]?.band === 'risky') {
-    flags.push({ type: 'rate_shock', severity: 'warn', rateOffsetPct: 1 });
+    flags.push({ type: 'rate_shock', severity: 'warn', rateOffsetPct: 1, suggestions: [{ type: 'extend_fixed' }] });
   }
 
   if (ltvAssessment && !ltvAssessment.tiers[0].withinCap) {
-    flags.push({ type: 'ltv_over', severity: 'warn' });
+    const shortfall = ltvAssessment.tiers[0].shortfall;
+    flags.push({
+      type: 'ltv_over',
+      severity: 'warn',
+      suggestions: shortfall > 0 ? [{ type: 'add_dp', amountIDR: shortfall }] : [],
+    });
   }
 
   // Significant installment jump when floating kicks in (≥ 15% of first installment)
@@ -78,6 +106,7 @@ function buildFlags(s: ScenarioDecisionInput, ltvAssessment: LtvAssessment | nul
       type: 'installment_jump',
       severity: 'warn',
       jumpPct: (r.installmentJump / r.firstInstallment) * 100,
+      suggestions: [],
     });
   }
 
@@ -110,7 +139,12 @@ export function computeDecisionSummary(input: DecisionSummaryInput): DecisionSum
   if (scenarios.length === 0) {
     const flags: DecisionFlag[] = [];
     if (ltvAssessment && !ltvAssessment.tiers[0].withinCap) {
-      flags.push({ type: 'ltv_over', severity: 'warn' });
+      const shortfall = ltvAssessment.tiers[0].shortfall;
+      flags.push({
+        type: 'ltv_over',
+        severity: 'warn',
+        suggestions: shortfall > 0 ? [{ type: 'add_dp', amountIDR: shortfall }] : [],
+      });
     }
     return { verdict: 'incomplete', flags };
   }

@@ -4,6 +4,7 @@ import { Button } from '../common/Button';
 import type { MortgageFormState } from '../../../application/store/formTypes';
 import type { MortgageSummary } from '../../../domain/models/amortization.types';
 import type { AffordabilityExportData, RefinancingExportData } from '../../../infrastructure/pdf/exportService';
+import type { DecisionSummaryResult } from '../../../domain/calculators/decisionSummary';
 
 interface ScenarioExportItem {
   label: string;
@@ -20,6 +21,10 @@ interface Props {
   affordability?: AffordabilityExportData;
   /** When provided, a refinancing section is included in the PDF. */
   refinancing?: RefinancingExportData;
+  /** For single-scenario PDF: active scenario decision result. */
+  decision?: DecisionSummaryResult;
+  /** For multi-scenario PDF: per-scenario decision results aligned with `scenarios`. */
+  decisions?: DecisionSummaryResult[];
 }
 
 const DownloadIcon = () => (
@@ -64,7 +69,7 @@ const SpinnerIcon = () => (
   </svg>
 );
 
-export function ExportButton({ form, summary, scenarios = [], affordability, refinancing }: Props) {
+export function ExportButton({ form, summary, scenarios = [], affordability, refinancing, decision, decisions }: Props) {
   const { t } = useTranslation();
   const [status, setStatus] = useState<'idle' | 'loading' | 'sharing' | 'downloaded' | 'error'>('idle');
 
@@ -78,9 +83,9 @@ export function ExportButton({ form, summary, scenarios = [], affordability, ref
       let blob: Blob;
       let filename: string;
       if (isMulti) {
-        ({ blob, filename } = await svc.buildMultiPdfBlob(scenarios, affordability, refinancing));
+        ({ blob, filename } = await svc.buildMultiPdfBlob(scenarios, affordability, refinancing, decisions));
       } else {
-        ({ blob, filename } = await svc.buildPdfBlob(form, summary, affordability, refinancing));
+        ({ blob, filename } = await svc.buildPdfBlob(form, summary, affordability, refinancing, decision));
       }
       svc.downloadBlob(blob, filename);
       setStatus('idle');
@@ -98,9 +103,9 @@ export function ExportButton({ form, summary, scenarios = [], affordability, ref
       let filename: string;
 
       if (isMulti) {
-        ({ blob, filename } = await svc.buildMultiPdfBlob(scenarios, affordability, refinancing));
+        ({ blob, filename } = await svc.buildMultiPdfBlob(scenarios, affordability, refinancing, decisions));
       } else {
-        ({ blob, filename } = await svc.buildPdfBlob(form, summary, affordability, refinancing));
+        ({ blob, filename } = await svc.buildPdfBlob(form, summary, affordability, refinancing, decision));
       }
 
       const file = new File([blob], filename, { type: 'application/pdf' });

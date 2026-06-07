@@ -14,7 +14,10 @@ import type {
   PdfAffordabilitySection,
   PdfStressRow,
   PdfRefinancingSection,
+  PdfDecisionSection,
+  PdfDecisionFlag,
 } from './pdfTypes';
+import type { DecisionSummaryResult } from '../../domain/calculators/decisionSummary';
 import type { MortgageFormState } from '../../application/store/formTypes';
 import type { MortgageSummary } from '../../domain/models/amortization.types';
 import type { AffordabilityFormState } from '../../application/store/affordabilityTypes';
@@ -50,6 +53,7 @@ export function buildPdfExportData(
   summary: MortgageSummary,
   affordability?: { form: AffordabilityFormState; result: AffordabilityResult },
   refinancing?: RefinancingExportData,
+  decision?: DecisionSummaryResult,
 ): PdfExportData {
   const now = new Date();
   const generatedAt =
@@ -84,6 +88,7 @@ export function buildPdfExportData(
     refinancing: refinancing
       ? buildRefinancingSection(refinancing.form, refinancing.result)
       : undefined,
+    decision: decision ? buildDecisionSection(decision) ?? undefined : undefined,
     isSyariah: isSyariah || undefined,
     akadTypeDisplay,
     interestColumnLabel,
@@ -131,13 +136,14 @@ export async function buildPdfBlob(
   summary: MortgageSummary,
   affordability?: AffordabilityExportData,
   refinancing?: RefinancingExportData,
+  decision?: DecisionSummaryResult,
 ): Promise<{ blob: Blob; filename: string }> {
   return Sentry.startSpan({ name: 'kpr.pdf_blob', op: 'pdf.export' }, async () => {
     try {
       const afData = affordability?.results[0]
         ? { form: affordability.form, result: affordability.results[0] }
         : undefined;
-      const data = buildPdfExportData(form, summary, afData, refinancing);
+      const data = buildPdfExportData(form, summary, afData, refinancing, decision);
       const doc = renderPdf(data);
       const filename = makeSingleFilename();
       const blob = doc.output('blob');
@@ -154,10 +160,11 @@ export async function buildMultiPdfBlob(
   scenarios: ScenarioForPdf[],
   affordability?: AffordabilityExportData,
   refinancing?: RefinancingExportData,
+  decisions?: DecisionSummaryResult[],
 ): Promise<{ blob: Blob; filename: string }> {
   return Sentry.startSpan({ name: 'kpr.pdf_blob_multi', op: 'pdf.export' }, async () => {
     try {
-      const data = buildMultiScenarioExportData(scenarios, affordability, refinancing);
+      const data = buildMultiScenarioExportData(scenarios, affordability, refinancing, decisions);
       const doc = renderMultiScenarioPdf(data);
       const filename = makeMultiFilename();
       const blob = doc.output('blob');
@@ -173,6 +180,7 @@ function buildMultiScenarioExportData(
   scenarios: ScenarioForPdf[],
   affordability?: AffordabilityExportData,
   refinancing?: RefinancingExportData,
+  decisions?: DecisionSummaryResult[],
 ): PdfMultiScenarioExportData {
   const now = new Date();
   const generatedAt =
@@ -189,6 +197,7 @@ function buildMultiScenarioExportData(
         : undefined,
       // Refinancing is global — only include it in the first scenario to avoid duplication
       i === 0 ? refinancing : undefined,
+      decisions?.[i],
     ),
     generatedAt,
     label: s.label,
@@ -560,6 +569,70 @@ function buildRefinancingSection(
           : `${result.breakEvenMonths} bulan`,
     recommendation: recLabel,
     recommendationType: result.recommendation,
+  };
+}
+
+// ─── Decision section builder ─────────────────────────────────────────────────
+
+function buildDecisionSection(result: DecisionSummaryResult): PdfDecisionSection | null {
+  if (result.verdict === 'incomplete') return null;
+
+  const verdictLabel: Record<string, string> = {
+    safe: 'AMAN',
+    watch: 'WASPADA',
+    risky: 'BERISIKO',
+  };
+
+  const verdictText: Record<string, string> = {
+    safe: 'Tampak OK — pinjaman ini dalam batas kemampuan Anda.',
+    watch: 'Bisa, tapi mepet — perhatikan peringatan di bawah.',
+    risky: 'Melebihi batas — pertimbangkan DP lebih besar, pinjaman lebih kecil, atau tenor lebih panjang.',
+  };
+
+  const flags: PdfDecisionFlag[] = result.flags.map((flag): PdfDecisionFlag => {
+    let text = '';
+    switch (flag.type) {
+      case 'dsr_over':
+        text = `DSR ${(flag.dsrPct ?? 0).toFixed(1)}% melebihi batas ${(flag.maxDsrPct ?? 0).toFixed(0)}%`;
+        break;
+      case 'negative_surplus':
+        text = 'Surplus bersih negatif pada cicilan tertinggi';
+        break;
+      case 'rate_shock':
+        text = `Kenaikan bunga +${flag.rateOffsetPct ?? 1}% sudah bisa membuat DSR berisiko`;
+        break;
+      case 'ltv_over':
+        text = 'Uang muka di bawah acuan minimum KPR rumah pertama';
+        break;
+      case 'installment_jump':
+        text = `Cicilan naik ${Math.round(flag.jumpPct ?? 0)}% saat periode bunga variabel`;
+        break;
+    }
+
+    const suggTexts = flag.suggestions.map((sug) => {
+      switch (sug.type) {
+        case 'add_dp': return `Tambah DP ${formatIDRCompact(sug.amountIDR ?? 0)}`;
+        case 'add_income': return `Butuh tambahan penghasilan ${formatIDRCompact(sug.amountIDR ?? 0)}/bln`;
+        case 'reduce_loan': return `Atau kurangi pinjaman ${formatIDRCompact(sug.amountIDR ?? 0)}`;
+        case 'extend_fixed': return 'Pertimbangkan memperpanjang periode bunga tetap';
+      }
+    });
+
+    return {
+      severity: flag.severity,
+      text,
+      suggestion: suggTexts.join(' · '),
+    };
+  });
+
+  return {
+    verdictLabel: verdictLabel[result.verdict] ?? result.verdict.toUpperCase(),
+    verdictColorType: result.verdict as 'safe' | 'watch' | 'risky',
+    verdictText: verdictText[result.verdict] ?? '',
+    flags,
+    bestScenario: result.bestScenarioLabel
+      ? `${result.bestScenarioLabel} paling hemat bunga total sambil tetap dalam batas aman.`
+      : undefined,
   };
 }
 

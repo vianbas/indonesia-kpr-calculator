@@ -38,6 +38,7 @@ function makeScenario(
     id,
     label: `Skenario ${id}`,
     totalInterest: 200_000_000,
+    totalPrincipal: 500_000_000,
     affordability: makeAffordability(affordabilityOverrides),
     maxDSR: 0.35,
     ...extra,
@@ -274,6 +275,83 @@ describe('computeDecisionSummary', () => {
       }));
       expect(result.verdict).toBe('watch');
       expect(result.bestScenarioId).toBe(1);
+    });
+  });
+
+  describe('suggestions', () => {
+    it('dsr_over flag carries add_income suggestion', () => {
+      const result = computeDecisionSummary(makeInput({
+        scenarios: [makeScenario(1, { dsrAtHighest: 0.40, riskBand: 'risky' })],
+      }));
+      const flag = result.flags.find((f) => f.type === 'dsr_over')!;
+      const income = flag.suggestions.find((s) => s.type === 'add_income');
+      expect(income).toBeDefined();
+      expect(income!.amountIDR).toBeGreaterThan(0);
+    });
+
+    it('dsr_over flag carries reduce_loan when loan exceeds maxAffordableLoan', () => {
+      const result = computeDecisionSummary(makeInput({
+        scenarios: [makeScenario(1, { dsrAtHighest: 0.40, riskBand: 'risky', maxAffordableLoan: 400_000_000 }, { totalPrincipal: 600_000_000 })],
+      }));
+      const flag = result.flags.find((f) => f.type === 'dsr_over')!;
+      const reduce = flag.suggestions.find((s) => s.type === 'reduce_loan');
+      expect(reduce).toBeDefined();
+      expect(reduce!.amountIDR).toBeGreaterThan(0);
+    });
+
+    it('dsr_over flag has no reduce_loan when loan <= maxAffordableLoan', () => {
+      const result = computeDecisionSummary(makeInput({
+        scenarios: [makeScenario(1, { dsrAtHighest: 0.40, riskBand: 'risky', maxAffordableLoan: 600_000_000 }, { totalPrincipal: 500_000_000 })],
+      }));
+      const flag = result.flags.find((f) => f.type === 'dsr_over')!;
+      expect(flag.suggestions.find((s) => s.type === 'reduce_loan')).toBeUndefined();
+    });
+
+    it('negative_surplus flag carries add_income suggestion with deficit amount', () => {
+      const result = computeDecisionSummary(makeInput({
+        scenarios: [makeScenario(1, { netSurplusAtHighest: -500_000, riskBand: 'risky' })],
+      }));
+      const flag = result.flags.find((f) => f.type === 'negative_surplus')!;
+      const income = flag.suggestions.find((s) => s.type === 'add_income');
+      expect(income).toBeDefined();
+      expect(income!.amountIDR).toBe(500_000);
+    });
+
+    it('rate_shock flag carries extend_fixed suggestion', () => {
+      const result = computeDecisionSummary(makeInput({
+        scenarios: [makeScenario(1, {
+          stressTest: [
+            { rateOffsetPct: 0, annualRate: 0.09, installment: 3_500_000, dsr: 0.35, netSurplus: 3_500_000, band: 'safe' },
+            { rateOffsetPct: 1, annualRate: 0.10, installment: 4_200_000, dsr: 0.42, netSurplus: 2_000_000, band: 'risky' },
+            { rateOffsetPct: 2, annualRate: 0.11, installment: 4_500_000, dsr: 0.45, netSurplus: 1_500_000, band: 'risky' },
+            { rateOffsetPct: 3, annualRate: 0.12, installment: 4_800_000, dsr: 0.48, netSurplus: 1_000_000, band: 'risky' },
+          ],
+        })],
+      }));
+      const flag = result.flags.find((f) => f.type === 'rate_shock')!;
+      expect(flag.suggestions.find((s) => s.type === 'extend_fixed')).toBeDefined();
+    });
+
+    it('ltv_over flag carries add_dp suggestion with shortfall amount', () => {
+      const result = computeDecisionSummary(makeInput({ ltvAssessment: makeLtv(false) }));
+      const flag = result.flags.find((f) => f.type === 'ltv_over')!;
+      const dp = flag.suggestions.find((s) => s.type === 'add_dp');
+      expect(dp).toBeDefined();
+      expect(dp!.amountIDR).toBe(50_000_000);
+    });
+
+    it('ltv_over in incomplete state carries add_dp suggestion', () => {
+      const result = computeDecisionSummary({ activeScenarioId: 1, scenarios: [], ltvAssessment: makeLtv(false) });
+      const flag = result.flags.find((f) => f.type === 'ltv_over')!;
+      expect(flag.suggestions.find((s) => s.type === 'add_dp')).toBeDefined();
+    });
+
+    it('installment_jump flag has empty suggestions array', () => {
+      const result = computeDecisionSummary(makeInput({
+        scenarios: [makeScenario(1, { firstInstallment: 3_000_000, installmentJump: 600_000 })],
+      }));
+      const flag = result.flags.find((f) => f.type === 'installment_jump')!;
+      expect(flag.suggestions).toHaveLength(0);
     });
   });
 });

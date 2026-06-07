@@ -1,8 +1,10 @@
 import { useTranslation } from 'react-i18next';
 import type { DecisionSummaryResult, DecisionFlag } from '../../../domain/calculators/decisionSummary';
+import { formatIDR } from '../../../domain/utils/currency';
 
 interface Props {
   result: DecisionSummaryResult;
+  onScrollToAffordability?: () => void;
 }
 
 const VERDICT_STYLE = {
@@ -16,8 +18,8 @@ function FlagItem({ flag }: { flag: DecisionFlag }) {
   const { t } = useTranslation();
 
   const icon = flag.severity === 'critical'
-    ? <span className="text-red-500 shrink-0 font-bold" aria-hidden="true">✗</span>
-    : <span className="text-amber-500 shrink-0 font-bold" aria-hidden="true">!</span>;
+    ? <span className="text-red-500 shrink-0 font-bold mt-0.5" aria-hidden="true">✗</span>
+    : <span className="text-amber-500 shrink-0 font-bold mt-0.5" aria-hidden="true">!</span>;
 
   let text: string;
   switch (flag.type) {
@@ -42,14 +44,43 @@ function FlagItem({ flag }: { flag: DecisionFlag }) {
   }
 
   return (
-    <li className="flex items-start gap-2 text-xs text-gray-700">
-      {icon}
-      <span>{text}</span>
+    <li className="text-xs text-gray-700">
+      <div className="flex items-start gap-2">
+        {icon}
+        <span>{text}</span>
+      </div>
+      {flag.suggestions.length > 0 && (
+        <ul className="mt-1 ml-5 space-y-0.5">
+          {flag.suggestions.map((sug, i) => {
+            let sugText: string;
+            switch (sug.type) {
+              case 'add_dp':
+                sugText = t('decision.suggestAddDp', { amount: formatIDR(sug.amountIDR ?? 0) });
+                break;
+              case 'add_income':
+                sugText = t('decision.suggestAddIncome', { amount: formatIDR(sug.amountIDR ?? 0) });
+                break;
+              case 'reduce_loan':
+                sugText = t('decision.suggestReduceLoan', { amount: formatIDR(sug.amountIDR ?? 0) });
+                break;
+              case 'extend_fixed':
+                sugText = t('decision.suggestExtendFixed');
+                break;
+            }
+            return (
+              <li key={i} className="text-[11px] text-blue-700 flex gap-1">
+                <span aria-hidden="true">→</span>
+                <span>{sugText}</span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </li>
   );
 }
 
-export function DecisionSummary({ result }: Props) {
+export function DecisionSummary({ result, onScrollToAffordability }: Props) {
   const { t } = useTranslation();
   const style = VERDICT_STYLE[result.verdict];
 
@@ -85,9 +116,20 @@ export function DecisionSummary({ result }: Props) {
       {/* Verdict headline */}
       <p className="text-sm font-medium text-gray-800 mb-2.5">{t(verdictTextKey)}</p>
 
+      {/* Scroll-to-affordability CTA (incomplete state only) */}
+      {result.verdict === 'incomplete' && onScrollToAffordability && (
+        <button
+          type="button"
+          onClick={onScrollToAffordability}
+          className="mb-2.5 text-xs font-medium text-blue-700 underline underline-offset-2 hover:text-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
+        >
+          {t('decision.enterIncome')}
+        </button>
+      )}
+
       {/* Flags */}
       {result.flags.length > 0 && (
-        <ul className="space-y-1.5 mb-2.5">
+        <ul className="space-y-2 mb-2.5">
           {result.flags.map((flag, i) => (
             <FlagItem key={`${flag.type}-${i}`} flag={flag} />
           ))}
