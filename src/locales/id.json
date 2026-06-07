@@ -610,6 +610,9 @@
     "suggestReduceLoan": "Atau kurangi pinjaman sebesar {{amount}}",
     "suggestExtendFixed": "Pertimbangkan memperpanjang periode bunga tetap",
     "bestScenario": "{{label}} paling hemat bunga total sambil tetap dalam batas aman — coba bandingkan.",
-    "disclaimer": "Hanya acuan. Bukan saran keuangan."
+    "disclaimer": "Hanya acuan. Bukan saran keuangan.",
+    "sandboxTitle": "Coba Skenario",
+    "sandboxLabel": "Pendapatan tambahan per bulan",
+    "sandboxResult": "→ Hasil:"
   }
 }
