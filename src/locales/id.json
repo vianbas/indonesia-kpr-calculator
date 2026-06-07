@@ -613,6 +613,9 @@
     "disclaimer": "Hanya acuan. Bukan saran keuangan.",
     "sandboxTitle": "Coba Skenario",
     "sandboxLabel": "Pendapatan tambahan per bulan",
-    "sandboxResult": "→ Hasil:"
+    "sandboxResult": "→ Hasil:",
+    "dsrGaugeLabel": "DSR",
+    "dsrGaugeMax": "maks {{pct}}%",
+    "minIncomeLabel": "Pendapatan minimum disarankan: {{amount}}/bln"
   }
 }

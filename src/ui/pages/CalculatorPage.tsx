@@ -45,7 +45,7 @@ import { DEFAULT_BUY_VS_RENT, type BuyVsRentFormState } from '../../application/
 import { DEFAULT_MAX_PROPERTY, type MaxPropertyFormState } from '../../application/store/maxPropertyTypes';
 import { DEFAULT_FLPP, type FlppFormState } from '../../application/store/flppTypes';
 import type { AffordabilityFormState } from '../../application/store/affordabilityTypes';
-import type { AffordabilityInput } from '../../domain/calculators/affordability';
+import type { AffordabilityInput, AffordabilityResult } from '../../domain/calculators/affordability';
 import type { RefinancingFormState } from '../../application/store/refinancingTypes';
 import type { ScenarioState, CalculatedScenario, ScenarioId } from '../../application/store/scenarioTypes';
 import type { DecisionSummaryResult, ScenarioDecisionInput, DecisionVerdict } from '../../domain/calculators/decisionSummary';
@@ -463,6 +463,8 @@ export function CalculatorPage({ initialUrlState }: CalculatorPageProps = {}) {
             decisionResult={decisionResult}
             allDecisionResults={allDecisionResults}
             onComputeSandbox={computeSandbox}
+            activeAffordability={affordabilityResults.find((r) => r.scenario.id === activeTab)?.result}
+            maxDSR={Math.max(0.01, parseNum(affordabilityForm.maxDSRPercent) / 100)}
           />
         </div>
       </div>
@@ -572,6 +574,8 @@ interface ResultsPanelProps {
   decisionResult?: DecisionSummaryResult | null;
   allDecisionResults?: DecisionSummaryResult[];
   onComputeSandbox?: (extraIncome: number) => DecisionSummaryResult | null;
+  activeAffordability?: AffordabilityResult;
+  maxDSR?: number;
 }
 
 function ResultsPanel({
@@ -588,6 +592,8 @@ function ResultsPanel({
   decisionResult,
   allDecisionResults,
   onComputeSandbox,
+  activeAffordability,
+  maxDSR,
 }: ResultsPanelProps) {
   const { t } = useTranslation();
   const { form, summary, errors, isCalcError } = scenario;
@@ -637,6 +643,8 @@ function ResultsPanel({
         {decisionResult && (
           <DecisionSummary
             result={decisionResult}
+            activeAffordability={activeAffordability}
+            maxDSR={maxDSR}
             onScrollToAffordability={onScrollToAffordability}
             onComputeSandbox={onComputeSandbox}
           />

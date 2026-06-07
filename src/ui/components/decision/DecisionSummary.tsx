@@ -1,10 +1,14 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { DecisionSummaryResult, DecisionFlag } from '../../../domain/calculators/decisionSummary';
+import type { AffordabilityResult } from '../../../domain/calculators/affordability';
 import { formatIDR } from '../../../domain/utils/currency';
 
 interface Props {
   result: DecisionSummaryResult;
+  activeAffordability?: AffordabilityResult;
+  /** maxDSR as a decimal (e.g. 0.35) from the affordability form — used for the gauge tick. */
+  maxDSR?: number;
   onScrollToAffordability?: () => void;
   onComputeSandbox?: (extraIncome: number) => DecisionSummaryResult | null;
 }
@@ -21,6 +25,13 @@ const BADGE_LABEL_KEY: Record<string, string> = {
   watch:      'affordability.bandWatch',
   risky:      'affordability.bandRisky',
   incomplete: 'decision.badgeIncomplete',
+};
+
+// Bar fill colour by verdict
+const GAUGE_BAR_COLOR: Record<string, string> = {
+  safe:  'bg-green-500',
+  watch: 'bg-yellow-400',
+  risky: 'bg-red-500',
 };
 
 function FlagItem({ flag }: { flag: DecisionFlag }) {
@@ -89,7 +100,40 @@ function FlagItem({ flag }: { flag: DecisionFlag }) {
   );
 }
 
-export function DecisionSummary({ result, onScrollToAffordability, onComputeSandbox }: Props) {
+function DsrGauge({ affordability, verdict, maxDSR }: {
+  affordability: AffordabilityResult;
+  verdict: string;
+  maxDSR: number;
+}) {
+  const { t } = useTranslation();
+  const dsrPct = affordability.dsrAtHighest * 100;
+  // Clamp fill to 100% visually; scale relative to max * 1.5 so bar doesn't hit edge at exactly max
+  const scale = maxDSR * 100 * 1.5;
+  const fillPct = Math.min(100, (dsrPct / scale) * 100);
+  const limitPct = Math.min(100, ((maxDSR * 100) / scale) * 100);
+  const barColor = GAUGE_BAR_COLOR[verdict] ?? 'bg-gray-400';
+
+  return (
+    <div className="mb-2.5" data-testid="dsr-gauge">
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-[11px] font-medium text-gray-500">
+          {t('decision.dsrGaugeLabel')} <span className="font-semibold text-gray-700">{dsrPct.toFixed(1)}%</span>
+        </span>
+        <span className="text-[11px] text-gray-400">{t('decision.dsrGaugeMax', { pct: (maxDSR * 100).toFixed(0) })}</span>
+      </div>
+      <div className="relative h-2 rounded-full bg-gray-200 overflow-hidden" role="progressbar"
+        aria-valuenow={Math.round(dsrPct)} aria-valuemin={0} aria-valuemax={Math.round(maxDSR * 100)}>
+        <div className={`absolute inset-y-0 left-0 rounded-full transition-all ${barColor}`}
+          style={{ width: `${fillPct}%` }} />
+        {/* Limit tick */}
+        <div className="absolute inset-y-0 w-0.5 bg-gray-500 opacity-60"
+          style={{ left: `${limitPct}%` }} aria-hidden="true" />
+      </div>
+    </div>
+  );
+}
+
+export function DecisionSummary({ result, activeAffordability, maxDSR = 0.35, onScrollToAffordability, onComputeSandbox }: Props) {
   const { t } = useTranslation();
   const style = VERDICT_STYLE[result.verdict];
 
@@ -101,6 +145,12 @@ export function DecisionSummary({ result, onScrollToAffordability, onComputeSand
   }[result.verdict];
 
   const badgeLabelKey = BADGE_LABEL_KEY[result.verdict];
+
+  // Min recommended income — show when risky/watch and income is below threshold
+  const showMinIncome =
+    activeAffordability &&
+    (result.verdict === 'risky' || result.verdict === 'watch') &&
+    activeAffordability.minRecommendedIncome > activeAffordability.totalIncome;
 
   // What-if sandbox state
   const [sandboxIncome, setSandboxIncome] = useState('');
@@ -129,6 +179,12 @@ export function DecisionSummary({ result, onScrollToAffordability, onComputeSand
       {/* Verdict headline */}
       <p className="text-sm font-medium text-gray-800 mb-2.5">{t(verdictTextKey)}</p>
 
+      {/* DSR gauge (all complete verdicts) */}
+      {activeAffordability && result.verdict !== 'incomplete' && (
+        <DsrGauge affordability={activeAffordability} verdict={result.verdict} maxDSR={maxDSR} />
+      )}
+
+
       {/* Scroll-to-affordability CTA (incomplete state only) */}
       {result.verdict === 'incomplete' && onScrollToAffordability && (
         <button
@@ -147,6 +203,14 @@ export function DecisionSummary({ result, onScrollToAffordability, onComputeSand
             <FlagItem key={`${flag.type}-${i}`} flag={flag} />
           ))}
         </ul>
+      )}
+
+      {/* Min recommended income callout */}
+      {showMinIncome && (
+        <p className="text-[11px] text-indigo-700 bg-indigo-50 border border-indigo-100 rounded px-2.5 py-1.5 mb-2.5"
+          data-testid="min-income-callout">
+          {t('decision.minIncomeLabel', { amount: formatIDR(activeAffordability!.minRecommendedIncome) })}
+        </p>
       )}
 
       {/* Best scenario recommendation */}
@@ -181,7 +245,8 @@ export function DecisionSummary({ result, onScrollToAffordability, onComputeSand
               />
             </div>
             {sandboxResult && (
-              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 ${VERDICT_STYLE[sandboxResult.verdict].badge}`} data-testid="sandbox-verdict-badge">
+              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 ${VERDICT_STYLE[sandboxResult.verdict].badge}`}
+                data-testid="sandbox-verdict-badge">
                 {t('decision.sandboxResult')} {t(BADGE_LABEL_KEY[sandboxResult.verdict])}
               </span>
             )}
