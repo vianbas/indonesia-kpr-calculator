@@ -366,7 +366,8 @@
     "legendMidRange": "Tengah — nilai di antara skenario lainnya",
     "legendFootnote": "Semua angka merupakan estimasi simulasi. Nilai aktual dapat berbeda tergantung kebijakan dan syarat masing-masing bank.",
     "tooltipLowest": "Nilai terendah di antara skenario Anda",
-    "tooltipHighest": "Nilai tertinggi di antara skenario Anda"
+    "tooltipHighest": "Nilai tertinggi di antara skenario Anda",
+    "rowVerdict": "Verdik"
   },
   "export": {
     "shareAria": "Bagikan PDF perbandingan skenario",
@@ -598,11 +599,16 @@
     "verdictWatch": "Bisa, tapi mepet — perhatikan peringatan di bawah.",
     "verdictRisky": "Melebihi batas — pertimbangkan DP lebih besar, pinjaman lebih kecil, atau tenor lebih panjang.",
     "verdictIncomplete": "Masukkan penghasilan di Kemampuan Bayar untuk melihat verdik lengkap.",
+    "enterIncome": "Masukkan penghasilan di Kemampuan Bayar →",
     "flagDsrOver": "DSR {{dsr}}% melebihi batas {{max}}%",
     "flagNegativeSurplus": "Surplus bersih negatif pada cicilan tertinggi",
     "flagRateShock": "Kenaikan bunga +{{pct}}% sudah bisa membuat DSR berisiko",
     "flagLtvOver": "Uang muka di bawah acuan minimum KPR rumah pertama",
     "flagInstallmentJump": "Cicilan naik {{pct}}% saat periode bunga variabel",
+    "suggestAddDp": "Tambah DP sebesar {{amount}}",
+    "suggestAddIncome": "Butuh tambahan penghasilan {{amount}}/bln",
+    "suggestReduceLoan": "Atau kurangi pinjaman sebesar {{amount}}",
+    "suggestExtendFixed": "Pertimbangkan memperpanjang periode bunga tetap",
     "bestScenario": "{{label}} paling hemat bunga total sambil tetap dalam batas aman — coba bandingkan.",
     "disclaimer": "Hanya acuan. Bukan saran keuangan."
   }

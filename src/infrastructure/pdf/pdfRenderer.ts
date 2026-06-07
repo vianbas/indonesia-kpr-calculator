@@ -44,6 +44,7 @@ import type {
   PdfMultiScenarioExportData,
   PdfAffordabilitySection,
   PdfRefinancingSection,
+  PdfDecisionSection,
 } from './pdfTypes';
 
 // ─── Type helpers ─────────────────────────────────────────────────────────────
@@ -110,6 +111,9 @@ export function renderMultiScenarioPdf(data: PdfMultiScenarioExportData): jsPDF 
     sy = renderLoanInfoSection(doc, sy, scenario);
     sy = renderInterestSchemeSection(doc, sy, scenario);
     sy = renderFinancialSummarySection(doc, sy, scenario);
+    if (scenario.decision) {
+      sy = renderDecisionSection(doc, sy, scenario.decision);
+    }
     if (scenario.affordability) {
       sy = renderAffordabilitySection(doc, sy, scenario.affordability);
     }
@@ -136,6 +140,9 @@ export function renderPdf(data: PdfExportData): jsPDF {
   y = renderLoanInfoSection(doc, y, data);
   y = renderInterestSchemeSection(doc, y, data);
   y = renderFinancialSummarySection(doc, y, data);
+  if (data.decision) {
+    y = renderDecisionSection(doc, y, data.decision);
+  }
   if (data.affordability) {
     y = renderAffordabilitySection(doc, y, data.affordability);
   }
@@ -279,6 +286,79 @@ function renderFinancialSummarySection(doc: DocWithAutoTable, y: number, data: P
   });
 
   return getLastTableY(doc, y) + 7;
+}
+
+// ─── Section D: Decision brief ────────────────────────────────────────────────
+
+function renderDecisionSection(doc: DocWithAutoTable, y: number, decision: PdfDecisionSection): number {
+  y = ensureSpace(doc, y, 28);
+
+  // Verdict color scheme
+  const verdictFill: [number, number, number] =
+    decision.verdictColorType === 'safe'
+      ? [220, 252, 231]
+      : decision.verdictColorType === 'watch'
+        ? [254, 249, 195]
+        : [254, 226, 226];
+
+  const verdictTextColor: [number, number, number] =
+    decision.verdictColorType === 'safe'
+      ? [22, 101, 52]
+      : decision.verdictColorType === 'watch'
+        ? [133, 77, 14]
+        : [153, 27, 27];
+
+  // Badge row
+  const badgeH = 8.5;
+  doc.setFillColor(...verdictFill);
+  doc.roundedRect(M, y, CONTENT_W, badgeH, 1.5, 1.5, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(...verdictTextColor);
+  doc.text(`RINGKASAN KEPUTUSAN — ${decision.verdictLabel}`, M + 3.5, y + 5.5);
+  y += badgeH + 2.5;
+
+  // Verdict explanation
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(...(C.black as [number, number, number]));
+  doc.text(decision.verdictText, M + 2, y);
+  y += 5.5;
+
+  // Flags
+  for (const flag of decision.flags) {
+    y = ensureSpace(doc, y, 8);
+    const iconColor: [number, number, number] = flag.severity === 'critical'
+      ? (C.orange as [number, number, number])
+      : [146, 64, 14];
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...iconColor);
+    doc.text(flag.severity === 'critical' ? 'x' : '!', M + 2.5, y);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...(C.black as [number, number, number]));
+    doc.text(flag.text, M + 6.5, y);
+    y += 4;
+    if (flag.suggestion) {
+      doc.setFontSize(7);
+      doc.setTextColor(...(C.gray as [number, number, number]));
+      doc.text(`-> ${flag.suggestion}`, M + 9, y);
+      y += 4;
+    }
+    doc.setFontSize(7.5);
+  }
+
+  // Best scenario tip
+  if (decision.bestScenario) {
+    y = ensureSpace(doc, y, 6);
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...(C.blueDark as [number, number, number]));
+    doc.text(`>> ${decision.bestScenario}`, M + 2, y);
+    y += 4.5;
+  }
+
+  return y + 3;
 }
 
 // ─── Section D: Affordability analysis ───────────────────────────────────────

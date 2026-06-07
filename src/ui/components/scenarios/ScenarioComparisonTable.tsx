@@ -4,9 +4,12 @@ import { formatIDR, formatPercent } from '../../../domain/utils/currency';
 import { getRowHighlights } from '../../utils/highlightLogic';
 import type { CellHighlight } from '../../utils/highlightLogic';
 import type { CalculatedScenario } from '../../../application/store/scenarioTypes';
+import type { ScenarioId } from '../../../application/store/scenarioTypes';
+import type { DecisionVerdict } from '../../../domain/calculators/decisionSummary';
 
 interface Props {
   scenarios: CalculatedScenario[];
+  verdicts?: Partial<Record<ScenarioId, DecisionVerdict>>;
 }
 
 interface RowDef {
@@ -71,7 +74,14 @@ interface TooltipState {
   y: number;
 }
 
-export function ScenarioComparisonTable({ scenarios }: Props) {
+const VERDICT_BADGE: Record<DecisionVerdict, string> = {
+  safe:       'bg-green-100 text-green-800',
+  watch:      'bg-yellow-100 text-yellow-800',
+  risky:      'bg-red-100 text-red-800',
+  incomplete: 'bg-gray-100 text-gray-500',
+};
+
+export function ScenarioComparisonTable({ scenarios, verdicts }: Props) {
   const { t } = useTranslation();
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
 
@@ -212,6 +222,20 @@ export function ScenarioComparisonTable({ scenarios }: Props) {
     },
   ];
 
+  // Only show verdict row when at least one scenario has a non-incomplete verdict
+  const showVerdictRow = verdicts &&
+    scenarios.some((s) => {
+      const v = verdicts[s.id as ScenarioId];
+      return v && v !== 'incomplete';
+    });
+
+  const verdictBadgeLabel = (v: DecisionVerdict | undefined): string => {
+    if (!v || v === 'incomplete') return '—';
+    if (v === 'safe') return t('affordability.bandSafe');
+    if (v === 'watch') return t('affordability.bandWatch');
+    return t('affordability.bandRisky');
+  };
+
   return (
     <>
       {/* Tooltip — position:fixed escapes the panel's overflow:hidden */}
@@ -247,6 +271,29 @@ export function ScenarioComparisonTable({ scenarios }: Props) {
             </tr>
           </thead>
           <tbody>
+            {/* Verdict row — only shown when income is entered */}
+            {showVerdictRow && (
+              <tr className="border-b border-gray-100">
+                <td className="py-2.5 px-3 text-gray-700 font-medium bg-gray-50 text-xs">
+                  {t('scenarios.rowVerdict')}
+                </td>
+                {scenarios.map((s) => {
+                  const verdict = verdicts![s.id as ScenarioId];
+                  const label = verdictBadgeLabel(verdict);
+                  return (
+                    <td key={s.id} className="py-2 px-3 text-right">
+                      {verdict && verdict !== 'incomplete' ? (
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${VERDICT_BADGE[verdict]}`}>
+                          {label}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-400">—</span>
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            )}
             {ROWS.map((row, ri) => {
               if (row.isSection) {
                 return (

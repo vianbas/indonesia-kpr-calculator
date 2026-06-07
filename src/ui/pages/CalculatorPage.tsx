@@ -47,8 +47,8 @@ import { DEFAULT_FLPP, type FlppFormState } from '../../application/store/flppTy
 import type { AffordabilityFormState } from '../../application/store/affordabilityTypes';
 import type { AffordabilityInput } from '../../domain/calculators/affordability';
 import type { RefinancingFormState } from '../../application/store/refinancingTypes';
-import type { ScenarioState, CalculatedScenario } from '../../application/store/scenarioTypes';
-import type { DecisionSummaryResult, ScenarioDecisionInput } from '../../domain/calculators/decisionSummary';
+import type { ScenarioState, CalculatedScenario, ScenarioId } from '../../application/store/scenarioTypes';
+import type { DecisionSummaryResult, ScenarioDecisionInput, DecisionVerdict } from '../../domain/calculators/decisionSummary';
 import type { UrlState } from '../../utils/urlState';
 
 // ─── Affordability helpers ────────────────────────────────────────────────────
@@ -183,6 +183,7 @@ export function CalculatorPage({ initialUrlState }: CalculatorPageProps = {}) {
             id: scenario.id,
             label: scenario.label,
             totalInterest: scenario.summary.totalInterest,
+            totalPrincipal: scenario.summary.totalPrincipal,
             affordability: result,
             maxDSR,
           }))
@@ -193,6 +194,43 @@ export function CalculatorPage({ initialUrlState }: CalculatorPageProps = {}) {
       ltvAssessment,
     });
   }, [activeCalculated, activeTab, affordabilityResults, affordabilityTotalIncome, affordabilityForm.maxDSRPercent]);
+
+  // Per-scenario independent decision results — used for PDF and comparison table
+  const allDecisionResults = useMemo((): DecisionSummaryResult[] => {
+    if (affordabilityTotalIncome <= 0) return [];
+    const maxDSR = Math.max(0.01, parseNum(affordabilityForm.maxDSRPercent) / 100);
+    return calculated.map((scenario) => {
+      const valuation = deriveLoanValuation(scenario.form);
+      const ltvAssessment = valuation
+        ? assessLtv({
+            propertyValue: valuation.propertyPrice,
+            downPayment: valuation.downPayment,
+            financingMode: scenario.form.financingMode,
+          })
+        : null;
+      const affordEntry = affordabilityResults.find((r) => r.scenario.id === scenario.id);
+      const decisionScenarios: ScenarioDecisionInput[] = affordEntry
+        ? [{
+            id: scenario.id,
+            label: scenario.label,
+            totalInterest: scenario.summary.totalInterest,
+            totalPrincipal: scenario.summary.totalPrincipal,
+            affordability: affordEntry.result,
+            maxDSR,
+          }]
+        : [];
+      return computeDecisionSummary({
+        activeScenarioId: scenario.id,
+        scenarios: decisionScenarios,
+        ltvAssessment,
+      });
+    });
+  }, [calculated, affordabilityResults, affordabilityTotalIncome, affordabilityForm.maxDSRPercent]);
+
+  const scenarioVerdicts = useMemo((): Partial<Record<ScenarioId, DecisionVerdict>> => {
+    const entries = calculated.map((s, i) => [s.id, allDecisionResults[i]?.verdict ?? 'incomplete'] as const);
+    return Object.fromEntries(entries) as Partial<Record<ScenarioId, DecisionVerdict>>;
+  }, [calculated, allDecisionResults]);
 
   function handleRefinancingPrefill() {
     if (!activeCalculated) return;
@@ -388,6 +426,7 @@ export function CalculatorPage({ initialUrlState }: CalculatorPageProps = {}) {
             onScrollToAffordability={scrollToAffordability}
             onScrollToRefinancing={scrollToRefinancing}
             decisionResult={decisionResult}
+            allDecisionResults={allDecisionResults}
           />
         </div>
       </div>
@@ -457,6 +496,8 @@ export function CalculatorPage({ initialUrlState }: CalculatorPageProps = {}) {
             scenarios={calculated}
             affordability={affordabilityExportData}
             refinancing={refinancingExportData}
+            verdicts={scenarioVerdicts}
+            decisions={allDecisionResults}
           />
         </div>
       )}
@@ -485,13 +526,14 @@ interface ResultsPanelProps {
   calculated: CalculatedScenario[];
   scenarios: ScenarioState[];
   activeCount: 1 | 2 | 3;
-  activeTab: import('../../application/store/scenarioTypes').ScenarioId;
+  activeTab: ScenarioId;
   onReset: () => void;
   affordability: import('../../infrastructure/pdf/exportService').AffordabilityExportData | undefined;
   refinancing: import('../../infrastructure/pdf/exportService').RefinancingExportData | undefined;
   onScrollToAffordability: () => void;
   onScrollToRefinancing: () => void;
   decisionResult?: DecisionSummaryResult | null;
+  allDecisionResults?: DecisionSummaryResult[];
 }
 
 function ResultsPanel({
@@ -506,6 +548,7 @@ function ResultsPanel({
   onScrollToAffordability,
   onScrollToRefinancing,
   decisionResult,
+  allDecisionResults,
 }: ResultsPanelProps) {
   const { t } = useTranslation();
   const { form, summary, errors, isCalcError } = scenario;
@@ -546,10 +589,17 @@ function ResultsPanel({
             scenarios={calculated}
             affordability={affordability}
             refinancing={refinancing}
+            decision={decisionResult ?? undefined}
+            decisions={allDecisionResults}
           />
         </div>
 
-        {decisionResult && <DecisionSummary result={decisionResult} />}
+        {decisionResult && (
+          <DecisionSummary
+            result={decisionResult}
+            onScrollToAffordability={onScrollToAffordability}
+          />
+        )}
 
         <SummaryCard summary={summary} onScrollToAmortization={scrollToAmortization} />
 

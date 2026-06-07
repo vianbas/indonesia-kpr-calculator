@@ -88,6 +88,22 @@ export interface PdfAffordabilitySection {
   stressRows: PdfStressRow[];
 }
 
+// ─── Decision section types ───────────────────────────────────────────────────
+
+export interface PdfDecisionFlag {
+  severity: 'critical' | 'warn';
+  text: string;
+  suggestion: string; // empty string when none
+}
+
+export interface PdfDecisionSection {
+  verdictLabel: string;          // "AMAN" | "WASPADA" | "BERISIKO"
+  verdictColorType: 'safe' | 'watch' | 'risky';
+  verdictText: string;           // One-sentence explanation
+  flags: PdfDecisionFlag[];
+  bestScenario?: string;         // Recommendation sentence when present
+}
+
 // ─── Refinancing section types ────────────────────────────────────────────────
 
 export interface PdfRefinancingSection {
@@ -125,6 +141,8 @@ export interface PdfExportData {
   affordability?: PdfAffordabilitySection;
   /** Present when the user filled in refinancing data before exporting */
   refinancing?: PdfRefinancingSection;
+  /** Present when income is entered and verdict is not incomplete */
+  decision?: PdfDecisionSection;
   /** Set when this is a Syariah (Islamic) financing scenario */
   isSyariah?: boolean;
   /** Akad type label, e.g. "Murabahah" or "Musyarakah Mutanaqishah (MMQ)" */

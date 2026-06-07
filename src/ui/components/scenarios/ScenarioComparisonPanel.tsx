@@ -3,12 +3,16 @@ import { useTranslation } from 'react-i18next';
 import { ScenarioComparisonTable } from './ScenarioComparisonTable';
 import { ChevronIcon } from '../common/ChevronIcon';
 import type { CalculatedScenario } from '../../../application/store/scenarioTypes';
+import type { ScenarioId } from '../../../application/store/scenarioTypes';
 import type { AffordabilityExportData, RefinancingExportData } from '../../../infrastructure/pdf/exportService';
+import type { DecisionSummaryResult, DecisionVerdict } from '../../../domain/calculators/decisionSummary';
 
 interface Props {
   scenarios: CalculatedScenario[];
   affordability?: AffordabilityExportData;
   refinancing?: RefinancingExportData;
+  verdicts?: Partial<Record<ScenarioId, DecisionVerdict>>;
+  decisions?: DecisionSummaryResult[];
 }
 
 const DownloadIcon = () => (
@@ -41,7 +45,7 @@ const SpinnerIcon = () => (
   </svg>
 );
 
-export function ScenarioComparisonPanel({ scenarios, affordability, refinancing }: Props) {
+export function ScenarioComparisonPanel({ scenarios, affordability, refinancing, verdicts, decisions }: Props) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(true);
   const [pdfStatus, setPdfStatus] = useState<'idle' | 'loading' | 'error'>('idle');
@@ -51,7 +55,7 @@ export function ScenarioComparisonPanel({ scenarios, affordability, refinancing 
     setPdfStatus('loading');
     try {
       const svc = await import('../../../infrastructure/pdf/exportService');
-      const { blob, filename } = await svc.buildMultiPdfBlob(scenarios, affordability, refinancing);
+      const { blob, filename } = await svc.buildMultiPdfBlob(scenarios, affordability, refinancing, decisions);
       svc.downloadBlob(blob, filename);
       setPdfStatus('idle');
     } catch {
@@ -95,7 +99,7 @@ export function ScenarioComparisonPanel({ scenarios, affordability, refinancing 
 
       {open && (
         <div className="p-4 bg-white">
-          <ScenarioComparisonTable scenarios={scenarios} />
+          <ScenarioComparisonTable scenarios={scenarios} verdicts={verdicts} />
         </div>
       )}
     </div>
