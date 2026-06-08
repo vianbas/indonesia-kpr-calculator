@@ -232,11 +232,20 @@
     "nextStepRefiTitle": "Simulasi Refinancing",
     "nextStepRefiDesc": "Gunakan hasil skenario ini untuk mengecek potensi take-over atau refinancing.",
     "nextStepAmortTitle": "Lihat Detail Angsuran",
-    "nextStepAmortDesc": "Buka tabel angsuran lengkap."
+    "nextStepAmortDesc": "Buka tabel angsuran lengkap.",
+    "rateResetTitle": "Perubahan Cicilan Mendatang",
+    "rateResetInfo": "Mulai bulan ke-{{month}}: {{from}} → {{to}} (+{{pct}}%)",
+    "sensitivityTitle": "Sensitivitas Suku Bunga × Tenor",
+    "sensitivityNote": "Cicilan bulanan (Rp) pada berbagai kombinasi suku bunga dan tenor. Berdasarkan pokok pinjaman saat ini.",
+    "sensitivityCurrent": "saat ini",
+    "sensitivityYr": "thn"
   },
   "chart": {
     "title": "Visualisasi Simulasi",
-    "scenarioAria": "Pilih skenario"
+    "scenarioAria": "Pilih skenario",
+    "prepaymentTitle": "Dampak Pelunasan Lebih Awal",
+    "prepaymentWithPrepay": "Dengan pelunasan lebih awal",
+    "prepaymentBaseline": "Tanpa pelunasan lebih awal"
   },
   "affordability": {
     "title": "Analisis Kemampuan Bayar",
@@ -616,6 +625,7 @@
     "sandboxLabelDp": "Uang muka tambahan",
     "sandboxResult": "→ Hasil:",
     "sandboxReset": "Reset",
+    "sandboxLabelTenor": "Perpanjang tenor (bulan)",
     "dsrGaugeLabel": "DSR",
     "dsrGaugeMax": "maks {{pct}}%",
     "minIncomeLabel": "Pendapatan minimum disarankan: {{amount}}/bln"

@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Card } from '../common/Card';
 import { formatIDR, formatIDRCompact, formatPercent, formatTenor } from '../../../domain/utils/currency';
 import type { MortgageSummary } from '../../../domain';
+import type { InstallmentGroup } from '../../../domain/models/amortization.types';
 
 const AKAD_LABEL: Record<string, string> = {
   murabahah: 'Murabahah',
@@ -36,6 +37,36 @@ function Metric({ label, value, sub, valueColor = 'text-gray-900', badge }: Metr
         )}
       </div>
       {sub && <p className="text-xs text-gray-400 mt-1 leading-snug">{sub}</p>}
+    </div>
+  );
+}
+
+// ─── Rate-reset callout ───────────────────────────────────────────────────────
+
+function RateResetCallout({ groups }: { groups: InstallmentGroup[] }) {
+  const { t } = useTranslation();
+  const fixedGroup = groups[0];
+  const floatGroup = groups.find((g) => g.type === 'floating');
+  if (!fixedGroup || fixedGroup.type !== 'fixed' || !floatGroup) return null;
+
+  const jumpAmt = floatGroup.installmentAmount - fixedGroup.installmentAmount;
+  if (jumpAmt <= 0) return null;
+  const pct = ((jumpAmt / fixedGroup.installmentAmount) * 100).toFixed(0);
+
+  return (
+    <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+      <span className="shrink-0 text-amber-500 font-bold mt-px" aria-hidden="true">!</span>
+      <div>
+        <p className="text-xs font-semibold text-amber-800">{t('results.rateResetTitle')}</p>
+        <p className="text-xs text-amber-700 mt-0.5">
+          {t('results.rateResetInfo', {
+            month: floatGroup.fromMonth,
+            from: formatIDR(fixedGroup.installmentAmount),
+            to: formatIDR(floatGroup.installmentAmount),
+            pct,
+          })}
+        </p>
+      </div>
     </div>
   );
 }
@@ -127,6 +158,11 @@ export function SummaryCard({ summary, onScrollToAmortization }: Props) {
             )}
           </p>
         </div>
+
+        {/* ── Rate-reset callout — only when fixed→floating exists ───────── */}
+        {!isSyariah && hasMultipleRates && (
+          <RateResetCallout groups={installmentGroups} />
+        )}
 
         {/* ── Metric 1: Loan / Financing Amount ──────────────────────────── */}
         <Metric

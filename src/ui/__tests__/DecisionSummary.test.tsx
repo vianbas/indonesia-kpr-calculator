@@ -103,10 +103,10 @@ describe('DecisionSummary — sandbox', () => {
     render(<DecisionSummary result={riskyResult} onComputeSandbox={sandbox} />);
 
     fireEvent.change(screen.getByTestId('sandbox-income-input'), { target: { value: '3000000' } });
-    expect(sandbox).toHaveBeenCalledWith(3_000_000, 0);
+    expect(sandbox).toHaveBeenCalledWith(3_000_000, 0, 0);
 
     fireEvent.change(screen.getByTestId('sandbox-dp-input'), { target: { value: '50000000' } });
-    expect(sandbox).toHaveBeenCalledWith(3_000_000, 50_000_000);
+    expect(sandbox).toHaveBeenCalledWith(3_000_000, 50_000_000, 0);
 
     expect(screen.getByTestId('sandbox-verdict-badge')).toBeInTheDocument();
   });

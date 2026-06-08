@@ -10,7 +10,7 @@ interface Props {
   /** maxDSR as a decimal (e.g. 0.35) from the affordability form — used for the gauge tick. */
   maxDSR?: number;
   onScrollToAffordability?: () => void;
-  onComputeSandbox?: (extraIncome: number, extraDP: number) => DecisionSummaryResult | null;
+  onComputeSandbox?: (extraIncome: number, extraDP: number, tenorDeltaMonths: number) => DecisionSummaryResult | null;
 }
 
 const VERDICT_STYLE = {
@@ -175,24 +175,27 @@ export function DecisionSummary({ result, activeAffordability, maxDSR = 0.35, on
 
   const [sandboxIncome, setSandboxIncome] = useState(() => defaultIncome);
   const [sandboxDp, setSandboxDp] = useState(() => defaultDp);
+  const [sandboxTenor, setSandboxTenor] = useState('');
 
   const sandboxExtraIncome = parseFloat(sandboxIncome) || 0;
   const sandboxExtraDp = parseFloat(sandboxDp) || 0;
+  const sandboxTenorDelta = parseInt(sandboxTenor) || 0;
 
   const sandboxResult = useMemo(
-    () => (sandboxExtraIncome > 0 || sandboxExtraDp > 0) && onComputeSandbox
-      ? onComputeSandbox(sandboxExtraIncome, sandboxExtraDp)
+    () => (sandboxExtraIncome > 0 || sandboxExtraDp > 0 || sandboxTenorDelta > 0) && onComputeSandbox
+      ? onComputeSandbox(sandboxExtraIncome, sandboxExtraDp, sandboxTenorDelta)
       : null,
-    [sandboxExtraIncome, sandboxExtraDp, onComputeSandbox],
+    [sandboxExtraIncome, sandboxExtraDp, sandboxTenorDelta, onComputeSandbox],
   );
 
   const showSandbox = (result.verdict === 'risky' || result.verdict === 'watch') && !!onComputeSandbox;
 
-  const sandboxDirty = sandboxIncome !== defaultIncome || sandboxDp !== defaultDp;
+  const sandboxDirty = sandboxIncome !== defaultIncome || sandboxDp !== defaultDp || sandboxTenor !== '';
 
   function resetSandbox() {
     setSandboxIncome(defaultIncome);
     setSandboxDp(defaultDp);
+    setSandboxTenor('');
   }
 
   const showMinIncome =
@@ -284,6 +287,21 @@ export function DecisionSummary({ result, activeAffordability, maxDSR = 0.35, on
                 <span className="text-xs text-gray-500 xs:w-36 shrink-0">{t('decision.sandboxLabelDp')}</span>
                 <RpInput value={sandboxDp} onChange={setSandboxDp}
                   label={t('decision.sandboxLabelDp')} testId="sandbox-dp-input" />
+              </div>
+              {/* Tenor row */}
+              <div className="flex flex-col xs:flex-row xs:items-center gap-1 xs:gap-2">
+                <span className="text-xs text-gray-500 xs:w-36 shrink-0">{t('decision.sandboxLabelTenor')}</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="12"
+                  value={sandboxTenor}
+                  onChange={(e) => setSandboxTenor(e.target.value)}
+                  className="w-full text-xs border border-gray-200 rounded px-2 pr-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  placeholder="0"
+                  aria-label={t('decision.sandboxLabelTenor')}
+                  data-testid="sandbox-tenor-input"
+                />
               </div>
             </div>
 

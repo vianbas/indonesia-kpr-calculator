@@ -232,11 +232,20 @@
     "nextStepRefiTitle": "Refinancing Simulation",
     "nextStepRefiDesc": "Use this scenario's results to check takeover or refinancing potential.",
     "nextStepAmortTitle": "View Installment Details",
-    "nextStepAmortDesc": "Open the full amortization table."
+    "nextStepAmortDesc": "Open the full amortization table.",
+    "rateResetTitle": "Upcoming Installment Change",
+    "rateResetInfo": "From month {{month}}: {{from}} → {{to}} (+{{pct}}%)",
+    "sensitivityTitle": "Rate × Tenor Sensitivity",
+    "sensitivityNote": "Monthly installment (Rp) at different rates and tenors. Based on current principal.",
+    "sensitivityCurrent": "current",
+    "sensitivityYr": "yr"
   },
   "chart": {
     "title": "Simulation Charts",
-    "scenarioAria": "Select scenario"
+    "scenarioAria": "Select scenario",
+    "prepaymentTitle": "Prepayment Impact",
+    "prepaymentWithPrepay": "With prepayments",
+    "prepaymentBaseline": "Without prepayments"
   },
   "affordability": {
     "title": "Affordability Analysis",
@@ -616,6 +625,7 @@
     "sandboxLabelDp": "Additional down payment",
     "sandboxResult": "→ Verdict:",
     "sandboxReset": "Reset",
+    "sandboxLabelTenor": "Extend tenor by (months)",
     "dsrGaugeLabel": "DSR",
     "dsrGaugeMax": "max {{pct}}%",
     "minIncomeLabel": "Min. recommended income: {{amount}}/mo"

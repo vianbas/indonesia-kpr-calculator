@@ -20,6 +20,7 @@ import { ScenarioComparisonPanel } from '../components/scenarios/ScenarioCompari
 import { ChartSection } from '../components/charts/ChartSection';
 import { EarlyRepaymentSummary } from '../components/results/EarlyRepaymentSummary';
 import { KprFeesSummary } from '../components/results/KprFeesSummary';
+import { SensitivityGrid } from '../components/results/SensitivityGrid';
 import { DecisionSummary } from '../components/decision/DecisionSummary';
 import { AffordabilityPanel } from '../components/affordability/AffordabilityPanel';
 import { MaxPropertyPanel } from '../components/affordability/MaxPropertyPanel';
@@ -33,6 +34,7 @@ import {
   CalculationErrorState,
 } from '../components/results/EmptyState';
 import { calculateAffordability } from '../../domain/calculators/affordability';
+import { calculateAnnuityInstallment } from '../../domain/calculators/annuity';
 import { calculateRefinancing } from '../../domain/calculators/refinancing';
 import { calculateBuyVsRent } from '../../domain/calculators/buyVsRent';
 import { assessFlpp } from '../../domain/calculators/flpp';
@@ -232,46 +234,79 @@ export function CalculatorPage({ initialUrlState }: CalculatorPageProps = {}) {
     return Object.fromEntries(entries) as Partial<Record<ScenarioId, DecisionVerdict>>;
   }, [calculated, allDecisionResults]);
 
-  // What-if sandbox: re-run affordability + decision with extra income, no form changes.
-  const computeSandbox = useCallback((extraIncome: number, extraDP: number): DecisionSummaryResult | null => {
-    if (!activeCalculated || affordabilityTotalIncome <= 0) return null;
-    const input = deriveAffordabilityInput(activeCalculated, affordabilityForm);
-    const originalPrincipal = activeCalculated.summary.totalPrincipal;
-    // Scale installments linearly — both annuity and flat are linear in principal
-    const dpRatio = extraDP > 0 && originalPrincipal > extraDP
-      ? (originalPrincipal - extraDP) / originalPrincipal
-      : 1;
-    const sandboxInput: AffordabilityInput = {
-      ...input,
-      totalIncome: input.totalIncome + extraIncome,
-      firstInstallment: input.firstInstallment * dpRatio,
-      highestInstallment: input.highestInstallment * dpRatio,
-      principalAmount: input.principalAmount * dpRatio,
-      stressBalance: input.stressBalance * dpRatio,
-    };
-    const newAffordability = calculateAffordability(sandboxInput);
-    const maxDSR = Math.max(0.01, parseNum(affordabilityForm.maxDSRPercent) / 100);
-    const valuation = deriveLoanValuation(activeCalculated.form);
-    const ltvAssessment = valuation
-      ? assessLtv({
-          propertyValue: valuation.propertyPrice,
-          downPayment: valuation.downPayment + extraDP,
-          financingMode: activeCalculated.form.financingMode,
-        })
-      : null;
-    return computeDecisionSummary({
-      activeScenarioId: activeTab,
-      scenarios: [{
-        id: activeTab,
-        label: active.label,
-        totalInterest: activeCalculated.summary.totalInterest,
-        totalPrincipal: originalPrincipal - extraDP,
-        affordability: newAffordability,
-        maxDSR,
-      }],
-      ltvAssessment,
-    });
-  }, [activeCalculated, active.label, activeTab, affordabilityForm, affordabilityTotalIncome]);
+  // What-if sandbox: re-run affordability + decision with extra income / DP / tenor, no form changes.
+  const computeSandbox = useCallback(
+    (extraIncome: number, extraDP: number, tenorDeltaMonths: number): DecisionSummaryResult | null => {
+      if (!activeCalculated || affordabilityTotalIncome <= 0) return null;
+      const input = deriveAffordabilityInput(activeCalculated, affordabilityForm);
+      const originalPrincipal = activeCalculated.summary.totalPrincipal;
+
+      // DP lever: scale installments linearly — both annuity and flat are linear in principal
+      const dpRatio = extraDP > 0 && originalPrincipal > extraDP
+        ? (originalPrincipal - extraDP) / originalPrincipal
+        : 1;
+
+      let firstInstallment = input.firstInstallment * dpRatio;
+      let highestInstallment = input.highestInstallment * dpRatio;
+      const newTenorMonths = input.tenorMonths + tenorDeltaMonths;
+      const newStressRemainingMonths = Math.max(1, input.stressRemainingMonths + tenorDeltaMonths);
+
+      // Tenor lever: recalculate annuity installments for the extended tenor
+      if (tenorDeltaMonths > 0 && activeCalculated.form.paymentMethod === 'annuity') {
+        const firstGroup = activeCalculated.summary.installmentGroups[0];
+        if (firstGroup) {
+          firstInstallment = calculateAnnuityInstallment(
+            originalPrincipal * dpRatio,
+            firstGroup.annualRate,
+            newTenorMonths,
+          );
+        }
+        if (input.stressRemainingMonths > 0) {
+          highestInstallment = calculateAnnuityInstallment(
+            input.stressBalance * dpRatio,
+            input.stressBaseRate,
+            newStressRemainingMonths,
+          );
+          // firstInstallment should never exceed highestInstallment
+          firstInstallment = Math.min(firstInstallment, highestInstallment);
+        }
+      }
+
+      const sandboxInput: AffordabilityInput = {
+        ...input,
+        totalIncome: input.totalIncome + extraIncome,
+        firstInstallment,
+        highestInstallment,
+        principalAmount: input.principalAmount * dpRatio,
+        stressBalance: input.stressBalance * dpRatio,
+        tenorMonths: newTenorMonths,
+        stressRemainingMonths: newStressRemainingMonths,
+      };
+      const newAffordability = calculateAffordability(sandboxInput);
+      const maxDSR = Math.max(0.01, parseNum(affordabilityForm.maxDSRPercent) / 100);
+      const valuation = deriveLoanValuation(activeCalculated.form);
+      const ltvAssessment = valuation
+        ? assessLtv({
+            propertyValue: valuation.propertyPrice,
+            downPayment: valuation.downPayment + extraDP,
+            financingMode: activeCalculated.form.financingMode,
+          })
+        : null;
+      return computeDecisionSummary({
+        activeScenarioId: activeTab,
+        scenarios: [{
+          id: activeTab,
+          label: active.label,
+          totalInterest: activeCalculated.summary.totalInterest,
+          totalPrincipal: originalPrincipal - extraDP,
+          affordability: newAffordability,
+          maxDSR,
+        }],
+        ltvAssessment,
+      });
+    },
+    [activeCalculated, active.label, activeTab, affordabilityForm, affordabilityTotalIncome],
+  );
 
   function handleRefinancingPrefill() {
     if (!activeCalculated) return;
@@ -589,7 +624,7 @@ interface ResultsPanelProps {
   onScrollToRefinancing: () => void;
   decisionResult?: DecisionSummaryResult | null;
   allDecisionResults?: DecisionSummaryResult[];
-  onComputeSandbox?: (extraIncome: number, extraDP: number) => DecisionSummaryResult | null;
+  onComputeSandbox?: (extraIncome: number, extraDP: number, tenorDeltaMonths: number) => DecisionSummaryResult | null;
   activeAffordability?: AffordabilityResult;
   maxDSR?: number;
 }
@@ -667,6 +702,14 @@ function ResultsPanel({
         )}
 
         <SummaryCard summary={summary} onScrollToAmortization={scrollToAmortization} />
+
+        {form.paymentMethod === 'annuity' && form.financingMode !== 'syariah' && summary.installmentGroups[0] && (
+          <SensitivityGrid
+            principal={summary.totalPrincipal}
+            baseAnnualRate={summary.installmentGroups[0].annualRate}
+            currentTenorMonths={summary.originalTenorMonths}
+          />
+        )}
 
         <LtvIndicator form={form} />
 
