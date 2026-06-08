@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Card } from '../common/Card';
 import { AmortizationBarChart } from './AmortizationBarChart';
 import { BalanceLineChart } from './BalanceLineChart';
+import { PrepaymentBalanceChart } from './PrepaymentBalanceChart';
 import type { CalculatedScenario } from '../../../application/store/scenarioTypes';
 
 interface Props {
@@ -55,6 +56,14 @@ export function ChartSection({ calculated }: Props) {
 
         {/* ── Balance line chart ──────────────────────────────────────────── */}
         <BalanceLineChart calculated={calculated} useYearlyGrouping={useYearlyGrouping} />
+
+        {/* ── Prepayment impact chart — only when active scenario has prepayments */}
+        {calculated[safeBarIdx].summary.schedule.some((r) => r.extraPayment > 0) && (
+          <PrepaymentBalanceChart
+            summary={calculated[safeBarIdx].summary}
+            useYearlyGrouping={useYearlyGrouping}
+          />
+        )}
       </div>
     </Card>
   );
