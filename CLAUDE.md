@@ -90,17 +90,13 @@ src/locales/en.json, id.json ← all i18n strings
 #87 Decision Summary v1 · #89 decision depth (suggestions+PDF+comparison)
 #90 share verdict · #91 what-if sandbox · #92 DSR gauge+min income
 #93 DP lever+auto-seed · #94 UI polish
+#95 rate-reset callout · #96 sensitivity grid · #97 prepayment chart · #98 tenor optimizer
 
 **Cancelled:** #50 biweekly payments (not applicable for Indonesian banks)
 
 ## Next features (queued — not yet started)
 
-| # | Feature | Notes |
-|---|---|---|
-| A | **Tenor optimizer** — 3rd sandbox lever in Decision Summary | Extending tenor reduces installment → can clear DSR flag. Pure math, no new UI pattern. |
-| B | **Fixed-to-floating rate-reset callout** | "In N months your installment jumps by Rp X." Schedule already has this data — just needs a proactive UI callout in results. |
-| C | **Prepayment impact chart** | `EarlyRepaymentSummary` shows numbers; a balance-curve overlay (with vs without prepayments) would make the benefit visual. |
-| D | **Rate × tenor sensitivity grid** | Table: rows = rate offsets (0→+3%), cols = tenor options (15/20/25/30 yr), cells = monthly installment. |
+_Queue is empty — no features pending as of 2026-06-08._
 
 ## Test run command
 
