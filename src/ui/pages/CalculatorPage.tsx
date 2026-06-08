@@ -589,7 +589,7 @@ interface ResultsPanelProps {
   onScrollToRefinancing: () => void;
   decisionResult?: DecisionSummaryResult | null;
   allDecisionResults?: DecisionSummaryResult[];
-  onComputeSandbox?: (extraIncome: number) => DecisionSummaryResult | null;
+  onComputeSandbox?: (extraIncome: number, extraDP: number) => DecisionSummaryResult | null;
   activeAffordability?: AffordabilityResult;
   maxDSR?: number;
 }
