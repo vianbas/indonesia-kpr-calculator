@@ -1,6 +1,40 @@
 # KPR Calculator — Handoff Document
 
-_Last updated: 2026-06-15. Current master: `c04ff9e`._
+_Last updated: 2026-07-21. Current master: `c04ff9e`._
+
+---
+
+## ▶ Resume Here (2026-07-21)
+
+**In progress: Over Kredit calculator (feature "B").** Design + implementation
+plan are written and committed; **no feature code written yet**.
+
+- **Branch:** `claude/kpr-project-status-0239c0` (git worktree, NOT master).
+- **Spec (approved):** [`docs/superpowers/specs/2026-07-20-over-kredit-calculator-design.md`](docs/superpowers/specs/2026-07-20-over-kredit-calculator-design.md)
+- **Plan (ready to execute):** [`docs/superpowers/plans/2026-07-20-over-kredit-calculator.md`](docs/superpowers/plans/2026-07-20-over-kredit-calculator.md) — 4 TDD tasks, full code, no placeholders.
+
+**Next action:** execute the plan. Use `superpowers:subagent-driven-development`
+(recommended) or `superpowers:executing-plans`. Then follow the mandatory
+delivery workflow below (issue → branch `feat/...` → tsc → tests → merge).
+
+**What the feature is:** standalone "over kredit resmi via bank" panel — buyer
+cash upfront, new installment, full process-cost breakdown incl. BPHTB, same/
+different-bank penalty toggle, appraisal/LTV gap warnings. Mirrors the
+Refinancing panel pattern. v1 excludes DSR, informal ("di bawah tangan") mode,
+and tiered rates (YAGNI — see spec).
+
+### Environment notes for whoever resumes
+- **tokensave** (token-saving MCP + global git hooks) was installed 2026-07-21.
+  It activates in a **fresh Claude Code session**. A PreToolUse hook blocks Bash
+  `grep` on indexed projects and points to `tokensave_search`; if that MCP tool
+  isn't loaded, override per-call with `TOKENSAVE_DISABLE_GREP_HOOK=1`.
+- In this worktree, `node` is Homebrew's (`/opt/homebrew/bin/node`), not the
+  nvm path in the setup section below. Run tests with `npx vitest run --run`.
+- **Test baseline caveat:** in this worktree 13 tests fail with
+  `localStorage is undefined` (jsdom env), all in `draftStorage.test.ts` and
+  `calculatorFlow.test.tsx` — a **pre-existing environment mismatch, not a
+  code bug**. On the canonical nvm-v20 setup the suite is 486/486. Confirm the
+  over-kredit work adds passing tests and introduces no NEW failures.
 
 ---
 
@@ -155,9 +189,14 @@ When using Claude Code on the new device:
 
 ## Next Features
 
-**Queue is empty.** Decide what to build next and create a GitHub issue to start.
+**In flight:** Over Kredit calculator — spec + plan ready, not yet coded.
+See the **▶ Resume Here** section at the top of this file.
 
 Ideas that haven't been done yet (not committed to any roadmap):
+- Feature "A" from the take-over discussion: add an old-bank early-settlement
+  **penalty field to the existing Refinancing panel** (currently its switching
+  cost omits the old bank's penalty, so take-over-to-another-bank numbers read
+  optimistic). Small change; deferred in favour of the standalone Over Kredit tool.
 - Analytics / usage tracking
 - Additional bank rate data
 - Comparison export to image (screenshot)
