@@ -11,7 +11,7 @@ API worker: **https://api.kpr.vikoabastian.com** (Cloudflare Worker, short-link 
 - **Frontend:** React 19, TypeScript, Vite, Tailwind CSS, i18next (ID + EN)
 - **Domain:** pure TS calculators in `src/domain/calculators/`
 - **State:** per-scenario hooks (`useScenarios`) + lifted affordability form state
-- **Tests:** Vitest + Testing Library — currently **486 passing** (32 test files)
+- **Tests:** Vitest + Testing Library — currently **505 passing** (34 test files)
 - **Deploy:** Cloudflare Pages (auto on master push)
 - **Node:** use `/Users/esrahana/.nvm/versions/node/v20.20.2/bin/npm` (never `nvm.sh`)
 
@@ -62,6 +62,7 @@ src/locales/en.json, id.json ← all i18n strings
 - Buy vs Rent breakeven panel
 - FLPP subsidy checker panel
 - Refinancing analysis + breakeven
+- Over Kredit (take-over) calculator — upfront cash, new installment, process-cost breakdown (provision, BPHTB, notary, balik nama, insurance, old-bank penalty), effective LTV + warning flags
 - Multi-lump-sum + extra-monthly prepayments
 - PDF + CSV export (lazy-loaded, split vendor chunk)
 - Share links (short URL via Cloudflare Worker) + WhatsApp presets
@@ -91,12 +92,13 @@ src/locales/en.json, id.json ← all i18n strings
 #90 share verdict · #91 what-if sandbox · #92 DSR gauge+min income
 #93 DP lever+auto-seed · #94 UI polish
 #95 rate-reset callout · #96 sensitivity grid · #97 prepayment chart · #98 tenor optimizer
+#99 Over Kredit (take-over) calculator
 
 **Cancelled:** #50 biweekly payments (not applicable for Indonesian banks)
 
 ## Next features (queued — not yet started)
 
-_Queue is empty — no features pending as of 2026-06-08._
+_Queue is empty — no features pending as of 2026-07-21 (Over Kredit shipped via PR #99)._
 
 ## Test run command
 
@@ -104,4 +106,4 @@ _Queue is empty — no features pending as of 2026-06-08._
 /Users/esrahana/.nvm/versions/node/v20.20.2/bin/npm test -- --run
 ```
 
-Expected: **486 passing, 0 failing** (occasional flaky timeout in calculatorFlow.test.tsx is pre-existing, re-run once).
+Expected: **505 passing, 0 failing** (occasional flaky timeout in calculatorFlow.test.tsx is pre-existing, re-run once).
