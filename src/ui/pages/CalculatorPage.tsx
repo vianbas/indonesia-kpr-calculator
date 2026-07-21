@@ -25,6 +25,7 @@ import { DecisionSummary } from '../components/decision/DecisionSummary';
 import { AffordabilityPanel } from '../components/affordability/AffordabilityPanel';
 import { MaxPropertyPanel } from '../components/affordability/MaxPropertyPanel';
 import { RefinancingPanel } from '../components/refinancing/RefinancingPanel';
+import { OverCreditPanel } from '../components/overcredit/OverCreditPanel';
 import { BuyVsRentPanel } from '../components/buyvsrent/BuyVsRentPanel';
 import { FlppPanel } from '../components/flpp/FlppPanel';
 import { FaqSection } from '../components/help/FaqSection';
@@ -36,6 +37,7 @@ import {
 import { calculateAffordability } from '../../domain/calculators/affordability';
 import { calculateAnnuityInstallment } from '../../domain/calculators/annuity';
 import { calculateRefinancing } from '../../domain/calculators/refinancing';
+import { calculateOverCredit } from '../../domain/calculators/overCredit';
 import { calculateBuyVsRent } from '../../domain/calculators/buyVsRent';
 import { assessFlpp } from '../../domain/calculators/flpp';
 import { assessLtv } from '../../domain/calculators/ltv';
@@ -43,12 +45,14 @@ import { computeDecisionSummary } from '../../domain/calculators/decisionSummary
 import { deriveLoanValuation } from '../../application/converters/formToInput';
 import { DEFAULT_AFFORDABILITY } from '../../application/store/affordabilityTypes';
 import { DEFAULT_REFINANCING } from '../../application/store/refinancingTypes';
+import { DEFAULT_OVER_CREDIT } from '../../application/store/overCreditTypes';
 import { DEFAULT_BUY_VS_RENT, type BuyVsRentFormState } from '../../application/store/buyVsRentTypes';
 import { DEFAULT_MAX_PROPERTY, type MaxPropertyFormState } from '../../application/store/maxPropertyTypes';
 import { DEFAULT_FLPP, type FlppFormState } from '../../application/store/flppTypes';
 import type { AffordabilityFormState } from '../../application/store/affordabilityTypes';
 import type { AffordabilityInput, AffordabilityResult } from '../../domain/calculators/affordability';
 import type { RefinancingFormState } from '../../application/store/refinancingTypes';
+import type { OverCreditFormState } from '../../application/store/overCreditTypes';
 import type { ScenarioState, CalculatedScenario, ScenarioId } from '../../application/store/scenarioTypes';
 import type { DecisionSummaryResult, ScenarioDecisionInput, DecisionVerdict } from '../../domain/calculators/decisionSummary';
 import type { UrlState } from '../../utils/urlState';
@@ -163,6 +167,17 @@ export function CalculatorPage({ initialUrlState }: CalculatorPageProps = {}) {
 
   function handleRefinancingChange(key: keyof RefinancingFormState, value: string) {
     setRefinancingForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  // ── Over Kredit state ─────────────────────────────────────────────────────
+  const [overCreditForm, setOverCreditForm] =
+    useState<OverCreditFormState>(DEFAULT_OVER_CREDIT);
+
+  function handleOverCreditChange<K extends keyof OverCreditFormState>(
+    key: K,
+    value: OverCreditFormState[K],
+  ) {
+    setOverCreditForm((prev) => ({ ...prev, [key]: value }));
   }
 
   const activeCalculated = calculated.find((s) => s.id === activeTab) ?? calculated[0] ?? null;
@@ -346,6 +361,29 @@ export function CalculatorPage({ initialUrlState }: CalculatorPageProps = {}) {
     return null;
   }, [refinancingForm]);
 
+  const overCreditResult = useMemo(() => {
+    const agreedPrice = parseFloat(overCreditForm.agreedPrice);
+    const newTenor = parseInt(overCreditForm.newTenorMonths);
+    const newRate = parseFloat(overCreditForm.newAnnualRatePercent) / 100;
+    if (!(agreedPrice > 0) || !(newTenor > 0) || Number.isNaN(newRate)) return null;
+    return calculateOverCredit({
+      agreedPrice,
+      sellerRemainingPrincipal: parseFloat(overCreditForm.sellerRemainingPrincipal) || 0,
+      appraisalValue: parseFloat(overCreditForm.appraisalValue) || 0,
+      buyerDownPayment: parseFloat(overCreditForm.buyerDownPayment) || 0,
+      newAnnualRate: newRate,
+      newTenorMonths: newTenor,
+      isSameBank: overCreditForm.isSameBank,
+      provisionFeePercent: (parseFloat(overCreditForm.provisionFeePercent) || 0) / 100,
+      appraisalFeeIDR: parseFloat(overCreditForm.appraisalFeeIDR) || 0,
+      notaryFeeIDR: parseFloat(overCreditForm.notaryFeeIDR) || 0,
+      balikNamaFeeIDR: parseFloat(overCreditForm.balikNamaFeeIDR) || 0,
+      insuranceIDR: parseFloat(overCreditForm.insuranceIDR) || 0,
+      oldBankPenaltyPercent: (parseFloat(overCreditForm.oldBankPenaltyPercent) || 0) / 100,
+      npoptkp: parseFloat(overCreditForm.npoptkp) || 0,
+    });
+  }, [overCreditForm]);
+
   // ── Buy vs Rent state ─────────────────────────────────────────────────────
   const [buyVsRentForm, setBuyVsRentForm] = useState<BuyVsRentFormState>(DEFAULT_BUY_VS_RENT);
 
@@ -466,6 +504,7 @@ export function CalculatorPage({ initialUrlState }: CalculatorPageProps = {}) {
     { id: 'section-max-property', label: t('toolsNav.maxProperty') },
     { id: 'section-affordability', label: t('toolsNav.affordability') },
     { id: 'section-refinancing', label: t('toolsNav.refinancing') },
+    { id: 'section-over-credit', label: t('toolsNav.overCredit') },
     { id: 'section-buy-vs-rent', label: t('toolsNav.buyVsRent') },
     { id: 'section-flpp', label: t('toolsNav.flpp') },
     ...(activeCount > 1 && calculated.length >= 2
@@ -551,6 +590,17 @@ export function CalculatorPage({ initialUrlState }: CalculatorPageProps = {}) {
             result={refinancingResult}
             activeScenario={activeCalculated}
             onPrefill={handleRefinancingPrefill}
+          />
+        </div>
+      )}
+
+      {/* Over Kredit — take-over via bank */}
+      {calculated.length >= 1 && (
+        <div id="section-over-credit" className="scroll-mt-16">
+          <OverCreditPanel
+            form={overCreditForm}
+            onChange={handleOverCreditChange}
+            result={overCreditResult}
           />
         </div>
       )}
