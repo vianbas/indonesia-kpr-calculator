@@ -11,9 +11,9 @@ API worker: **https://api.kpr.vikoabastian.com** (Cloudflare Worker, short-link 
 - **Frontend:** React 19, TypeScript, Vite, Tailwind CSS, i18next (ID + EN)
 - **Domain:** pure TS calculators in `src/domain/calculators/`
 - **State:** per-scenario hooks (`useScenarios`) + lifted affordability form state
-- **Tests:** Vitest + Testing Library — currently **505 passing** (34 test files)
+- **Tests:** Vitest + Testing Library — currently **506 passing** (34 test files)
 - **Deploy:** Cloudflare Pages (auto on master push)
-- **Node:** use `/Users/esrahana/.nvm/versions/node/v20.20.2/bin/npm` (never `nvm.sh`)
+- **Node:** system npm at `/opt/homebrew/bin/npm` (node v26); run tests with `npx vitest run`. (The old `/Users/esrahana/.nvm/...` path no longer exists.)
 
 ## Workflow (MANDATORY)
 
@@ -103,7 +103,7 @@ _Queue is empty — no features pending as of 2026-07-21 (Over Kredit shipped vi
 ## Test run command
 
 ```bash
-/Users/esrahana/.nvm/versions/node/v20.20.2/bin/npm test -- --run
+npx vitest run
 ```
 
-Expected: **505 passing, 0 failing** (occasional flaky timeout in calculatorFlow.test.tsx is pre-existing, re-run once).
+Expected: **506 passing, 0 failing** (occasional flaky timeout in calculatorFlow.test.tsx is pre-existing, re-run once).
