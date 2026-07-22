@@ -19,7 +19,7 @@ API worker: **https://api.kpr.vikoabastian.com** (Cloudflare Worker, short-link 
 
 1. `gh issue create` → new branch `feat/...` → implement → `tsc -b --noEmit` → full test run
 2. Push feature branch → `git checkout master && git merge feat/... --no-ff`
-3. Re-run full tests on master → if 486/486 pass → `git push origin master`
+3. Re-run full tests on master → if 506/506 pass → `git push origin master`
 4. No Co-Authored-By lines in commits.
 5. No force-push / reset --hard on master.
 6. The flaky test `calculatorFlow.test.tsx > auto-calculates the default form` occasionally times out — re-run once before treating it as a real failure.
