@@ -58,6 +58,11 @@ describe('OverCreditPanel', () => {
     expect(screen.getByLabelText(/seller's remaining principal/i)).toBeInTheDocument();
   });
 
+  it('renders the subtitle in the panel header', () => {
+    render(<Harness />);
+    expect(screen.getByText(/take over a seller's house/i)).toBeInTheDocument();
+  });
+
   it('shows the empty state until required fields are filled', () => {
     render(<Harness />);
     openPanel();

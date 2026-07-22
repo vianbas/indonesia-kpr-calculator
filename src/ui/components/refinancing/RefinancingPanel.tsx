@@ -30,7 +30,10 @@ export function RefinancingPanel({ form, onChange, result, activeScenario, onPre
         aria-expanded={open}
         aria-controls={panelId}
       >
-        <span>{t('refinancing.title')}</span>
+        <span className="flex flex-col text-left">
+          <span>{t('refinancing.title')}</span>
+          <span className="text-xs font-normal text-gray-400">{t('refinancing.subtitle')}</span>
+        </span>
         <ChevronIcon open={open} />
       </button>
 

@@ -27,7 +27,10 @@ export function OverCreditPanel({ form, onChange, result }: Props) {
         aria-expanded={open}
         aria-controls={panelId}
       >
-        <span>{t('overCredit.title')}</span>
+        <span className="flex flex-col text-left">
+          <span>{t('overCredit.title')}</span>
+          <span className="text-xs font-normal text-gray-400">{t('overCredit.subtitle')}</span>
+        </span>
         <ChevronIcon open={open} />
       </button>
 
