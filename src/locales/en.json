@@ -285,7 +285,8 @@
     "stressRateOffset": "+{{pct}}%"
   },
   "refinancing": {
-    "title": "Refinancing Calculator",
+    "title": "Take Over KPR to Another Bank",
+    "subtitle": "Move your KPR to another bank for a lower rate (refinancing)",
     "promptFill": "Fill in the remaining balance, current interest rate, and new offer to view the analysis.",
     "autoFillDesc": "Auto-fill from active simulation",
     "autoFillBtn": "Fill from Scenario",
@@ -333,7 +334,8 @@
     "netSavingsSub": "After switching costs deducted"
   },
   "overCredit": {
-    "title": "Over Kredit (Take-Over) Calculator",
+    "title": "Over Kredit (Home Take-Over)",
+    "subtitle": "Take over a seller's house and remaining KPR",
     "promptFill": "Enter the agreed price, seller's remaining principal, and your new loan terms to see the analysis.",
     "dealSection": "The Deal",
     "agreedPrice": "Agreed Price",
@@ -651,7 +653,7 @@
     "results": "Results",
     "maxProperty": "Price Estimate",
     "affordability": "Affordability",
-    "refinancing": "Refinancing",
+    "refinancing": "Take Over KPR",
     "overCredit": "Over Kredit",
     "buyVsRent": "Buy vs Rent",
     "flpp": "FLPP",
