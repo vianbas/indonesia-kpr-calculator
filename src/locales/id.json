@@ -285,7 +285,8 @@
     "stressRateOffset": "+{{pct}}%"
   },
   "refinancing": {
-    "title": "Kalkulator Refinancing",
+    "title": "Take Over KPR ke Bank Lain",
+    "subtitle": "Pindahkan KPR-mu ke bank lain demi bunga lebih murah (refinancing)",
     "promptFill": "Isi sisa pokok, suku bunga saat ini, dan penawaran baru untuk melihat analisis.",
     "autoFillDesc": "Isi otomatis dari hasil simulasi aktif",
     "autoFillBtn": "Isi dari Skenario",
@@ -333,7 +334,8 @@
     "netSavingsSub": "Setelah biaya pindah dikurangi"
   },
   "overCredit": {
-    "title": "Kalkulator Over Kredit",
+    "title": "Over Kredit Rumah",
+    "subtitle": "Ambil alih rumah + sisa KPR dari penjual",
     "promptFill": "Isi harga sepakat, sisa pokok KPR penjual, dan syarat KPR barumu untuk melihat analisis.",
     "dealSection": "Kesepakatan",
     "agreedPrice": "Harga Sepakat",
@@ -651,7 +653,7 @@
     "results": "Hasil",
     "maxProperty": "Estimasi Harga",
     "affordability": "Kemampuan Bayar",
-    "refinancing": "Refinancing",
+    "refinancing": "Take Over KPR",
     "overCredit": "Over Kredit",
     "buyVsRent": "Beli vs Sewa",
     "flpp": "FLPP",
