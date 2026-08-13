@@ -9,7 +9,8 @@ export interface RefinancingInput {
   remainingMonths: number;
   newAnnualRate: number;
   newTenorMonths: number;
-  provisionFeePercent: number;  // decimal, e.g. 0.01 = 1%
+  provisionFeePercent: number;  // decimal, e.g. 0.01 = 1% — charged by the new bank
+  penaltyFeePercent: number;    // decimal — old bank's early-settlement penalty
   appraisalFeeIDR: number;
   adminFeeIDR: number;
 }
@@ -23,6 +24,8 @@ export interface RefinancingResult {
   newTotalPayment: number;
   monthlySavings: number;
   totalInterestSavings: number;
+  provisionFee: number;
+  penaltyFee: number;
   totalSwitchingCost: number;
   breakEvenMonths: number | null;
   netSavings: number;
@@ -37,6 +40,7 @@ export function calculateRefinancing(input: RefinancingInput): RefinancingResult
     newAnnualRate,
     newTenorMonths,
     provisionFeePercent,
+    penaltyFeePercent,
     appraisalFeeIDR,
     adminFeeIDR,
   } = input;
@@ -59,8 +63,15 @@ export function calculateRefinancing(input: RefinancingInput): RefinancingResult
   const newTotalPayment = roundMoney(newMonthlyPayment * newTenorMonths);
   const newTotalInterest = roundMoney(Math.max(0, newTotalPayment - remainingBalance));
 
+  // Provision is charged by the new bank on the amount taken over; the penalty is
+  // charged by the old bank for settling early. Both scale with the balance but
+  // are separate line items, and either can be zero (same-bank renegotiation,
+  // waived provision) — so they are kept apart rather than summed into one rate.
+  const provisionFee = roundMoney(remainingBalance * provisionFeePercent);
+  const penaltyFee = roundMoney(remainingBalance * penaltyFeePercent);
+
   const totalSwitchingCost = roundMoney(
-    remainingBalance * provisionFeePercent + appraisalFeeIDR + adminFeeIDR,
+    provisionFee + penaltyFee + appraisalFeeIDR + adminFeeIDR,
   );
 
   const monthlySavings = roundMoney(currentMonthlyPayment - newMonthlyPayment);
@@ -90,6 +101,8 @@ export function calculateRefinancing(input: RefinancingInput): RefinancingResult
     newTotalPayment,
     monthlySavings,
     totalInterestSavings,
+    provisionFee,
+    penaltyFee,
     totalSwitchingCost,
     breakEvenMonths,
     netSavings,

@@ -57,7 +57,7 @@ npm install
 # 4. Run dev server
 npm run dev
 
-# 5. Run tests (expect 506 passing)
+# 5. Run tests (expect 524 passing)
 npx vitest run
 ```
 
@@ -67,10 +67,10 @@ npx vitest run
 
 ## Current State (as of 2026-08-13)
 
-- **Tests:** 506 passing, 0 failing (34 test files)
+- **Tests:** 524 passing, 0 failing (35 test files)
 - **Branch:** `master` is clean, green, and **protected** — PR-only (see workflow below)
 - **Deploy:** Auto-deploys to Cloudflare Pages on every master push
-- **Feature queue:** two unstarted items — see [Next Features](#next-features)
+- **Feature queue:** one unstarted item — see [Next Features](#next-features)
 - **Known debt:** `npm audit` reports 2 critical + 6 high, all in the dev
   toolchain (`vitest` 1.6.1 / `vite`) and fixable only by semver-major upgrades.
   The single production dependency flagged is `dompurify` (moderate).
@@ -111,6 +111,8 @@ Re-run once before treating as a real failure.
 | #99 | Over Kredit (take-over) calculator — upfront cash, new installment, process-cost breakdown (provision, BPHTB, notary, balik nama, insurance, old-bank penalty), effective LTV + warning flags |
 | #100 | Take-over feature naming + panel subtitles for Indonesian clarity |
 | #106 | jsdom `localStorage` fix — in-memory Storage fallback on Node ≥26 |
+| #108 | HANDOFF.md refresh + PR-only mandatory workflow |
+| #110 | Refinancing old-bank early-settlement penalty — own field, split from the new bank's provisi |
 
 **Cancelled:** #50 biweekly payments — not applicable for Indonesian banks.
 
@@ -126,7 +128,7 @@ src/domain/calculators/      ← pure functions, no React
   ltv.ts                     ← LTV assessment
   buyVsRent.ts               ← net-worth comparison
   flpp.ts                    ← FLPP eligibility
-  refinancing.ts             ← refinancing breakeven
+  refinancing.ts             ← refinancing breakeven + old-bank penalty
   overCredit.ts              ← over kredit (take-over): cash upfront, BPHTB, flags
 
 src/application/
@@ -159,7 +161,7 @@ the repo owner as well. Every change lands through a pull request.
 2. Implement on the branch
 3. `npx tsc -b --noEmit` — must be clean
 4. `npm run lint` — must be clean
-5. `npx vitest run` — must be 506/506
+5. `npx vitest run` — must be 524/524
 6. `git push -u origin <branch>` → `gh pr create --base master` with `Closes #N` in the body
 7. Wait for CI green, then `gh pr merge <N> --merge`
 
@@ -202,12 +204,7 @@ When using Claude Code on the new device:
 
 **Nothing in flight.** Queued but unstarted:
 
-1. **Old-bank penalty field in the Refinancing panel.** `refinancing.ts` has no
-   penalty input, so its switching cost omits the old bank's early-settlement
-   penalty and take-over-to-another-bank numbers read optimistic. The standalone
-   Over Kredit calculator already models this (`oldBankPenalty`); the Refinancing
-   panel does not.
-2. **Dev-toolchain security upgrade.** `npm audit`: 2 critical + 6 high, all in
+1. **Dev-toolchain security upgrade.** `npm audit`: 2 critical + 6 high, all in
    the dev toolchain — `vitest` 1.6.1 → 4.x and `vite` → 8.x are semver-major and
    likely to touch config and test setup, so keep this isolated in its own PR.
    `dompurify` (the only production dependency flagged, moderate) has a
