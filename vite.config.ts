@@ -1,4 +1,4 @@
-/// <reference types="vitest" />
+/// <reference types="vitest/config" />
 import { copyFileSync, existsSync } from 'fs'
 import { resolve } from 'path'
 import { defineConfig } from 'vite'
@@ -78,8 +78,11 @@ export default defineConfig(({ command }) => {
 
     test: {
       globals: true,
+      // Default to node — it starts far faster than jsdom, and only the src/ui
+      // suites need a DOM. Those declare it per file with a
+      // `// @vitest-environment jsdom` docblock (Vitest 4 removed
+      // environmentMatchGlobs, which used to apply it to src/ui/** wholesale).
       environment: 'node',
-      environmentMatchGlobs: [['src/ui/**', 'jsdom']],
       setupFiles: ['./src/test/setup.ts'],
       include: ['src/**/*.{test,spec}.{ts,tsx}'],
     },

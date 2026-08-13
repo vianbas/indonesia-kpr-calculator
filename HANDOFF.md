@@ -6,9 +6,10 @@ _Last updated: 2026-08-13._
 
 ## ▶ Start Here
 
-**Nothing is in flight.** `master` is green and fully shipped — the Over Kredit
-(take-over) calculator landed in PR #99, was renamed for Indonesian clarity in
-PR #101, and the jsdom/localStorage test-environment bug was fixed in PR #107.
+**Nothing is in flight.** `master` is green and fully shipped. Most recently: the
+Refinancing panel gained a separate old-bank early-settlement penalty field
+(#110), and the dependency security debt was cleared down to 3 dev-only moderates
+across #112 (non-breaking fixes) and #114 (`vitest` 1 → 4, `vite` 5 → 6).
 
 **Before you write any code**, read the two sections that changed most recently:
 
@@ -22,6 +23,10 @@ PR #101, and the jsdom/localStorage test-environment bug was fixed in PR #107.
   works locally: Node ≥26 exposes a global `localStorage` that shadowed jsdom's
   and broke 13 tests, and `src/test/setup.ts` now installs an in-memory Storage
   fallback when that happens (#106).
+- **Test environment:** Vitest 4 defaults every file to `node`. A test that
+  touches the DOM must declare `// @vitest-environment jsdom` on its first line;
+  `environmentMatchGlobs` (which used to give all of `src/ui/**` a DOM) was
+  removed in Vitest 4 (#114).
 - **tokensave** (token-saving MCP + global git hooks) is installed. A PreToolUse
   hook blocks Bash `grep` on indexed projects and points to `tokensave_search`;
   if that MCP tool is not loaded, override per-call with
@@ -71,9 +76,13 @@ npx vitest run
 - **Branch:** `master` is clean, green, and **protected** — PR-only (see workflow below)
 - **Deploy:** Auto-deploys to Cloudflare Pages on every master push
 - **Feature queue:** one unstarted item — see [Next Features](#next-features)
-- **Known debt:** `npm audit` reports 2 critical + 6 high, all in the dev
-  toolchain (`vitest` 1.6.1 / `vite`) and fixable only by semver-major upgrades.
-  The single production dependency flagged is `dompurify` (moderate).
+- **Known debt:** `npm audit` is down to **3 moderate, 0 critical, 0 high**
+  (#112 cleared the non-breaking advisories, #114 the `vitest`/`vite` majors).
+  All three that remain — `uuid`, `@storybook/addon-actions`,
+  `@storybook/addon-essentials` — are reachable only through Storybook, which is
+  dev-only and never ships to users. Do **not** run `npm audit fix --force` on
+  them: npm's proposed fix downgrades `@storybook/addon-essentials` from 8.6.x
+  to 7.0.6.
 
 ### Flaky test (pre-existing, not a bug)
 `calculatorFlow.test.tsx > auto-calculates the default form` occasionally times out under load.  
@@ -113,6 +122,8 @@ Re-run once before treating as a real failure.
 | #106 | jsdom `localStorage` fix — in-memory Storage fallback on Node ≥26 |
 | #108 | HANDOFF.md refresh + PR-only mandatory workflow |
 | #110 | Refinancing old-bank early-settlement penalty — own field, split from the new bank's provisi |
+| #112 | Non-breaking security fixes — dompurify, postcss, nanoid, js-yaml, form-data, brace-expansion |
+| #114 | `vitest` 1.6.1 → 4.1.10 and `vite` 5 → 6.4.3 — clears the 2 critical + 1 high + 2 moderate |
 
 **Cancelled:** #50 biweekly payments — not applicable for Indonesian banks.
 
@@ -204,11 +215,12 @@ When using Claude Code on the new device:
 
 **Nothing in flight.** Queued but unstarted:
 
-1. **Dev-toolchain security upgrade.** `npm audit`: 2 critical + 6 high, all in
-   the dev toolchain — `vitest` 1.6.1 → 4.x and `vite` → 8.x are semver-major and
-   likely to touch config and test setup, so keep this isolated in its own PR.
-   `dompurify` (the only production dependency flagged, moderate) has a
-   non-breaking fix.
+1. **Storybook 8.6 → 9/10 migration.** The last three `npm audit` findings (all
+   moderate) sit behind Storybook: `uuid`, `@storybook/addon-actions`,
+   `@storybook/addon-essentials`. Storybook 9 removed `addon-essentials`
+   altogether, so this is a config migration rather than a version bump — and it
+   would also unlock `vite` 7/8, which `@storybook/react-vite@8.6.18` currently
+   caps at `vite ^6`. Low urgency: Storybook is dev-only tooling.
 
 Ideas without a committed roadmap:
 - Analytics / usage tracking

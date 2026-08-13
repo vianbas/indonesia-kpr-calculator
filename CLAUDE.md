@@ -11,7 +11,10 @@ API worker: **https://api.kpr.vikoabastian.com** (Cloudflare Worker, short-link 
 - **Frontend:** React 19, TypeScript, Vite, Tailwind CSS, i18next (ID + EN)
 - **Domain:** pure TS calculators in `src/domain/calculators/`
 - **State:** per-scenario hooks (`useScenarios`) + lifted affordability form state
-- **Tests:** Vitest + Testing Library — currently **524 passing** (35 test files)
+- **Tests:** Vitest 4 + Testing Library — currently **524 passing** (35 test files).
+  The default environment is `node`. **A test that touches the DOM must declare
+  `// @vitest-environment jsdom` on its first line** — Vitest 4 removed
+  `environmentMatchGlobs`, so living under `src/ui/` no longer grants jsdom.
 - **Deploy:** Cloudflare Pages (auto on master push)
 - **Node:** `.nvmrc` pins **22.22.3** — that is what CI runs. Local dev on newer Node works too (see #106); use system npm at `/opt/homebrew/bin/npm` and run tests with `npx vitest run`.
 
@@ -105,14 +108,18 @@ src/locales/en.json, id.json ← all i18n strings
 #99 Over Kredit (take-over) calculator · #100 take-over naming/subtitles
 #102/#104 CLAUDE.md stale-fact fixes · #106 jsdom localStorage on Node ≥26
 #108 HANDOFF/workflow refresh · #110 refinancing old-bank penalty field
+#112 non-breaking security fixes · #114 vitest 1→4 + vite 5→6 upgrade
 
 **Cancelled:** #50 biweekly payments (not applicable for Indonesian banks)
 
 ## Next features (queued — not yet started)
 
-- Dev-toolchain security upgrade — `npm audit` reports 2 critical + 6 high, all
-  in the dev toolchain (`vitest` 1.6.1, `vite`); fixes are semver-major.
-  `dompurify` (production) has a non-breaking fix.
+- Storybook 8.6 → 9/10 migration. The last 3 `npm audit` findings (all moderate:
+  `uuid`, `@storybook/addon-actions`, `@storybook/addon-essentials`) are only
+  reachable through Storybook. npm's proposed "fix" is
+  `@storybook/addon-essentials@7.0.6` — a **downgrade**, so it must not be
+  applied. Storybook 9 dropped `addon-essentials` entirely, so this is a config
+  migration, not a version bump. Dev-only tooling; nothing ships to users.
 
 ## Test run command
 
