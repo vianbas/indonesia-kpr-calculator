@@ -3,7 +3,10 @@
   "compilerOptions": {
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "types": ["vitest/globals", "@testing-library/jest-dom"]
+    // "node" is listed explicitly: Vitest 1's `vitest/globals` pulled @types/node
+    // in transitively, Vitest 4 does not. pwa.test.ts imports node:fs and
+    // src/test/setup.ts touches `global`, so both need it.
+    "types": ["vitest/globals", "@testing-library/jest-dom", "node"]
   },
   "include": ["src"],
   "exclude": []

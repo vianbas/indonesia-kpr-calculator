@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Frontend integration tests for CalculatorPage.
  *
