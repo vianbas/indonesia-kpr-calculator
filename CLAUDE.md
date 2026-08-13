@@ -13,16 +13,26 @@ API worker: **https://api.kpr.vikoabastian.com** (Cloudflare Worker, short-link 
 - **State:** per-scenario hooks (`useScenarios`) + lifted affordability form state
 - **Tests:** Vitest + Testing Library — currently **506 passing** (34 test files)
 - **Deploy:** Cloudflare Pages (auto on master push)
-- **Node:** system npm at `/opt/homebrew/bin/npm` (node v26); run tests with `npx vitest run`. (The old `/Users/esrahana/.nvm/...` path no longer exists.)
+- **Node:** `.nvmrc` pins **22.22.3** — that is what CI runs. Local dev on newer Node works too (see #106); use system npm at `/opt/homebrew/bin/npm` and run tests with `npx vitest run`.
 
 ## Workflow (MANDATORY)
 
-1. `gh issue create` → new branch `feat/...` → implement → `tsc -b --noEmit` → full test run
-2. Push feature branch → `git checkout master && git merge feat/... --no-ff`
-3. Re-run full tests on master → if 506/506 pass → `git push origin master`
-4. No Co-Authored-By lines in commits.
-5. No force-push / reset --hard on master.
+`master` is a protected branch — **you cannot push to it**, not even as the repo
+owner. Every change lands through a pull request.
+
+1. `gh issue create` → new branch `feat/issue-N-description` off `origin/master`
+2. Implement → `npx tsc -b --noEmit` → `npm run lint` → `npx vitest run` (506/506)
+3. `git push -u origin <branch>` → `gh pr create --base master` with `Closes #N`
+4. Wait for CI to pass, then `gh pr merge <N> --merge` (merge commit, matching repo history)
+5. No Co-Authored-By lines in commits.
 6. The flaky test `calculatorFlow.test.tsx > auto-calculates the default form` occasionally times out — re-run once before treating it as a real failure.
+
+### Branch protection on `master` (why direct push fails)
+
+- Pull request required (0 approvals — you can merge your own PR)
+- Status check `Type check · Lint · Test · Build` must pass, branch must be up to date
+- `enforce_admins` on — the rules bind the owner too
+- Force-push and branch deletion blocked; PR conversations must be resolved
 
 ## Architecture quick-map
 
@@ -92,13 +102,19 @@ src/locales/en.json, id.json ← all i18n strings
 #90 share verdict · #91 what-if sandbox · #92 DSR gauge+min income
 #93 DP lever+auto-seed · #94 UI polish
 #95 rate-reset callout · #96 sensitivity grid · #97 prepayment chart · #98 tenor optimizer
-#99 Over Kredit (take-over) calculator
+#99 Over Kredit (take-over) calculator · #100 take-over naming/subtitles
+#102/#104 CLAUDE.md stale-fact fixes · #106 jsdom localStorage on Node ≥26
 
 **Cancelled:** #50 biweekly payments (not applicable for Indonesian banks)
 
 ## Next features (queued — not yet started)
 
-_Queue is empty — no features pending as of 2026-07-21 (Over Kredit shipped via PR #99)._
+- Old-bank early-settlement **penalty field in the Refinancing panel** —
+  `refinancing.ts` has no penalty input, so switching cost for a take-over to a
+  different bank reads optimistic.
+- Dev-toolchain security upgrade — `npm audit` reports 2 critical + 6 high, all
+  in the dev toolchain (`vitest` 1.6.1, `vite`); fixes are semver-major.
+  `dompurify` (production) has a non-breaking fix.
 
 ## Test run command
 
