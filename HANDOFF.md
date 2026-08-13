@@ -8,8 +8,10 @@ _Last updated: 2026-08-13._
 
 **Nothing is in flight.** `master` is green and fully shipped. Most recently: the
 Refinancing panel gained a separate old-bank early-settlement penalty field
-(#110), and the dependency security debt was cleared down to 3 dev-only moderates
-across #112 (non-breaking fixes) and #114 (`vitest` 1 → 4, `vite` 5 → 6).
+(#110), and the dependency security debt was cleared **all the way to zero**
+across #112 (non-breaking fixes), #114 (`vitest` 1 → 4, `vite` 5 → 6) and #116
+(Storybook 8.6 → 10, which dropped the last three advisories with
+`addon-essentials`).
 
 **Before you write any code**, read the two sections that changed most recently:
 
@@ -27,6 +29,12 @@ across #112 (non-breaking fixes) and #114 (`vitest` 1 → 4, `vite` 5 → 6).
   touches the DOM must declare `// @vitest-environment jsdom` on its first line;
   `environmentMatchGlobs` (which used to give all of `src/ui/**` a DOM) was
   removed in Vitest 4 (#114).
+- **Storybook:** version **10**. `@storybook/addon-essentials` is gone —
+  controls, actions, viewport, backgrounds, toolbars, measure and outline are
+  part of the `storybook` core. Only `@storybook/addon-docs` and
+  `@storybook/addon-a11y` remain as addons. Stories import types from
+  `@storybook/react-vite`, and `backgrounds` uses an `options` record plus
+  `initialGlobals.backgrounds.value` (#116).
 - **tokensave** (token-saving MCP + global git hooks) is installed. A PreToolUse
   hook blocks Bash `grep` on indexed projects and points to `tokensave_search`;
   if that MCP tool is not loaded, override per-call with
@@ -75,14 +83,10 @@ npx vitest run
 - **Tests:** 524 passing, 0 failing (35 test files)
 - **Branch:** `master` is clean, green, and **protected** — PR-only (see workflow below)
 - **Deploy:** Auto-deploys to Cloudflare Pages on every master push
-- **Feature queue:** one unstarted item — see [Next Features](#next-features)
-- **Known debt:** `npm audit` is down to **3 moderate, 0 critical, 0 high**
-  (#112 cleared the non-breaking advisories, #114 the `vitest`/`vite` majors).
-  All three that remain — `uuid`, `@storybook/addon-actions`,
-  `@storybook/addon-essentials` — are reachable only through Storybook, which is
-  dev-only and never ships to users. Do **not** run `npm audit fix --force` on
-  them: npm's proposed fix downgrades `@storybook/addon-essentials` from 8.6.x
-  to 7.0.6.
+- **Feature queue:** empty — see [Next Features](#next-features)
+- **Known debt:** none outstanding. `npm audit` reports **0 vulnerabilities**
+  (#112 cleared the non-breaking advisories, #114 the `vitest`/`vite` majors,
+  #116 the last three Storybook ones by removing `addon-essentials`).
 
 ### Flaky test (pre-existing, not a bug)
 `calculatorFlow.test.tsx > auto-calculates the default form` occasionally times out under load.  
@@ -124,6 +128,7 @@ Re-run once before treating as a real failure.
 | #110 | Refinancing old-bank early-settlement penalty — own field, split from the new bank's provisi |
 | #112 | Non-breaking security fixes — dompurify, postcss, nanoid, js-yaml, form-data, brace-expansion |
 | #114 | `vitest` 1.6.1 → 4.1.10 and `vite` 5 → 6.4.3 — clears the 2 critical + 1 high + 2 moderate |
+| #116 | Storybook 8.6 → 10, `addon-essentials` dropped for core + `addon-docs` — `npm audit` reaches 0 |
 
 **Cancelled:** #50 biweekly payments — not applicable for Indonesian banks.
 
@@ -213,14 +218,13 @@ When using Claude Code on the new device:
 
 ## Next Features
 
-**Nothing in flight.** Queued but unstarted:
+**Nothing in flight, and nothing queued.** The dependency-security backlog is
+finished — `npm audit` is at 0.
 
-1. **Storybook 8.6 → 9/10 migration.** The last three `npm audit` findings (all
-   moderate) sit behind Storybook: `uuid`, `@storybook/addon-actions`,
-   `@storybook/addon-essentials`. Storybook 9 removed `addon-essentials`
-   altogether, so this is a config migration rather than a version bump — and it
-   would also unlock `vite` 7/8, which `@storybook/react-vite@8.6.18` currently
-   caps at `vite ^6`. Low urgency: Storybook is dev-only tooling.
+One option is now unblocked but deliberately not scheduled: **`vite` 6 → 7/8.**
+`@storybook/react-vite@10` peers on `vite ^5 || ^6 || ^7 || ^8`, so Storybook no
+longer caps the version. Nothing needs it today and it carries its own breaking
+changes, so treat it as a considered choice rather than routine maintenance.
 
 Ideas without a committed roadmap:
 - Analytics / usage tracking

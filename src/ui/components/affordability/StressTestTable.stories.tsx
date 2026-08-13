@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { StressTestTable } from './StressTestTable';
 import { AFFORDABILITY_SAFE, AFFORDABILITY_RISKY } from '../../../stories/fixtures';
 

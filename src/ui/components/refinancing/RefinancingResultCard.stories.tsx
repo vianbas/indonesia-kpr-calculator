@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { RefinancingResultCard } from './RefinancingResultCard';
 import { REFI_WORTH_IT, REFI_MARGINAL, REFI_NOT_WORTH_IT } from '../../../stories/fixtures';
 
