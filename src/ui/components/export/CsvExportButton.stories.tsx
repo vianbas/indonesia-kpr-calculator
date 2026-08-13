@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { CsvExportButton } from './CsvExportButton';
 import { MOCK_SCENARIOS_1, MOCK_SCENARIOS_2 } from '../../../stories/fixtures';
 import type { ScenarioForCsv } from '../../../infrastructure/csv/csvTypes';

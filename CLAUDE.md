@@ -109,17 +109,32 @@ src/locales/en.json, id.json ← all i18n strings
 #102/#104 CLAUDE.md stale-fact fixes · #106 jsdom localStorage on Node ≥26
 #108 HANDOFF/workflow refresh · #110 refinancing old-bank penalty field
 #112 non-breaking security fixes · #114 vitest 1→4 + vite 5→6 upgrade
+#116 Storybook 8.6→10 + addon-essentials removal (`npm audit` → 0)
 
 **Cancelled:** #50 biweekly payments (not applicable for Indonesian banks)
 
+## Storybook
+
+Storybook **10**. `@storybook/addon-essentials` no longer exists — controls,
+actions, viewport, backgrounds, toolbars, measure and outline all live in the
+`storybook` core package. Only `@storybook/addon-docs` (autodocs) and
+`@storybook/addon-a11y` are separate addons, and both are listed in
+`.storybook/main.ts`.
+
+Two things that changed shape in the migration and are easy to get wrong again:
+
+- Stories import their types from `@storybook/react-vite`, not `@storybook/react`.
+- `backgrounds` takes an `options` **record keyed by id**, and the active one is
+  selected via `initialGlobals.backgrounds.value`. The old `values` array and
+  `backgrounds.default` parameter are no longer read at runtime.
+
+The a11y panel only fills in when a story renders while the panel is open — it
+does not replay the last report on mount. Reload the story if it sits on
+"Preparing accessibility scan"; that is Storybook UX, not a broken config.
+
 ## Next features (queued — not yet started)
 
-- Storybook 8.6 → 9/10 migration. The last 3 `npm audit` findings (all moderate:
-  `uuid`, `@storybook/addon-actions`, `@storybook/addon-essentials`) are only
-  reachable through Storybook. npm's proposed "fix" is
-  `@storybook/addon-essentials@7.0.6` — a **downgrade**, so it must not be
-  applied. Storybook 9 dropped `addon-essentials` entirely, so this is a config
-  migration, not a version bump. Dev-only tooling; nothing ships to users.
+Nothing queued. `npm audit` is clean (0 vulnerabilities).
 
 ## Test run command
 

@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { EarlyRepaymentSummary } from './EarlyRepaymentSummary';
 import { SUMMARY_WITH_SAVINGS, SUMMARY_FIXED_ONLY } from '../../../stories/fixtures';
 
