@@ -10,6 +10,7 @@ function makeInput(overrides: Partial<RefinancingInput> = {}): RefinancingInput 
     newAnnualRate: 0.08,           // 8%
     newTenorMonths: 240,
     provisionFeePercent: 0.01,     // 1%
+    penaltyFeePercent: 0,          // old bank early-settlement penalty
     appraisalFeeIDR: 5_000_000,
     adminFeeIDR: 2_000_000,
     ...overrides,
@@ -180,5 +181,72 @@ describe('calculateRefinancing', () => {
     // Shorter tenor → higher monthly payment → negative monthly savings
     expect(r.monthlySavings).toBeLessThan(0);
     expect(r.recommendation).toBe('not_worth_it');
+  });
+
+  describe('old-bank early-settlement penalty', () => {
+    it('penaltyFee is the given percentage of the remaining balance', () => {
+      const r = calculateRefinancing(makeInput({ penaltyFeePercent: 0.02 }));
+      expect(r.penaltyFee).toBe(8_000_000); // 2% of 400M
+    });
+
+    it('penaltyFee is zero when no penalty applies', () => {
+      const r = calculateRefinancing(makeInput({ penaltyFeePercent: 0 }));
+      expect(r.penaltyFee).toBe(0);
+    });
+
+    it('exposes provisionFee separately so the switching cost is auditable', () => {
+      const r = calculateRefinancing(makeInput({ penaltyFeePercent: 0.02 }));
+      expect(r.provisionFee).toBe(4_000_000); // 1% of 400M
+      expect(r.provisionFee + r.penaltyFee + 5_000_000 + 2_000_000).toBe(
+        r.totalSwitchingCost,
+      );
+    });
+
+    it('penalty is added to the total switching cost', () => {
+      const without = calculateRefinancing(makeInput());
+      const withPenalty = calculateRefinancing(makeInput({ penaltyFeePercent: 0.02 }));
+      expect(withPenalty.totalSwitchingCost).toBe(without.totalSwitchingCost + 8_000_000);
+      // 1% provision + 2% penalty of 400M + 5M + 2M = 4M + 8M + 7M = 19M
+      expect(withPenalty.totalSwitchingCost).toBe(19_000_000);
+    });
+
+    it('penalty does not change either installment — it is a one-off cost', () => {
+      const without = calculateRefinancing(makeInput());
+      const withPenalty = calculateRefinancing(makeInput({ penaltyFeePercent: 0.03 }));
+      expect(withPenalty.currentMonthlyPayment).toBe(without.currentMonthlyPayment);
+      expect(withPenalty.newMonthlyPayment).toBe(without.newMonthlyPayment);
+      expect(withPenalty.monthlySavings).toBe(without.monthlySavings);
+      expect(withPenalty.totalInterestSavings).toBe(without.totalInterestSavings);
+    });
+
+    it('penalty pushes break-even later', () => {
+      const without = calculateRefinancing(makeInput());
+      const withPenalty = calculateRefinancing(makeInput({ penaltyFeePercent: 0.02 }));
+      expect(without.breakEvenMonths).not.toBeNull();
+      expect(withPenalty.breakEvenMonths).toBeGreaterThan(without.breakEvenMonths!);
+    });
+
+    it('penalty reduces net savings by exactly the penalty amount', () => {
+      const without = calculateRefinancing(makeInput());
+      const withPenalty = calculateRefinancing(makeInput({ penaltyFeePercent: 0.02 }));
+      expect(withPenalty.netSavings).toBe(without.netSavings - 8_000_000);
+    });
+
+    it('a large enough penalty flips the verdict away from worth_it', () => {
+      const without = calculateRefinancing(makeInput());
+      expect(without.recommendation).toBe('worth_it');
+      // 35% of 400M = 140M penalty — outweighs the ~123M of interest saved
+      const withPenalty = calculateRefinancing(makeInput({ penaltyFeePercent: 0.35 }));
+      expect(withPenalty.netSavings).toBeLessThan(0);
+      expect(withPenalty.recommendation).toBe('not_worth_it');
+    });
+
+    it('zero balance → no penalty even at a high rate', () => {
+      const r = calculateRefinancing(
+        makeInput({ remainingBalance: 0, penaltyFeePercent: 0.03 }),
+      );
+      expect(r.penaltyFee).toBe(0);
+      expect(r.totalSwitchingCost).toBe(7_000_000); // appraisal + admin only
+    });
   });
 });

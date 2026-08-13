@@ -104,6 +104,22 @@ export function RefinancingResultCard({ result }: Props) {
           value={formatIDR(result.totalSwitchingCost)}
           sub={t('refinancing.totalSwitchCostSub')}
         />
+        {(result.provisionFee > 0 || result.penaltyFee > 0) && (
+          <div className="pb-2 -mt-1 space-y-0.5">
+            {result.provisionFee > 0 && (
+              <p className="flex justify-between gap-2 text-xs text-gray-400">
+                <span>{t('refinancing.breakdownProvision')}</span>
+                <span className="tabular-nums">{formatIDR(result.provisionFee)}</span>
+              </p>
+            )}
+            {result.penaltyFee > 0 && (
+              <p className="flex justify-between gap-2 text-xs text-gray-400">
+                <span>{t('refinancing.breakdownPenalty')}</span>
+                <span className="tabular-nums">{formatIDR(result.penaltyFee)}</span>
+              </p>
+            )}
+          </div>
+        )}
         <MetricRow
           label={t('refinancing.interestSavings')}
           value={

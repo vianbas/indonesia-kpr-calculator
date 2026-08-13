@@ -354,6 +354,7 @@ export function CalculatorPage({ initialUrlState }: CalculatorPageProps = {}) {
         newAnnualRate: newRate,
         newTenorMonths: newTenor,
         provisionFeePercent: (parseFloat(refinancingForm.provisionFeePercent) || 0) / 100,
+        penaltyFeePercent: (parseFloat(refinancingForm.penaltyFeePercent) || 0) / 100,
         appraisalFeeIDR: parseFloat(refinancingForm.appraisalFeeIDR) || 0,
         adminFeeIDR: parseFloat(refinancingForm.adminFeeIDR) || 0,
       });

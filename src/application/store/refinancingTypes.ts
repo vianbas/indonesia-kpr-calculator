@@ -5,6 +5,7 @@ export interface RefinancingFormState {
   newAnnualRatePercent: string;
   newTenorMonths: string;
   provisionFeePercent: string;
+  penaltyFeePercent: string;
   appraisalFeeIDR: string;
   adminFeeIDR: string;
 }
@@ -16,6 +17,7 @@ export const DEFAULT_REFINANCING: RefinancingFormState = {
   newAnnualRatePercent: '',
   newTenorMonths: '',
   provisionFeePercent: '1',
+  penaltyFeePercent: '0',
   appraisalFeeIDR: '0',
   adminFeeIDR: '0',
 };
