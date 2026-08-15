@@ -95,7 +95,7 @@ describe('BankRatePicker', () => {
     const form: MortgageFormState = { ...baseForm, calculationMethod: 'fixed_only' };
     render(<BankRatePicker form={form} dispatch={dispatch} />);
 
-    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'btn_5yr' } });
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'btn_3yr' } });
 
     const hasPeriodCalls = dispatch.mock.calls.filter(
       ([action]) => action.type === 'SET_HAS_FIXED_PERIOD',
